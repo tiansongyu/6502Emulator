@@ -24,7 +24,7 @@ struct Mem
 		return Data[Address];
 	}
 	//写入两个字节
-	void WriteWord(Word Value, u32 Address, u32& Cycles)
+	void WriteWord(Word Value, u32 Address, s32& Cycles)
 	{
 		Data[Address] = Value & 0xFF;
 		Data[Address + 1] = (Value >> 8);
@@ -56,40 +56,40 @@ struct CPU
 		A = X = Y = 0;
 		mem.Initialise();
 	}
-	Byte FetchByte(u32& Cycles, Mem& memory)
+	Byte FetchByte(s32& Cycles, Mem& memory)
 	{
 		Byte Data = memory[PC];
 		PC++;
 		Cycles--;
 		return Data;
 	}
-	Byte ReadByte(Byte address, u32& Cycles, Mem& memory)
+	Byte ReadByte(Byte address, s32& Cycles, Mem& memory)
 	{
 		Byte Data = memory[address];
 		Cycles--;
 		return Data;
 	}
-	Byte ReadByte(Word address, u32& Cycles, Mem& memory)
+	Byte ReadByte(Word address, s32& Cycles, Mem& memory)
 	{
 		Byte Data = memory[address];
 		Cycles--;
 		return Data;
 	}
-	Word ReadWord(Word address, u32& Cycles, Mem& memory)
+	Word ReadWord(Word address, s32& Cycles, Mem& memory)
 	{
 		Word Data = memory[address];
 		Data |= (memory[address+1] << 8);
 		Cycles-=2;
 		return Data;
 	}
-	Word ReadWord(Byte address, u32& Cycles, Mem& memory)
+	Word ReadWord(Byte address, s32& Cycles, Mem& memory)
 	{
 		Word Data = memory[address];
 		Data |= (memory[address + 1] << 8);
 		Cycles -= 2;
 		return Data;
 	}
-	Word FetchWord(u32& Cycles, Mem& memory)
+	Word FetchWord(s32& Cycles, Mem& memory)
 	{
 		//小端存储数据  如果是大端口，需要调换数据顺序
 		Word Data = memory[PC];
@@ -103,23 +103,23 @@ struct CPU
 		return Data;
 	}
 
-	static constexpr Byte INS_LDA_IM = 0xA9;
-	static constexpr Byte INS_LDA_ZP = 0xA5;
-	static constexpr Byte INS_LDA_ZPX = 0xB5;
-	static constexpr Byte INS_LDA_ABS = 0xAD;
-	static constexpr Byte INS_LDA_ABS_X = 0xBD;
-	static constexpr Byte INS_LDA_ABS_Y = 0xB9;
-	static constexpr Byte INS_LDA_IND_X = 0x61;
+	static constexpr Byte   INS_LDA_IM = 0xA9,
+							INS_LDA_ZP = 0xA5,
+							INS_LDA_ZPX = 0xB5,
+							INS_LDA_ABS = 0xAD,
+							INS_LDA_ABS_X = 0xBD,
+							INS_LDA_ABS_Y = 0xB9,
+							INS_LDA_IND_X = 0x61,
+							INS_LDA_IND_Y = 0xB1,
+						    INS_JSR = 0x20;
 
-	static constexpr Byte INS_JSR = 0x20;
-	
 	void LDASetStatus()
 	{
 		Z = (A == 0);
 		N = (A & 0b10000000) > 0;
 	}
 
-	s32 Execute(u32 Cycles, Mem& memory)
+	s32 Execute(s32 Cycles, Mem& memory)
 	{
 		s32 CyclesRequests = Cycles;
 		while (Cycles > 0)
@@ -159,11 +159,13 @@ struct CPU
 						memory);
 					LDASetStatus();
 				}break;
-				case INS_LDA_ABS_X: //	4 (+1 if page crossed)不知道什么意思 TODO
+				case INS_LDA_ABS_X:
 				{
 					Word AbsAddress = FetchWord(Cycles, memory);
+					auto Copy_AbsAddress = AbsAddress % 256;
+					// 下面有更好的写法，这里暂时这样写 https://github.com/davepoo/6502Emulator/blob/bb278fbf80d6e4f0f3bb60826afc2551977d9ead/6502/6502Lib/src/private/m6502.cpp#L1068 
 					AbsAddress += X;
-					if (AbsAddress % 256 == 255)
+					if (Copy_AbsAddress + X > 254)
 						Cycles--;
 					A = ReadByte(
 						AbsAddress,
@@ -171,11 +173,12 @@ struct CPU
 						memory);
 					LDASetStatus();
 				}break;
-				case INS_LDA_ABS_Y: //	4 (+1 if page crossed)不知道什么意思 TODO
+				case INS_LDA_ABS_Y:
 				{
 					Word AbsAddress = FetchWord(Cycles, memory);
+					auto Copy_AbsAddress = AbsAddress % 256;
 					AbsAddress += Y;
-					if (AbsAddress % 256 == 255)
+					if (Copy_AbsAddress + Y > 254)
 						Cycles--;
 					A = ReadByte(
 						AbsAddress,
@@ -198,6 +201,23 @@ struct CPU
 						memory);
 					LDASetStatus();
 				}break;
+				case INS_LDA_IND_Y:
+				{
+					Byte IndAddress = FetchByte(Cycles, memory);
+					Word ind_address_ = ReadWord(
+						IndAddress,
+						Cycles,
+						memory);
+					auto Copy_ind_address_ = ind_address_ % 256;
+					ind_address_ += Y;
+					if (Copy_ind_address_ + Y > 254)
+						Cycles--;
+					A = ReadByte(
+						ind_address_,
+						Cycles,
+						memory);
+					LDASetStatus();
+				}break;
 				case INS_JSR:
 				{
 					Word SubAddress = FetchWord(Cycles, memory); //两个周期
@@ -208,7 +228,7 @@ struct CPU
 				}break;
 				default:
 				{
-					printf("没有设置此条指令\n");
+					printf("没有设置 0x%x 指令\n",Ins);
 					Cycles++;//由于前面的使用了一次周期读取无用数据，所以要加回来
 					goto finish;
 				}break;
