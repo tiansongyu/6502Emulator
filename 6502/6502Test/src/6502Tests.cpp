@@ -116,6 +116,82 @@ TEST_F(M6502Test1, LDAAbsoluteCanLoadAValueIntoTheARegister)
 	EXPECT_EQ(cpu.B, CPUCopy.B);
 	EXPECT_EQ(cpu.V, CPUCopy.V);
 }
+TEST_F(M6502Test1, LDAAbsoluteXCanLoadAValueIntoTheARegister)
+{
+	// start - inline a little program
+	cpu.X = 2;
+	mem[0xFFFC] = CPU::INS_LDA_ABS_X;
+	mem[0xFFFD] = 0xfe;
+	mem[0xFFFE] = 0x01;
+	mem[0x0200] = 0x89;
+	// end - inline a little program
+
+	//when:
+	CPU CPUCopy = cpu;
+	s32 CyclesUsed = cpu.Execute(4, mem);
+
+	//then:
+	EXPECT_EQ(cpu.A, 0x89);
+	EXPECT_EQ(CyclesUsed, 4);
+	EXPECT_FALSE(cpu.Z);
+	EXPECT_TRUE(cpu.N);
+	EXPECT_EQ(cpu.C, CPUCopy.C);
+	EXPECT_EQ(cpu.I, CPUCopy.I);
+	EXPECT_EQ(cpu.D, CPUCopy.D);
+	EXPECT_EQ(cpu.B, CPUCopy.B);
+	EXPECT_EQ(cpu.V, CPUCopy.V);
+}
+TEST_F(M6502Test1, LDAAbsoluteYCanLoadAValueIntoTheARegister)
+{
+	// start - inline a little program
+	cpu.Y = 1;
+	mem[0xFFFC] = CPU::INS_LDA_ABS_Y;
+	mem[0xFFFD] = 0xfe;
+	mem[0xFFFE] = 0x01;
+	mem[0x01FF] = 0x89;
+	// end - inline a little program
+
+	//when:
+	CPU CPUCopy = cpu;
+	s32 CyclesUsed = cpu.Execute(5, mem);
+
+	//then:
+	EXPECT_EQ(cpu.A, 0x89);
+	EXPECT_EQ(CyclesUsed, 5);
+	EXPECT_FALSE(cpu.Z);
+	EXPECT_TRUE(cpu.N);
+	EXPECT_EQ(cpu.C, CPUCopy.C);
+	EXPECT_EQ(cpu.I, CPUCopy.I);
+	EXPECT_EQ(cpu.D, CPUCopy.D);
+	EXPECT_EQ(cpu.B, CPUCopy.B);
+	EXPECT_EQ(cpu.V, CPUCopy.V);
+}
+TEST_F(M6502Test1, LDAInd_XCanLoadAValueIntoTheARegister)
+{
+	// start - inline a little program
+	cpu.X = 1;
+	mem[0xFFFC] = CPU::INS_LDA_IND_X;
+	mem[0xFFFD] = 0x03;
+	mem[0x0004] = 0x83;
+	mem[0x0005] = 0x84;
+	mem[0x8483] = 0x89;
+	// end - inline a little program
+
+	//when:
+	CPU CPUCopy = cpu;
+	s32 CyclesUsed = cpu.Execute(6, mem);
+
+	//then:
+	EXPECT_EQ(cpu.A, 0x89);
+	EXPECT_EQ(CyclesUsed, 6);
+	EXPECT_FALSE(cpu.Z);
+	EXPECT_TRUE(cpu.N);
+	EXPECT_EQ(cpu.C, CPUCopy.C);
+	EXPECT_EQ(cpu.I, CPUCopy.I);
+	EXPECT_EQ(cpu.D, CPUCopy.D);
+	EXPECT_EQ(cpu.B, CPUCopy.B);
+	EXPECT_EQ(cpu.V, CPUCopy.V);
+}
 #if 0
 TEST_F( M6502Test1, LDAZeroPageXCanLoadAValueIntoTheARegisterWhenItWraps )
 {
