@@ -1,4 +1,4 @@
-#include <gtest/gtest.h>
+ï»¿#include <gtest/gtest.h>
 #include "main_6502.h"
 
 class M6502Test1 : public testing::Test
@@ -9,16 +9,22 @@ public:
 	m6502::CPU cpu;
 	virtual void SetUp()
 	{
-		cpu.Reset( mem );
+		cpu.Reset(mem);
 	}
 
 	virtual void TearDown()
 	{
 	}
-	void CyclesConfirm( m6502::Byte *_register, const m6502::Byte& DataA, const m6502::s32 Cycles, const m6502::s32 RequestCycles)
+	void CyclesConfirm(m6502::Byte* _register, const m6502::Byte& DataA, const m6502::s32 Cycles, const m6502::s32 RequestCycles)
 	{
 		m6502::s32 CyclesUsed = cpu.Execute(Cycles, mem);
 		EXPECT_EQ(*_register, DataA);
+		EXPECT_EQ(CyclesUsed, RequestCycles);
+	}
+	void STCyclesConfirm(const m6502::Byte& _register, const m6502::Byte& DataA, const m6502::s32 Cycles, const m6502::s32 RequestCycles)
+	{
+		m6502::s32 CyclesUsed = cpu.Execute(Cycles, mem);
+		EXPECT_EQ(_register, DataA);
 		EXPECT_EQ(CyclesUsed, RequestCycles);
 	}
 	void VerfiyCPUFlagCIDBV(const m6502::CPU& cpu, const m6502::CPU& CPUCopy)
@@ -29,10 +35,18 @@ public:
 		EXPECT_EQ(cpu.B, CPUCopy.B);
 		EXPECT_EQ(cpu.V, CPUCopy.V);
 	}
+	void VerfiyCPUFlagALL(const m6502::CPU& cpu, const m6502::CPU& CPUCopy)
+	{
+		EXPECT_EQ(cpu.C, CPUCopy.C);
+		EXPECT_EQ(cpu.I, CPUCopy.I);
+		EXPECT_EQ(cpu.D, CPUCopy.D);
+		EXPECT_EQ(cpu.B, CPUCopy.B);
+		EXPECT_EQ(cpu.V, CPUCopy.V);
+		EXPECT_EQ(cpu.Z, CPUCopy.Z);
+		EXPECT_EQ(cpu.N, CPUCopy.N);
+	}
 };
-
-
-TEST_F( M6502Test1, LDAImmediate_Can_Load_A_Value_Into_The_ARegister )
+TEST_F(M6502Test1, LDAImmediate_Can_Load_A_Value_Into_The_ARegister)
 {
 	// given:
 	// start - inline a little program
@@ -42,8 +56,8 @@ TEST_F( M6502Test1, LDAImmediate_Can_Load_A_Value_Into_The_ARegister )
 
 	m6502::CPU CPUCopy = cpu;
 	CyclesConfirm(&cpu.A, 0x84, 2, 2);
-	EXPECT_FALSE( cpu.Z );
-	EXPECT_TRUE( cpu.N );
+	EXPECT_FALSE(cpu.Z);
+	EXPECT_TRUE(cpu.N);
 	VerfiyCPUFlagCIDBV(cpu, CPUCopy);
 }
 TEST_F(M6502Test1, LDXImmediate_Can_Load_A_Value_Into_The_ARegister)
@@ -74,7 +88,7 @@ TEST_F(M6502Test1, LDYImmediate_Can_Load_A_Value_Into_The_ARegister)
 	EXPECT_TRUE(cpu.N);
 	VerfiyCPUFlagCIDBV(cpu, CPUCopy);
 }
-TEST_F( M6502Test1, LDAZeroPageCanLoadAValueIntoTheARegister )
+TEST_F(M6502Test1, LDAZeroPageCanLoadAValueIntoTheARegister)
 {
 	// given:
 	// start - inline a little program
@@ -85,9 +99,9 @@ TEST_F( M6502Test1, LDAZeroPageCanLoadAValueIntoTheARegister )
 
 	m6502::CPU CPUCopy = cpu;
 	CyclesConfirm(&cpu.A, 0x37, 3, 3);
-	EXPECT_FALSE( cpu.Z );
-	EXPECT_FALSE( cpu.N );
-	VerfiyCPUFlagCIDBV( cpu, CPUCopy);
+	EXPECT_FALSE(cpu.Z);
+	EXPECT_FALSE(cpu.N);
+	VerfiyCPUFlagCIDBV(cpu, CPUCopy);
 }
 TEST_F(M6502Test1, LDXZeroPageCanLoadAValueIntoTheARegister)
 {
@@ -119,7 +133,7 @@ TEST_F(M6502Test1, LDYZeroPageCanLoadAValueIntoTheARegister)
 	EXPECT_FALSE(cpu.N);
 	VerfiyCPUFlagCIDBV(cpu, CPUCopy);
 }
-TEST_F( M6502Test1, LDAZeroPageXCanLoadAValueIntoTheARegister )
+TEST_F(M6502Test1, LDAZeroPageXCanLoadAValueIntoTheARegister)
 {
 	// given:
 	cpu.X = 0xff;
@@ -130,10 +144,10 @@ TEST_F( M6502Test1, LDAZeroPageXCanLoadAValueIntoTheARegister )
 	// end - inline a little program
 
 	m6502::CPU CPUCopy = cpu;
-	CyclesConfirm(&cpu.A, 0x37,4, 4);
-	EXPECT_FALSE( cpu.Z );
-	EXPECT_FALSE( cpu.N );
-	VerfiyCPUFlagCIDBV( cpu, CPUCopy);
+	CyclesConfirm(&cpu.A, 0x37, 4, 4);
+	EXPECT_FALSE(cpu.Z);
+	EXPECT_FALSE(cpu.N);
+	VerfiyCPUFlagCIDBV(cpu, CPUCopy);
 
 }
 TEST_F(M6502Test1, LDAAbsoluteCanLoadAValueIntoTheARegister)
@@ -149,7 +163,7 @@ TEST_F(M6502Test1, LDAAbsoluteCanLoadAValueIntoTheARegister)
 	CyclesConfirm(&cpu.A, 0x89, 4, 4);
 	EXPECT_FALSE(cpu.Z);
 	EXPECT_TRUE(cpu.N);
-	VerfiyCPUFlagCIDBV( cpu, CPUCopy);
+	VerfiyCPUFlagCIDBV(cpu, CPUCopy);
 
 }
 TEST_F(M6502Test1, LDXAbsoluteCanLoadAValueIntoTheARegister)
@@ -194,11 +208,11 @@ TEST_F(M6502Test1, LDAAbsoluteXCanLoadAValueIntoTheARegister)
 	mem[0x01f4] = 0x89;
 	// end - inline a little program
 	m6502::CPU CPUCopy = cpu;
-	CyclesConfirm(&cpu.A, 0x89, 4,4);
+	CyclesConfirm(&cpu.A, 0x89, 4, 4);
 
 	EXPECT_FALSE(cpu.Z);
 	EXPECT_TRUE(cpu.N);
-	VerfiyCPUFlagCIDBV( cpu, CPUCopy);
+	VerfiyCPUFlagCIDBV(cpu, CPUCopy);
 
 }
 TEST_F(M6502Test1, LDXAbsoluteYCanLoadAValueIntoTheARegister)
@@ -240,7 +254,7 @@ TEST_F(M6502Test1, LDAAbsoluteXCanLoadAValueIntoTheARegisterWhenItCrossThePage)
 	// start - inline a little program
 	cpu.X = 2;
 	mem[0xFFFC] = m6502::CPU::INS_LDA_ABS_X;
-	mem[0xFFFD] = 0xfe; // 0xfe - 0x101 ¿çÒ³ÁËÐèÒªÊ¹ÓÃ5¸öÖÜÆÚ
+	mem[0xFFFD] = 0xfe; // 0xfe - 0x101 ï¿½ï¿½Ò³ï¿½ï¿½ï¿½ï¿½ÒªÊ¹ï¿½ï¿½5ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	mem[0xFFFE] = 0x01;
 	mem[0x0200] = 0x89;
 	// end - inline a little program
@@ -265,7 +279,7 @@ TEST_F(M6502Test1, LDAAbsoluteYCanLoadAValueIntoTheARegister)
 	CyclesConfirm(&cpu.A, 0x89, 4, 4);
 	EXPECT_FALSE(cpu.Z);
 	EXPECT_TRUE(cpu.N);
-	VerfiyCPUFlagCIDBV(cpu,CPUCopy);
+	VerfiyCPUFlagCIDBV(cpu, CPUCopy);
 
 }
 TEST_F(M6502Test1, LDAAbsoluteYCanLoadAValueIntoTheARegisterWhenItCrossThePage)
@@ -273,16 +287,16 @@ TEST_F(M6502Test1, LDAAbsoluteYCanLoadAValueIntoTheARegisterWhenItCrossThePage)
 	// start - inline a little program
 	cpu.Y = 1;
 	mem[0xFFFC] = m6502::CPU::INS_LDA_ABS_Y;
-	mem[0xFFFD] = 0xfe;//¿çÒ³ÁË
+	mem[0xFFFD] = 0xff;
 	mem[0xFFFE] = 0x01;
-	mem[0x01FF] = 0x89;
+	mem[0x0200] = 0x89;
 	// end - inline a little program
 
 	m6502::CPU CPUCopy = cpu;
 	CyclesConfirm(&cpu.A, 0x89, 5, 5);
 	EXPECT_FALSE(cpu.Z);
 	EXPECT_TRUE(cpu.N);
-	VerfiyCPUFlagCIDBV(cpu,CPUCopy);
+	VerfiyCPUFlagCIDBV(cpu, CPUCopy);
 
 }
 TEST_F(M6502Test1, LDXAbsoluteYCanLoadAValueIntoTheARegisterWhenItCrossThePage)
@@ -290,9 +304,9 @@ TEST_F(M6502Test1, LDXAbsoluteYCanLoadAValueIntoTheARegisterWhenItCrossThePage)
 	// start - inline a little program
 	cpu.Y = 1;
 	mem[0xFFFC] = m6502::CPU::INS_LDX_ABS_Y;
-	mem[0xFFFD] = 0xfe;//¿çÒ³ÁË
+	mem[0xFFFD] = 0xff;
 	mem[0xFFFE] = 0x01;
-	mem[0x01FF] = 0x89;
+	mem[0x0200] = 0x89;
 	// end - inline a little program
 
 	m6502::CPU CPUCopy = cpu;
@@ -307,9 +321,9 @@ TEST_F(M6502Test1, LDYAbsoluteXCanLoadAValueIntoTheARegisterWhenItCrossThePage)
 	// start - inline a little program
 	cpu.X = 1;
 	mem[0xFFFC] = m6502::CPU::INS_LDY_ABS_X;
-	mem[0xFFFD] = 0xfe;//¿çÒ³ÁË
+	mem[0xFFFD] = 0xff;//ï¿½ï¿½Ò³ï¿½ï¿½
 	mem[0xFFFE] = 0x01;
-	mem[0x01FF] = 0x89;
+	mem[0x0200] = 0x89;
 	// end - inline a little program
 
 	m6502::CPU CPUCopy = cpu;
@@ -334,7 +348,7 @@ TEST_F(M6502Test1, LDAInd_XCanLoadAValueIntoTheARegister)
 	CyclesConfirm(&cpu.A, 0x89, 6, 6);
 	EXPECT_FALSE(cpu.Z);
 	EXPECT_TRUE(cpu.N);
-	VerfiyCPUFlagCIDBV(cpu,CPUCopy);
+	VerfiyCPUFlagCIDBV(cpu, CPUCopy);
 
 }
 TEST_F(M6502Test1, LDAInd_YCanLoadAValueIntoTheARegister)
@@ -367,9 +381,9 @@ TEST_F(M6502Test1, LDAInd_YCanLoadAValueIntoTheARegisterWhenItCroessThePage)
 	// end - inline a little program
 
 	m6502::CPU CPUCopy = cpu;
-	CyclesConfirm(&cpu.A, 0x89,6, 6);
+	CyclesConfirm(&cpu.A, 0x89, 6, 6);
 	EXPECT_FALSE(cpu.Z);
 	EXPECT_TRUE(cpu.N);
-	VerfiyCPUFlagCIDBV(cpu,CPUCopy);
+	VerfiyCPUFlagCIDBV(cpu, CPUCopy);
 
 }
