@@ -1,5 +1,16 @@
 # 6052emulator 6502芯片模拟记录
-参考资料如下: 
+
+## 使用方法
+1. **安装vs2019、cmake v3.20+**
+2. **下载或clone本库源码**
+3. **执行make_VS2019.bat命令，会使用cmake自动生成vs2019工程，找到sln文件，进入工程(vs2019关闭警告作为错误选项)**（vs2017 vs2016 vs2015等皆可使用本源码，需要修改**make_VS2019.bat**中的`cmake -G "Visual Studio 16 2019" -A x64 ..\ -Dgtest_force_shared_crt=on` 指令,查询相关资料，修改为对应的vs版本工程）
+
+
+
+工程包括分两个模块，一个是6502CPU实现模块，另外一个是使用[Google test](https://github.com/google/googletest/)工具进行单元测试，用来测试实现的指令。
+本工程只包括6502指令实现，可以进行执行所有逻辑、算数等指令(WIP),如果需要学习6502有关实现，可以查阅6502应用相关资料，进行应用实现。
+
+## 参考资料 
  - **http://www.obelisk.me.uk/6502/**
  - **http://www.6502.org/**
  - **https://www.c64-wiki.com/wiki/Addressing_mode**
@@ -10,6 +21,9 @@
 4. 寻址  描述了6502存储器的每种寻址模式。
 5. 算法 包含基本的6502编码示例。
 6. 参考 详细描述了完整的指令集。
+
+
+
 
 
 ## 基本架构
@@ -70,13 +84,6 @@ Y寄存器与X寄存器的相似之处在于，它可用于保持计数器或偏
  - Negative Flag 负标志
 如果最后一个操作的结果的第7位设置为1，则设置负标志。
 
-###  已实现寻址方式
-- LDA命令
- >  - Immediate 立即数寻址
- >  - Zero Page
- >  - Zero Page,X
- >  - Absolute
- >  - Absolute,X
- >  - Absolute,Y
- >  - (Indirect,X)
- >  - (Indirect),Y
+###  已实现指令
+[点击这里进入trello看板](https://trello.com/b/ll6HPTJ0/)
+
