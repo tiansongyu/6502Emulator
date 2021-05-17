@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include "main_6502.h"
 
-class M6502Test1 : public testing::Test
+class M6502Test1J : public testing::Test
 {
 public:
 
@@ -29,25 +29,25 @@ public:
 	}
 	void VerfiyCPUFlagCIDBV(const m6502::CPU& cpu, const m6502::CPU& CPUCopy)
 	{
-		EXPECT_EQ(cpu.C, CPUCopy.C);
-		EXPECT_EQ(cpu.I, CPUCopy.I);
-		EXPECT_EQ(cpu.D, CPUCopy.D);
-		EXPECT_EQ(cpu.B, CPUCopy.B);
-		EXPECT_EQ(cpu.V, CPUCopy.V);
-	}
+		EXPECT_EQ(cpu.Flags.C, CPUCopy.Flags.C);
+		EXPECT_EQ(cpu.Flags.I, CPUCopy.Flags.I);
+		EXPECT_EQ(cpu.Flags.D, CPUCopy.Flags.D);
+		EXPECT_EQ(cpu.Flags.B, CPUCopy.Flags.B);
+		EXPECT_EQ(cpu.Flags.V, CPUCopy.Flags.V);
+	}								
 	void VerfiyCPUFlagALL(const m6502::CPU& cpu, const m6502::CPU& CPUCopy)
 	{
-		EXPECT_EQ(cpu.C, CPUCopy.C);
-		EXPECT_EQ(cpu.I, CPUCopy.I);
-		EXPECT_EQ(cpu.D, CPUCopy.D);
-		EXPECT_EQ(cpu.B, CPUCopy.B);
-		EXPECT_EQ(cpu.V, CPUCopy.V);
-		EXPECT_EQ(cpu.Z, CPUCopy.Z);
-		EXPECT_EQ(cpu.N, CPUCopy.N);
+		EXPECT_EQ(cpu.Flags.C, CPUCopy.Flags.C);
+		EXPECT_EQ(cpu.Flags.I, CPUCopy.Flags.I);
+		EXPECT_EQ(cpu.Flags.D, CPUCopy.Flags.D);
+		EXPECT_EQ(cpu.Flags.B, CPUCopy.Flags.B);
+		EXPECT_EQ(cpu.Flags.V, CPUCopy.Flags.V);
+		EXPECT_EQ(cpu.Flags.Z, CPUCopy.Flags.Z);
+		EXPECT_EQ(cpu.Flags.N, CPUCopy.Flags.N);
 	}
 };
 
-TEST_F(M6502Test1, JSRANDRTSTEST)
+TEST_F(M6502Test1J, JSRANDRTSTEST)
 {
 	// given:
 	// start - inline a little program
@@ -61,6 +61,111 @@ TEST_F(M6502Test1, JSRANDRTSTEST)
 	// end - inline a little program
 	constexpr int CYCLES = 6 + 6 + 2;
 
-	m6502::CPU CPUCopy = cpu;
+	m6502::Byte SPCopy = cpu.SP;
 	STCyclesConfirm(cpu.A, 0x23, CYCLES, CYCLES);
+	EXPECT_EQ(SPCopy, cpu.SP);
+}
+TEST_F(M6502Test1J, JMPANDRTSTEST)
+{
+	// given:
+	cpu.A = 0x69;
+	// start - inline a little program
+	mem[0xFFFC] = m6502::CPU::INS_JMP;
+	mem[0xFFFD] = 0x42;
+	mem[0xFFFE] = 0X53;
+	mem[0x5342] = m6502::CPU::INS_LDA_IM;
+	mem[0x5343] = 0x67;
+	// end - inline a little program
+	constexpr int CYCLES = 3 + 2;
+
+	m6502::Byte SPCopy = cpu.SP;
+	STCyclesConfirm(cpu.A, 0x67, CYCLES, CYCLES);
+	EXPECT_EQ(SPCopy, cpu.SP);
+}
+TEST_F(M6502Test1J, TSXTEST)
+{
+	// given:
+	cpu.X = 0x69;
+	// start - inline a little program
+	mem[0xFFFC] = m6502::CPU::INS_TSX;
+	
+	// end - inline a little program
+	constexpr int CYCLES = 2;
+	STCyclesConfirm(cpu.X, cpu.SP, CYCLES, CYCLES);
+}
+TEST_F(M6502Test1J, TXSTEST)
+{
+	// given:
+	cpu.X = 0x69;
+	// start - inline a little program
+	mem[0xFFFC] = m6502::CPU::INS_TXS;
+
+	// end - inline a little program
+	constexpr int CYCLES = 2;
+
+	STCyclesConfirm(cpu.X, cpu.SP, CYCLES, CYCLES);
+}
+TEST_F(M6502Test1J, PHATEST)
+{
+	// given:
+	cpu.A = 0x69;
+	// start - inline a little program
+	mem[0xFFFC] = m6502::CPU::INS_PHA;
+	// end - inline a little program
+	constexpr int CYCLES = 3;
+
+	m6502::Byte SPCopy = cpu.SP;
+	STCyclesConfirm(0x69, mem[0x100+ SPCopy], CYCLES, CYCLES);
+	EXPECT_EQ(SPCopy-1, cpu.SP);
+
+}
+TEST_F(M6502Test1J, PHPANDstatusflagsTEST)
+{
+	// given:
+	cpu.ps = 0b00001111;
+	// start - inline a little program
+	mem[0xFFFC] = m6502::CPU::INS_PHP;
+	// end - inline a little program
+	constexpr int CYCLES = 3;
+
+	m6502::Byte SPCopy = cpu.SP;
+	m6502::Byte psCopy = cpu.ps;
+	STCyclesConfirm(cpu.ps, mem[0x100 + SPCopy], CYCLES, CYCLES);
+	EXPECT_EQ(SPCopy - 1, cpu.SP);
+}
+
+TEST_F(M6502Test1J, PLAANDstatusflagsTEST)
+{
+	// given:
+	m6502::CPU CPUCopy = cpu;
+	cpu.SP = 0xFE;
+	cpu.A = 0b01000100;
+	// start - inline a little program
+	mem[0xFFFC] = m6502::CPU::INS_PLA;
+	mem[0x01ff] = 0b11110000;
+	// end - inline a little program
+	constexpr int CYCLES = 4;
+
+	m6502::Byte SPCopy = cpu.SP;
+	m6502::Byte psCopy = cpu.ps;
+	STCyclesConfirm(cpu.A, 0b11110000, CYCLES, CYCLES);
+	EXPECT_EQ(SPCopy + 1, cpu.SP);
+	EXPECT_FALSE(cpu.Flags.Z);
+	EXPECT_TRUE(cpu.Flags.N);
+	VerfiyCPUFlagCIDBV(cpu, CPUCopy);
+}
+TEST_F(M6502Test1J, PLPANDstatusflagsTEST)
+{
+	// given:
+	m6502::CPU CPUCopy = cpu;
+	cpu.SP = 0xFE;
+	// start - inline a little program
+	mem[0xFFFC] = m6502::CPU::INS_PLP;
+	mem[0x01ff] = 0b11110000;
+	// end - inline a little program
+	constexpr int CYCLES = 4;
+
+	m6502::Byte SPCopy = cpu.SP;
+	m6502::Byte psCopy = cpu.ps;
+	STCyclesConfirm(cpu.ps, 0b11110000, CYCLES, CYCLES);
 }

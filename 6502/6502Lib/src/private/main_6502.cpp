@@ -10,7 +10,22 @@ s32 CPU::Execute(s32 Cycles, Mem& memory)
 		{
 		case INS_LDA_IM: //立即寻址 Immediate
 		{
-			A =  FetchByte(Cycles, memory);
+			A = FetchByte(Cycles, memory);
+			SetStatus(A);
+		}break;
+		case INS_AND_IMM: //立即寻址 AND Immediate
+		{
+			A &= FetchByte(Cycles, memory);
+			SetStatus(A);
+		}break;
+		case INS_EOR_IMM: //立即寻址 AND Immediate
+		{
+			A ^= FetchByte(Cycles, memory);
+			SetStatus(A);
+		}break;
+		case INS_ORA_IMM: //立即寻址 AND Immediate
+		{
+			A |= FetchByte(Cycles, memory);
 			SetStatus(A);
 		}break;
 		case INS_LDX_IM: //立即寻址 Immediate
@@ -26,6 +41,28 @@ s32 CPU::Execute(s32 Cycles, Mem& memory)
 		case INS_LDA_ZP: //零页寻址 ..zero page
 		{
 			A = AddZeroPage(Cycles, memory);
+			SetStatus(A);
+		}break;
+		case INS_AND_ZP: //零页寻址 ..zero page
+		{
+			A &= AddZeroPage(Cycles, memory);
+			SetStatus(A);
+		}break;
+		case INS_EOR_ZP: //零页寻址 ..zero page
+		{
+			A ^= AddZeroPage(Cycles, memory);
+			SetStatus(A);
+		}break;
+		case INS_BIT_ZP:
+		{
+			Byte Value = AddZeroPage(Cycles, memory);
+			Flags.Z = !(Value & A);
+			Flags.N = (Value & NagativeFlagBit) != 0;
+			Flags.V = (Value & OverFlowFlagBit) != 0;
+		}break;
+		case INS_ORA_ZP: //零页寻址 ..zero page
+		{
+			A |= AddZeroPage(Cycles, memory);
 			SetStatus(A);
 		}break;
 		case INS_LDX_ZP: //零页寻址 ..zero page
@@ -44,6 +81,21 @@ s32 CPU::Execute(s32 Cycles, Mem& memory)
 			A = AddZeroPageAdd(Cycles, memory, X);
 			SetStatus(A);
 		}break;
+		case INS_AND_ZPX: //零页寻址 ..zero page x
+		{
+			A &= AddZeroPageAdd(Cycles, memory, X);
+			SetStatus(A);
+		}break;
+		case INS_EOR_ZPX: //零页寻址 ..zero page x
+		{
+			A ^= AddZeroPageAdd(Cycles, memory, X);
+			SetStatus(A);
+		}break;
+		case INS_ORA_ZPX: //零页寻址 ..zero page x
+		{
+			A |= AddZeroPageAdd(Cycles, memory, X);
+			SetStatus(A);
+		}break;
 		case INS_LDX_ZPY: //零页寻址 ..zero page x
 		{
 			X = AddZeroPageAdd(Cycles, memory, Y);
@@ -58,6 +110,28 @@ s32 CPU::Execute(s32 Cycles, Mem& memory)
 		{
 			A = AbsoluteAddress(Cycles, memory);
 			SetStatus(A);
+		}break;
+		case INS_AND_ABS:
+		{
+			A &= AbsoluteAddress(Cycles, memory);
+			SetStatus(A);
+		}break;
+		case INS_EOR_ABS:
+		{
+			A ^= AbsoluteAddress(Cycles, memory);
+			SetStatus(A);
+		}break;
+		case INS_ORA_ABS:
+		{
+			A |= AbsoluteAddress(Cycles, memory);
+			SetStatus(A);
+		}break;
+		case INS_BIT_ABS:
+		{
+			Byte Value = AbsoluteAddress(Cycles, memory);
+			Flags.Z = !(Value & A);
+			Flags.N = (Value & NagativeFlagBit) != 0;
+			Flags.V = (Value & OverFlowFlagBit) != 0;
 		}break;
 		case INS_LDX_ABS:
 		{
@@ -74,9 +148,39 @@ s32 CPU::Execute(s32 Cycles, Mem& memory)
 			A = AbsoluteAddress_Register( Cycles,memory, X);
 			SetStatus(A);
 		}break;
+		case INS_AND_ABSX:
+		{
+			A &= AbsoluteAddress_Register(Cycles, memory, X);
+			SetStatus(A);
+		}break;
+		case INS_EOR_ABSX:
+		{
+			A ^= AbsoluteAddress_Register(Cycles, memory, X);
+			SetStatus(A);
+		}break;
+		case INS_ORA_ABSX:
+		{
+			A |= AbsoluteAddress_Register(Cycles, memory, X);
+			SetStatus(A);
+		}break;
 		case INS_LDA_ABS_Y:
 		{
 			A = AbsoluteAddress_Register(Cycles, memory, Y);
+			SetStatus(A);
+		}break;
+		case INS_AND_ABSY:
+		{
+			A &= AbsoluteAddress_Register(Cycles, memory, Y);
+			SetStatus(A);
+		}break;
+		case INS_EOR_ABSY:
+		{
+			A ^= AbsoluteAddress_Register(Cycles, memory, Y);
+			SetStatus(A);
+		}break;
+		case INS_ORA_ABSY:
+		{
+			A |= AbsoluteAddress_Register(Cycles, memory, Y);
 			SetStatus(A);
 		}break;
 		case INS_LDX_ABS_Y:
@@ -94,9 +198,39 @@ s32 CPU::Execute(s32 Cycles, Mem& memory)
 			A = IndirectAddressX( Cycles, memory);
 			SetStatus(A);
 		}break;
+		case INS_AND_INDX:
+		{
+			A &= IndirectAddressX(Cycles, memory);
+			SetStatus(A);
+		}break;
+		case INS_EOR_INDX:
+		{
+			A ^= IndirectAddressX(Cycles, memory);
+			SetStatus(A);
+		}break;
+		case INS_ORA_INDX:
+		{
+			A |= IndirectAddressX(Cycles, memory);
+			SetStatus(A);
+		}break;
 		case INS_LDA_IND_Y:
 		{
 			A = IndirectAddressY(Cycles, memory);
+			SetStatus(A);
+		}break;
+		case INS_AND_INDY:
+		{
+			A &= IndirectAddressY(Cycles, memory);
+			SetStatus(A);
+		}break;
+		case INS_EOR_INDY:
+		{
+			A ^= IndirectAddressY(Cycles, memory);
+			SetStatus(A);
+		}break;
+		case INS_ORA_INDY:
+		{
+			A |= IndirectAddressY(Cycles, memory);
 			SetStatus(A);
 		}break;
 		case INS_STA_ZP:
@@ -151,6 +285,10 @@ s32 CPU::Execute(s32 Cycles, Mem& memory)
 		{
 			ST_IndirectAddressY(Cycles, memory);
 		}break;
+		case INS_JMP:
+		{
+			PC = FetchWord(Cycles, memory);
+		}break;
 		case INS_JSR:
 		{
 			Word SubAddress = FetchWord(Cycles, memory); //两个周期
@@ -162,17 +300,50 @@ s32 CPU::Execute(s32 Cycles, Mem& memory)
 		{
 			Word ReturnAddress = POPPCFROMAddress(Cycles,memory );
 			PC = ReturnAddress + 1;
+			Cycles-=2;
+		}break;
+		case INS_TSX:
+		{
+			X = SP;
+			Cycles--;
+			SetStatus(X);
+		}break;
+		case INS_TXS:
+		{
+			SP = X;
+			Cycles--;
+		}break;
+		case INS_PHA:
+		{
+			PUSHByteTOAddress(A, Cycles, memory);
+		}break;
+		case INS_PHP:
+		{
+			PUSHByteTOAddress(ps, Cycles, memory);
+
+		}break;
+		case INS_PLA:
+		{
+			Byte Data = POPByteFROMAddress(Cycles, memory);
+			A = Data;
+			Cycles--;
+			SetStatus(A);
+		}break;
+		case INS_PLP:
+		{
+			Byte Data = POPByteFROMAddress(Cycles, memory);
+			ps = Data;
 			Cycles--;
 		}break;
 		default:
 		{
 			printf("没有设置 0x%x 指令\n", Ins);
 			Cycles++;//由于前面的使用了一次周期读取无用数据，所以要加回来
-			goto finish;
+			//goto finish;
+			throw - 1;
 		}break;
 		}
 	}
-finish:
 	return CyclesRequests - Cycles;
 }
 

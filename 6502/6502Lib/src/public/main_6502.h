@@ -12,7 +12,17 @@ namespace m6502
 
 	struct Mem;
 	struct CPU;
+	struct statusFlags;
 }
+static constexpr m6502::Byte
+	NagativeFlagBit = 0b10000000,
+	OverFlowFlagBit = 0b01000000,
+	BreakFlagBit = 0b00010000,
+	UnusedFlagBit = 0b00100000,
+	InterruptDisableFlagBit = 0b000000100,
+	ZeroBit = 0b00000001;
+
+
 struct m6502::Mem
 {
 	static constexpr u32 MAX_MEM = 1024 * 64;
@@ -42,6 +52,18 @@ struct m6502::Mem
 		Cycles--;
 	}
 };
+struct m6502::statusFlags
+{
+	Byte C : 1;
+	Byte Z : 1;
+	Byte I : 1;
+	Byte D : 1;
+	Byte B : 1;
+	Byte unused : 1;
+	Byte V : 1;
+	Byte N : 1;
+};
+
 struct m6502::CPU
 {	
 	Word PC;
@@ -49,19 +71,17 @@ struct m6502::CPU
 
 	Byte A, X, Y;
 
-	Byte C : 1;
-	Byte Z : 1;
-	Byte I : 1;
-	Byte D : 1;
-	Byte B : 1;
-	Byte V : 1;
-	Byte N : 1;
+	union
+	{
+		Byte ps;
+		statusFlags Flags;
+	};
 
 	void Reset(Mem& mem)
 	{
 		PC = 0xFFFC; //将PC寄存器初始化 LDX #$FF
 		SP = 0x00FF; //将栈寄存器初始化
-		C = Z = I = D = B = V = N = 0;		 //将标志寄存器初始化，
+		Flags.C = Flags.Z = Flags.I = Flags.D = Flags.B = Flags.V = Flags.N = 0;		 //将标志寄存器初始化，
 					 //实际上是某个指令实现的初始化，这里暂时这样做
 					 //比如D=0可以写成CLD
 		A = X = Y = 0;
@@ -117,11 +137,27 @@ struct m6502::CPU
 	{
 		return 0x100 | SP;
 	}
+	void PUSHByteTOAddress(Byte Data, m6502::s32& Cycles, Mem& memory )
+	{
+		memory.WriteByte(Data, SPTOAddress() , Cycles); //两个周期
+		SP--;
+		Cycles--;
+	}
+	void PUSHWordTOAddress(Word Data, m6502::s32& Cycles, Mem& memory)
+	{
+		memory.WriteWord(Data, SPTOAddress() - 1, Cycles); //两个周期
+		SP-=2;
+	}
 	void PUSHPCTOAddress(Mem&memory,m6502::s32& Cycles)
 	{
-		memory.WriteWord(PC-1, SPTOAddress()-1, Cycles); //两个周期
-		SP -= 2;
+		PUSHWordTOAddress(PC - 1, Cycles, memory);
+	}
+	Byte POPByteFROMAddress(m6502::s32& Cycles, Mem& memory)
+	{
+		Byte Value = ReadByte((Word)(SPTOAddress() + 1), Cycles, memory);
+		SP ++;
 		Cycles--;
+		return Value;
 	}
 	Word POPPCFROMAddress(m6502::s32& Cycles,Mem& memory )
 	{
@@ -170,13 +206,51 @@ struct m6502::CPU
 		INS_STY_ZPX = 0x94,
 		INS_STY_ABS = 0x8C,
 		//JMP
+		INS_JMP = 0x4C,
 		INS_RTS = 0x60,
-		INS_JSR = 0x20;
+		INS_JSR = 0x20,
+		//TSX
+		INS_TSX = 0xBA,
+		INS_TXS = 0x8A,
+		INS_PHA = 0x48,
+		INS_PHP = 0x08,
+		INS_PLA = 0x68,
+		INS_PLP = 0x28,
+		//Logical AND
+		INS_AND_IMM = 0x29,
+		INS_AND_ZP = 0x25,
+		INS_AND_ZPX = 0x35,
+		INS_AND_ABS = 0x2D,
+		INS_AND_ABSX = 0x3D,
+		INS_AND_ABSY = 0x39,
+		INS_AND_INDX = 0x21,
+		INS_AND_INDY = 0x31,
+		//Logical EOR
+		INS_EOR_IMM = 0x49,
+		INS_EOR_ZP = 0x45,
+		INS_EOR_ZPX = 0x55,
+		INS_EOR_ABS = 0x4D,
+		INS_EOR_ABSX = 0x5D,
+		INS_EOR_ABSY = 0x59,
+		INS_EOR_INDX = 0x41,
+		INS_EOR_INDY = 0x51,
+		//Logical ORA
+		INS_ORA_IMM = 0x09,
+		INS_ORA_ZP = 0x05,
+		INS_ORA_ZPX = 0x15,
+		INS_ORA_ABS = 0x0D,
+		INS_ORA_ABSX = 0x1D,
+		INS_ORA_ABSY = 0x19,
+		INS_ORA_INDX = 0x01,
+		INS_ORA_INDY = 0x11,
+		//BIT test
+		INS_BIT_ZP = 0x24,
+		INS_BIT_ABS = 0x2c;
 
 	void SetStatus(const m6502::Byte _register)
 	{
-		Z = (_register == 0);
-		N = (_register & 0b10000000) > 0;
+		Flags.Z = (_register == 0);
+		Flags.N = (_register & 0b10000000) > 0;
 	}
 
 	/* CPU判断指令函数*/

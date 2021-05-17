@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include "main_6502.h"
 
-class M6502Test1 : public testing::Test
+class M6502Test1ST : public testing::Test
 {
 public:
 
@@ -29,25 +29,25 @@ public:
 	}
 	void VerfiyCPUFlagCIDBV(const m6502::CPU& cpu, const m6502::CPU& CPUCopy)
 	{
-		EXPECT_EQ(cpu.C, CPUCopy.C);
-		EXPECT_EQ(cpu.I, CPUCopy.I);
-		EXPECT_EQ(cpu.D, CPUCopy.D);
-		EXPECT_EQ(cpu.B, CPUCopy.B);
-		EXPECT_EQ(cpu.V, CPUCopy.V);
+		EXPECT_EQ(cpu.Flags.C, CPUCopy.Flags.C);
+		EXPECT_EQ(cpu.Flags.I, CPUCopy.Flags.I);
+		EXPECT_EQ(cpu.Flags.D, CPUCopy.Flags.D);
+		EXPECT_EQ(cpu.Flags.B, CPUCopy.Flags.B);
+		EXPECT_EQ(cpu.Flags.V, CPUCopy.Flags.V);
 	}
 	void VerfiyCPUFlagALL(const m6502::CPU& cpu, const m6502::CPU& CPUCopy)
 	{
-		EXPECT_EQ(cpu.C, CPUCopy.C);
-		EXPECT_EQ(cpu.I, CPUCopy.I);
-		EXPECT_EQ(cpu.D, CPUCopy.D);
-		EXPECT_EQ(cpu.B, CPUCopy.B);
-		EXPECT_EQ(cpu.V, CPUCopy.V);
-		EXPECT_EQ(cpu.Z, CPUCopy.Z);
-		EXPECT_EQ(cpu.N, CPUCopy.N);
+		EXPECT_EQ(cpu.Flags.C, CPUCopy.Flags.C);
+		EXPECT_EQ(cpu.Flags.I, CPUCopy.Flags.I);
+		EXPECT_EQ(cpu.Flags.D, CPUCopy.Flags.D);
+		EXPECT_EQ(cpu.Flags.B, CPUCopy.Flags.B);
+		EXPECT_EQ(cpu.Flags.V, CPUCopy.Flags.V);
+		EXPECT_EQ(cpu.Flags.Z, CPUCopy.Flags.Z);
+		EXPECT_EQ(cpu.Flags.N, CPUCopy.Flags.N);
 	}
 };
 
-TEST_F(M6502Test1, STAZeroPageCanLoadAValueIntoTheARegister)
+TEST_F(M6502Test1ST, STAZeroPageCanLoadAValueIntoTheARegister)
 {
 	// start - inline a little program
 	cpu.A = 0x89;
@@ -59,7 +59,7 @@ TEST_F(M6502Test1, STAZeroPageCanLoadAValueIntoTheARegister)
 	STCyclesConfirm(mem[0x03], cpu.A, 3, 3);
 	VerfiyCPUFlagALL(cpu, CPUCopy);
 }
-TEST_F(M6502Test1, STAZeroPageXCanLoadAValueIntoTheARegister)
+TEST_F(M6502Test1ST, STAZeroPageXCanLoadAValueIntoTheARegister)
 {
 	// start - inline a little program
 	cpu.A = 0x89;
@@ -73,7 +73,7 @@ TEST_F(M6502Test1, STAZeroPageXCanLoadAValueIntoTheARegister)
 	VerfiyCPUFlagALL(cpu, CPUCopy);
 }
 
-TEST_F(M6502Test1, STAABSCanLoadAValueIntoTheARegister)
+TEST_F(M6502Test1ST, STAABSCanLoadAValueIntoTheARegister)
 {
 	// start - inline a little program
 	cpu.A = 0x89;
@@ -86,7 +86,7 @@ TEST_F(M6502Test1, STAABSCanLoadAValueIntoTheARegister)
 	STCyclesConfirm(mem[0x0403], cpu.A, 4, 4);
 	VerfiyCPUFlagALL(cpu, CPUCopy);
 }
-TEST_F(M6502Test1, STAABSXCanLoadAValueIntoTheARegister)
+TEST_F(M6502Test1ST, STAABSXCanLoadAValueIntoTheARegister)
 {
 	// start - inline a little program
 	cpu.X = 0x05;
@@ -100,7 +100,7 @@ TEST_F(M6502Test1, STAABSXCanLoadAValueIntoTheARegister)
 	STCyclesConfirm(mem[0x0408], cpu.A, 5, 5);
 	VerfiyCPUFlagALL(cpu, CPUCopy);
 }
-TEST_F(M6502Test1, STAABSYCanLoadAValueIntoTheARegister)
+TEST_F(M6502Test1ST, STAABSYCanLoadAValueIntoTheARegister)
 {
 	// start - inline a little program
 	cpu.Y = 0x05;
@@ -114,7 +114,7 @@ TEST_F(M6502Test1, STAABSYCanLoadAValueIntoTheARegister)
 	STCyclesConfirm(mem[0x0408], cpu.A, 5, 5);
 	VerfiyCPUFlagALL(cpu, CPUCopy);
 }
-TEST_F(M6502Test1, STAINDXCanLoadAValueIntoTheARegister)
+TEST_F(M6502Test1ST, STAINDXCanLoadAValueIntoTheARegister)
 {
 	// start - inline a little program
 	cpu.X = 0x05;
@@ -130,7 +130,7 @@ TEST_F(M6502Test1, STAINDXCanLoadAValueIntoTheARegister)
 	VerfiyCPUFlagALL(cpu, CPUCopy);
 }
 
-TEST_F(M6502Test1, STAINDYCanLoadAValueIntoTheARegister)
+TEST_F(M6502Test1ST, STAINDYCanLoadAValueIntoTheARegister)
 {
 	// start - inline a little program
 	cpu.Y = 0x05;
@@ -147,7 +147,7 @@ TEST_F(M6502Test1, STAINDYCanLoadAValueIntoTheARegister)
 	VerfiyCPUFlagALL(cpu, CPUCopy);
 }
 
-TEST_F(M6502Test1, STXZeroPageCanLoadAValueIntoTheARegister)
+TEST_F(M6502Test1ST, STXZeroPageCanLoadAValueIntoTheARegister)
 {
 	// start - inline a little program
 	cpu.X = 0x04;
@@ -159,7 +159,7 @@ TEST_F(M6502Test1, STXZeroPageCanLoadAValueIntoTheARegister)
 	STCyclesConfirm(mem[0x03], cpu.X, 3, 3);
 	VerfiyCPUFlagALL(cpu, CPUCopy);
 }
-TEST_F(M6502Test1, STXZeroPageYCanLoadAValueIntoTheARegister)
+TEST_F(M6502Test1ST, STXZeroPageYCanLoadAValueIntoTheARegister)
 {
 	// start - inline a little program
 	cpu.X = 0x89;
@@ -173,7 +173,7 @@ TEST_F(M6502Test1, STXZeroPageYCanLoadAValueIntoTheARegister)
 	VerfiyCPUFlagALL(cpu, CPUCopy);
 }
 
-TEST_F(M6502Test1, STXABSCanLoadAValueIntoTheARegister)
+TEST_F(M6502Test1ST, STXABSCanLoadAValueIntoTheARegister)
 {
 	// start - inline a little program
 	cpu.X = 0x89;
@@ -187,7 +187,7 @@ TEST_F(M6502Test1, STXABSCanLoadAValueIntoTheARegister)
 	VerfiyCPUFlagALL(cpu, CPUCopy);
 }
 
-TEST_F(M6502Test1, STYZeroPageCanLoadAValueIntoTheARegister)
+TEST_F(M6502Test1ST, STYZeroPageCanLoadAValueIntoTheARegister)
 {
 	// start - inline a little program
 	cpu.Y = 0x04;
@@ -199,7 +199,7 @@ TEST_F(M6502Test1, STYZeroPageCanLoadAValueIntoTheARegister)
 	STCyclesConfirm(mem[0x03], cpu.Y, 3, 3);
 	VerfiyCPUFlagALL(cpu, CPUCopy);
 }
-TEST_F(M6502Test1, STYZeroPageXCanLoadAValueIntoTheARegister)
+TEST_F(M6502Test1ST, STYZeroPageXCanLoadAValueIntoTheARegister)
 {
 	// start - inline a little program
 	cpu.Y = 0x89;
@@ -213,7 +213,7 @@ TEST_F(M6502Test1, STYZeroPageXCanLoadAValueIntoTheARegister)
 	VerfiyCPUFlagALL(cpu, CPUCopy);
 }
 
-TEST_F(M6502Test1, STYABSCanLoadAValueIntoTheARegister)
+TEST_F(M6502Test1ST, STYABSCanLoadAValueIntoTheARegister)
 {
 	// start - inline a little program
 	cpu.Y = 0x89;

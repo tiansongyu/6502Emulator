@@ -43,7 +43,7 @@ set  (M6502_SOURCES
 		"src/6502TestsLD.cpp"
 		"src/6502TestsST.cpp"
 		"src/6502TestsJ.cpp"
-
+		"src/6502TestsLogical.cpp"
 		)
 		
 source_group("src" FILES ${M6502_SOURCES})
