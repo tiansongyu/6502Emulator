@@ -38,6 +38,30 @@ s32 CPU::Execute(s32 Cycles, Mem& memory)
 			Y = FetchByte(Cycles, memory);
 			SetStatus(Y);
 		}break;
+		case INS_TAX_IM: //¡¢º¥—∞÷∑ Immediate
+		{
+			X = A;
+			Cycles--;
+			SetStatus(X);
+		}break;
+		case INS_TAY_IM: //¡¢º¥—∞÷∑ Immediate
+		{
+			Y = A;
+			Cycles--;
+			SetStatus(Y);
+		}break;
+		case INS_TXA_IM: //¡¢º¥—∞÷∑ Immediate
+		{
+			A = X;
+			Cycles--;
+			SetStatus(A);
+		}break;
+		case INS_TYA_IM: //¡¢º¥—∞÷∑ Immediate
+		{
+			A = Y;
+			Cycles--;
+			SetStatus(A);
+		}break;
 		case INS_LDA_ZP: //¡„“≥—∞÷∑ ..zero page
 		{
 			A = AddZeroPage(Cycles, memory);
@@ -76,10 +100,26 @@ s32 CPU::Execute(s32 Cycles, Mem& memory)
 			Y = AddZeroPage(Cycles, memory);
 			SetStatus(Y);
 		}break;
+		//INC START
+		case INS_INC_ZP: //¡„“≥—∞÷∑ ..zero page
+		{
+			Byte Value = AddZeroPage(Cycles, memory) + 1;
+			Byte Address = ReadByte(memory[PC - 1], Cycles, memory);
+			memory.WriteByte(Value, Address, Cycles);
+			SetStatus(Value);
+		}break;
+		// INC END
 		case INS_LDA_ZPX: //¡„“≥—∞÷∑ ..zero page x
 		{
 			A = AddZeroPageAdd(Cycles, memory, X);
 			SetStatus(A);
+		}break;
+		case INS_INC_ZPX: //¡„“≥—∞÷∑ ..zero page x
+		{
+			Byte Value = AddZeroPageAdd(Cycles, memory, X) + 1;
+			Byte Address = ReadByte((Word)(memory[PC-1]+X), Cycles, memory);
+			memory.WriteByte(Value, Address, Cycles);
+			SetStatus(Value);
 		}break;
 		case INS_AND_ZPX: //¡„“≥—∞÷∑ ..zero page x
 		{
@@ -143,6 +183,13 @@ s32 CPU::Execute(s32 Cycles, Mem& memory)
 			Y = AbsoluteAddress(Cycles, memory);
 			SetStatus(Y);
 		}break;
+		case INS_INC_ABS:
+		{
+			Byte Value  = AbsoluteAddress(Cycles, memory)+1;
+			Word Address = ReadWord(memory[PC - 2], Cycles, memory);
+			memory.WriteByte(Value, Address, Cycles);
+			SetStatus(Value);
+		}break;
 		case INS_LDA_ABS_X:
 		{
 			A = AbsoluteAddress_Register( Cycles,memory, X);
@@ -162,6 +209,13 @@ s32 CPU::Execute(s32 Cycles, Mem& memory)
 		{
 			A |= AbsoluteAddress_Register(Cycles, memory, X);
 			SetStatus(A);
+		}break;
+		case INS_INC_ABSX:
+		{
+			Byte Value = AbsoluteAddress_Register(Cycles, memory, X)+1;
+			Byte Address = ReadWord(memory[PC - 2], Cycles, memory);
+			memory.WriteByte(Value, Address, Cycles);
+			SetStatus(Value);
 		}break;
 		case INS_LDA_ABS_Y:
 		{

@@ -169,3 +169,56 @@ TEST_F(M6502Test1J, PLPANDstatusflagsTEST)
 	m6502::Byte psCopy = cpu.ps;
 	STCyclesConfirm(cpu.ps, 0b11110000, CYCLES, CYCLES);
 }
+TEST_F(M6502Test1J, TAXANDstatusflagsTEST)
+{
+	// given:
+	cpu.X = 0b01001111;
+	cpu.A = 0b10000000;
+	// start - inline a little program
+	mem[0xFFFC] = m6502::CPU::INS_TAX_IM;
+	// end - inline a little program
+	constexpr int CYCLES = 2;
+	STCyclesConfirm(cpu.X, cpu.A, CYCLES, CYCLES);
+	EXPECT_FALSE(cpu.Flags.Z);
+	EXPECT_TRUE(cpu.Flags.N);
+}
+TEST_F(M6502Test1J, TAYANDstatusflagsTEST)
+{
+	// given:
+	cpu.Y = 0b01001111;
+	cpu.A = 0b10000000;
+	// start - inline a little program
+	mem[0xFFFC] = m6502::CPU::INS_TAY_IM;
+	// end - inline a little program
+	constexpr int CYCLES = 2;
+
+	STCyclesConfirm(cpu.A, cpu.Y, CYCLES, CYCLES);
+	EXPECT_FALSE(cpu.Flags.Z);
+	EXPECT_TRUE(cpu.Flags.N);
+}
+TEST_F(M6502Test1J, TXAANDstatusflagsTEST)
+{
+	// given:
+	cpu.X = 0b01001111;
+	cpu.A = 0b10000000;
+	// start - inline a little program
+	mem[0xFFFC] = m6502::CPU::INS_TXA_IM;
+	// end - inline a little program
+	constexpr int CYCLES = 2;
+	STCyclesConfirm(cpu.X, cpu.A, CYCLES, CYCLES);
+	EXPECT_FALSE(cpu.Flags.Z);
+	EXPECT_FALSE(cpu.Flags.N);
+}
+TEST_F(M6502Test1J, TYAANDstatusflagsTEST)
+{
+	// given:
+	cpu.Y = 0b01001111;
+	cpu.A = 0b10000000;
+	// start - inline a little program
+	mem[0xFFFC] = m6502::CPU::INS_TYA_IM;
+	// end - inline a little program
+	constexpr int CYCLES = 2;
+	STCyclesConfirm(cpu.A, cpu.Y, CYCLES, CYCLES);
+	EXPECT_FALSE(cpu.Flags.Z);
+	EXPECT_FALSE(cpu.Flags.N);
+}

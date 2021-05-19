@@ -211,7 +211,7 @@ struct m6502::CPU
 		INS_JSR = 0x20,
 		//TSX
 		INS_TSX = 0xBA,
-		INS_TXS = 0x8A,
+		INS_TXS = 0x9A,
 		INS_PHA = 0x48,
 		INS_PHP = 0x08,
 		INS_PLA = 0x68,
@@ -245,7 +245,26 @@ struct m6502::CPU
 		INS_ORA_INDY = 0x11,
 		//BIT test
 		INS_BIT_ZP = 0x24,
-		INS_BIT_ABS = 0x2c;
+		INS_BIT_ABS = 0x2c,
+		//TRANSFER REGISTER
+		INS_TAX_IM = 0xAA,
+		INS_TAY_IM = 0xA8,
+		INS_TXA_IM = 0x8A,
+		INS_TYA_IM = 0x98,
+		// INCREMENTS DECREMENTS
+		INS_INC_ZP = 0xE6,
+		INS_INC_ZPX = 0xF6,
+		INS_INC_ABS = 0xEE,
+		INS_INC_ABSX = 0xFE,
+		INS_INX_IM = 0xE8,
+		INS_INY_IM = 0xC8,
+		INS_DEC_ZP = 0xC6,
+		INS_DEC_ZPX = 0xD6,
+		INS_DEC_ABS = 0xCE,
+		INS_DEC_ABSX = 0xDE,
+		INS_DEX_IM = 0xCA,
+		INS_DEY_IM = 0x88;
+		
 
 	void SetStatus(const m6502::Byte _register)
 	{
