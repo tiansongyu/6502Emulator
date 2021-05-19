@@ -62,6 +62,30 @@ s32 CPU::Execute(s32 Cycles, Mem& memory)
 			Cycles--;
 			SetStatus(A);
 		}break;
+		case INS_INX_IM: //立即寻址 Immediate
+		{
+			X++;
+			Cycles--;
+			SetStatus(X);
+		}break;
+		case INS_INY_IM: //立即寻址 Immediate
+		{
+			Y++;
+			Cycles--;
+			SetStatus(Y);
+		}break;
+		case INS_DEX_IM: //立即寻址 Immediate
+		{
+			X--;
+			Cycles--;
+			SetStatus(X);
+		}break;
+		case INS_DEY_IM: //立即寻址 Immediate
+		{
+			Y--;
+			Cycles--;
+			SetStatus(Y);
+		}break;
 		case INS_LDA_ZP: //零页寻址 ..zero page
 		{
 			A = AddZeroPage(Cycles, memory);
@@ -104,7 +128,18 @@ s32 CPU::Execute(s32 Cycles, Mem& memory)
 		case INS_INC_ZP: //零页寻址 ..zero page
 		{
 			Byte Value = AddZeroPage(Cycles, memory) + 1;
-			Byte Address = ReadByte(memory[PC - 1], Cycles, memory);
+			Byte Address = memory[PC - 1];
+			Cycles--;
+			//Byte Address = ReadByte(memory[PC - 1], Cycles, memory);
+			memory.WriteByte(Value, Address, Cycles);
+			SetStatus(Value);
+		}break;
+		case INS_DEC_ZP: //零页寻址 ..zero page
+		{
+			Byte Value = AddZeroPage(Cycles, memory) - 1;
+			Byte Address = memory[PC - 1];
+			Cycles--;
+			//Byte Address = ReadByte(memory[PC - 1], Cycles, memory);
 			memory.WriteByte(Value, Address, Cycles);
 			SetStatus(Value);
 		}break;
@@ -117,7 +152,16 @@ s32 CPU::Execute(s32 Cycles, Mem& memory)
 		case INS_INC_ZPX: //零页寻址 ..zero page x
 		{
 			Byte Value = AddZeroPageAdd(Cycles, memory, X) + 1;
-			Byte Address = ReadByte((Word)(memory[PC-1]+X), Cycles, memory);
+			Byte Address = memory[PC - 1] + X;
+			Cycles--;
+			memory.WriteByte(Value, Address, Cycles);
+			SetStatus(Value);
+		}break;
+		case INS_DEC_ZPX: //零页寻址 
+		{
+			Byte Value = AddZeroPageAdd(Cycles, memory, X) - 1;
+			Byte Address = memory[PC - 1] + X;
+			Cycles--;
 			memory.WriteByte(Value, Address, Cycles);
 			SetStatus(Value);
 		}break;
@@ -186,8 +230,21 @@ s32 CPU::Execute(s32 Cycles, Mem& memory)
 		case INS_INC_ABS:
 		{
 			Byte Value  = AbsoluteAddress(Cycles, memory)+1;
-			Word Address = ReadWord(memory[PC - 2], Cycles, memory);
+			Word Address = ReadWord((Word)(PC-2), Cycles, memory);
+			//这里不知道为什么，貌似真实的CPU写入不需要消耗周期
 			memory.WriteByte(Value, Address, Cycles);
+			Cycles++;
+			//FIX ME
+			SetStatus(Value);
+		}break;
+		case INS_DEC_ABS:
+		{
+			Byte Value = AbsoluteAddress(Cycles, memory) - 1;
+			Word Address = ReadWord((Word)(PC - 2), Cycles, memory);
+			//这里不知道为什么，貌似真实的CPU写入不需要消耗周期
+			memory.WriteByte(Value, Address, Cycles);
+			Cycles++;
+			//FIX ME
 			SetStatus(Value);
 		}break;
 		case INS_LDA_ABS_X:
@@ -213,7 +270,14 @@ s32 CPU::Execute(s32 Cycles, Mem& memory)
 		case INS_INC_ABSX:
 		{
 			Byte Value = AbsoluteAddress_Register(Cycles, memory, X)+1;
-			Byte Address = ReadWord(memory[PC - 2], Cycles, memory);
+			Word Address = ReadWord(Word(PC - 2), Cycles, memory) + X;
+			memory.WriteByte(Value, Address, Cycles);
+			SetStatus(Value);
+		}break;
+		case INS_DEC_ABSX:
+		{
+			Byte Value = AbsoluteAddress_Register(Cycles, memory, X) - 1;
+			Word Address = ReadWord(Word(PC - 2), Cycles, memory) + X;
 			memory.WriteByte(Value, Address, Cycles);
 			SetStatus(Value);
 		}break;

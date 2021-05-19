@@ -222,3 +222,176 @@ TEST_F(M6502Test1J, TYAANDstatusflagsTEST)
 	EXPECT_FALSE(cpu.Flags.Z);
 	EXPECT_FALSE(cpu.Flags.N);
 }
+TEST_F(M6502Test1J,INC_ZP_TEST)
+{
+	// given:
+
+	// start - inline a little program
+	mem[0xFFFC] = m6502::CPU::INS_INC_ZP;
+	mem[0xFFFD] = 0x0002;
+	mem[0x0002] = 0b10000000;
+	// end - inline a little program
+	constexpr int CYCLES = 5;
+	STCyclesConfirm(0b10000001, mem[0x0002], CYCLES, CYCLES);
+	EXPECT_FALSE(cpu.Flags.Z);
+	EXPECT_TRUE(cpu.Flags.N);
+	
+}
+
+TEST_F(M6502Test1J, INC_ZPX_TEST)
+{
+	// given:
+	cpu.X = 0x03;
+	// start - inline a little program
+	mem[0xFFFC] = m6502::CPU::INS_INC_ZPX;
+	mem[0xFFFD] = 0x0002;
+	mem[0x0005] = 0b10000000;
+	// end - inline a little program
+	constexpr int CYCLES = 6;
+	STCyclesConfirm(0b10000001, mem[0x0005], CYCLES, CYCLES);
+	EXPECT_FALSE(cpu.Flags.Z);
+	EXPECT_TRUE(cpu.Flags.N);
+}
+
+TEST_F(M6502Test1J, INC_ABS_TEST)
+{
+	// given:
+	// start - inline a little program
+	mem[0xFFFC] = m6502::CPU::INS_INC_ABS;
+	mem[0xFFFD] = 0x02;
+	mem[0xFFFE] = 0xFF;
+	mem[0xFF02] = 0x31;
+	// end - inline a little program
+	constexpr int CYCLES = 6;
+	STCyclesConfirm(0x32, mem[0xFF02], CYCLES, CYCLES);
+	EXPECT_FALSE(cpu.Flags.Z);
+	EXPECT_FALSE(cpu.Flags.N);
+}
+
+TEST_F(M6502Test1J, INC_ABSX_TEST)
+{
+	// given:
+	cpu.X = 0x03;
+	// start - inline a little program
+	mem[0xFFFC] = m6502::CPU::INS_INC_ABSX;
+	mem[0xFFFD] = 0x02;
+	mem[0xFFFE] = 0xFF;
+	mem[0xFF05] = 0x31;
+	// end - inline a little program
+	constexpr int CYCLES = 7;
+	STCyclesConfirm(0x32, mem[0xFF05], CYCLES, CYCLES);
+	EXPECT_FALSE(cpu.Flags.Z);
+	EXPECT_FALSE(cpu.Flags.N);
+}
+
+TEST_F(M6502Test1J, INC_INX_IMM_TEST)
+{
+	// given:
+	cpu.X = 0x03;
+	// start - inline a little program
+	mem[0xFFFC] = m6502::CPU::INS_INX_IM;
+	// end - inline a little program
+	constexpr int CYCLES = 2;
+	STCyclesConfirm(cpu.X, 0x4, CYCLES, CYCLES);
+	EXPECT_FALSE(cpu.Flags.Z);
+	EXPECT_FALSE(cpu.Flags.N);
+}
+TEST_F(M6502Test1J, INC_INY_IMM_TEST)
+{
+	// given:
+	cpu.Y = 0x03;
+	// start - inline a little program
+	mem[0xFFFC] = m6502::CPU::INS_INY_IM;
+	// end - inline a little program
+	constexpr int CYCLES = 2;
+	STCyclesConfirm(cpu.Y, 0x4, CYCLES, CYCLES);
+	EXPECT_FALSE(cpu.Flags.Z);
+	EXPECT_FALSE(cpu.Flags.N);
+}
+////////////////////
+TEST_F(M6502Test1J, DEC_ZP_TEST)
+{
+	// given:
+
+	// start - inline a little program
+	mem[0xFFFC] = m6502::CPU::INS_DEC_ZP;
+	mem[0xFFFD] = 0x0002;
+	mem[0x0002] = 0b10000000;
+	// end - inline a little program
+	constexpr int CYCLES = 5;
+	STCyclesConfirm(0b01111111, mem[0x0002], CYCLES, CYCLES);
+	EXPECT_FALSE(cpu.Flags.Z);
+	EXPECT_FALSE(cpu.Flags.N);
+
+}
+
+TEST_F(M6502Test1J, DEC_ZPX_TEST)
+{
+	// given:
+	cpu.X = 0x03;
+	// start - inline a little program
+	mem[0xFFFC] = m6502::CPU::INS_DEC_ZPX;
+	mem[0xFFFD] = 0x0002;
+	mem[0x0005] = 0b10000000;
+	// end - inline a little program
+	constexpr int CYCLES = 6;
+	STCyclesConfirm(0b01111111, mem[0x0005], CYCLES, CYCLES);
+	EXPECT_FALSE(cpu.Flags.Z);
+	EXPECT_FALSE(cpu.Flags.N);
+}
+
+TEST_F(M6502Test1J, DEC_ABS_TEST)
+{
+	// given:
+	// start - inline a little program
+	mem[0xFFFC] = m6502::CPU::INS_DEC_ABS;
+	mem[0xFFFD] = 0x02;
+	mem[0xFFFE] = 0xFF;
+	mem[0xFF02] = 0x31;
+	// end - inline a little program
+	constexpr int CYCLES = 6;
+	STCyclesConfirm(0x30, mem[0xFF02], CYCLES, CYCLES);
+	EXPECT_FALSE(cpu.Flags.Z);
+	EXPECT_FALSE(cpu.Flags.N);
+}
+
+TEST_F(M6502Test1J, DEC_ABSX_TEST)
+{
+	// given:
+	cpu.X = 0x03;
+	// start - inline a little program
+	mem[0xFFFC] = m6502::CPU::INS_DEC_ABSX;
+	mem[0xFFFD] = 0x02;
+	mem[0xFFFE] = 0xFF;
+	mem[0xFF05] = 0x31;
+	// end - inline a little program
+	constexpr int CYCLES = 7;
+	STCyclesConfirm(0x30, mem[0xFF05], CYCLES, CYCLES);
+	EXPECT_FALSE(cpu.Flags.Z);
+	EXPECT_FALSE(cpu.Flags.N);
+}
+
+TEST_F(M6502Test1J, DEX_IMM_TEST)
+{
+	// given:
+	cpu.X = 0x03;
+	// start - inline a little program
+	mem[0xFFFC] = m6502::CPU::INS_DEX_IM;
+	// end - inline a little program
+	constexpr int CYCLES = 2;
+	STCyclesConfirm(cpu.X, 0x02, CYCLES, CYCLES);
+	EXPECT_FALSE(cpu.Flags.Z);
+	EXPECT_FALSE(cpu.Flags.N);
+}
+TEST_F(M6502Test1J, DEY_IMM_TEST)
+{
+	// given:
+	cpu.Y = 0x03;
+	// start - inline a little program
+	mem[0xFFFC] = m6502::CPU::INS_DEY_IM;
+	// end - inline a little program
+	constexpr int CYCLES = 2;
+	STCyclesConfirm(cpu.Y, 0x2, CYCLES, CYCLES);
+	EXPECT_FALSE(cpu.Flags.Z);
+	EXPECT_FALSE(cpu.Flags.N);
+}
