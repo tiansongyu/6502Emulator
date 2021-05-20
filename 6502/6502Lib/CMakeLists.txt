@@ -4,7 +4,7 @@ project( M6502Lib )
 
 if(MSVC)
 	add_compile_options(/MP)				#Use multiple processors when building
-	add_compile_options(/W4 /wd4201 /WX)	#Warning level 4, all warnings are errors
+	add_compile_options(/W4 /wd4201)	#Warning level 4, all warnings are errors
 else()
 	add_compile_options(-W -Wall -Werror) #All Warnings, all warnings are errors
 endif()

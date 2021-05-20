@@ -7,7 +7,7 @@ set( CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -DM6502_D
 
 if(MSVC)
 	add_compile_options(/MP)				#Use multiple processors when building
-	add_compile_options(/W4 /wd4201 /WX)	#Warning level 4, all warnings are errors
+	add_compile_options(/W4 /wd4201 )	#Warning level 4, all warnings are errors
 else()
 	add_compile_options(-W -Wall ) #All Warnings, all warnings are errors
 endif()
@@ -44,6 +44,7 @@ set  (M6502_SOURCES
 		"src/6502TestsST.cpp"
 		"src/6502TestsJ.cpp"
 		"src/6502TestsLogical.cpp"
+		"src/6502TestsBranch.cpp"
 		)
 		
 source_group("src" FILES ${M6502_SOURCES})

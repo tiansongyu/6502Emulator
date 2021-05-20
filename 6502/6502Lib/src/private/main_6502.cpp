@@ -453,6 +453,14 @@ s32 CPU::Execute(s32 Cycles, Mem& memory)
 			ps = Data;
 			Cycles--;
 		}break;
+		case INS_BCC_REL:
+		{
+			RelativeModeClearIsJmp(CarryFlag,Cycles, memory);
+		}break;
+		case INS_BCS_REL:
+		{
+			RelativeModeSetIsJmp(CarryFlag, Cycles, memory);
+		}break;
 		default:
 		{
 			printf("没有设置 0x%x 指令\n", Ins);
@@ -558,4 +566,33 @@ void CPU::ST_IndirectAddressY(s32& Cycles, Mem& memory)
 	IndAddressAddress += Y;
 	Cycles--;
 	memory.WriteByte(A, IndAddressAddress, Cycles);
+}
+void m6502::CPU::RelativeModeClearIsJmp(const Byte FlagRegister, s32& Cycles, Mem& memory)
+{
+	Byte RelativeOffset = FetchByte(Cycles, memory);
+	if ((FlagRegister & ps)==0)
+	{
+		auto copyPC = PC;
+		PC += RelativeOffset;
+
+		if (copyPC / 0xff != PC / 0xff)
+			Cycles -= 2;
+		else
+			Cycles--;
+	}
+}
+
+void m6502::CPU::RelativeModeSetIsJmp(const Byte FlagRegister, s32& Cycles, Mem& memory)
+{
+	Byte RelativeOffset = FetchByte(Cycles, memory);
+	if ((FlagRegister & ps) != 0)
+	{
+		auto copyPC = PC;
+		PC += RelativeOffset;
+
+		if (copyPC / 0xff != PC / 0xff)
+			Cycles -= 2;
+		else
+			Cycles--;
+	}
 }

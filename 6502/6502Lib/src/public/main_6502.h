@@ -17,10 +17,12 @@ namespace m6502
 static constexpr m6502::Byte
 	NagativeFlagBit = 0b10000000,
 	OverFlowFlagBit = 0b01000000,
-	BreakFlagBit = 0b00010000,
+	BreakFlagBit = 0b00100000,
 	UnusedFlagBit = 0b00100000,
+	DecimalMode = 0b00001000,
 	InterruptDisableFlagBit = 0b000000100,
-	ZeroBit = 0b00000001;
+	ZeroBit =	0b00000010,
+	CarryFlag = 0b00000001;
 
 
 struct m6502::Mem
@@ -263,7 +265,16 @@ struct m6502::CPU
 		INS_DEC_ABS = 0xCE,
 		INS_DEC_ABSX = 0xDE,
 		INS_DEX_IM = 0xCA,
-		INS_DEY_IM = 0x88;
+		INS_DEY_IM = 0x88,
+		//Branches
+		INS_BCC_REL = 0x90,
+		INS_BCS_REL = 0xB0,
+		INS_BEQ_REL = 0xF0,
+		INS_BMI_REL = 0x30,
+		INS_BNE_REL = 0xD0,
+		INS_BPL_REL = 0x10,
+		INS_BVC_REL = 0x50,
+		INS_BVS_REL = 0x70;
 		
 
 	void SetStatus(const m6502::Byte _register)
@@ -307,5 +318,8 @@ struct m6502::CPU
 
 	void ST_IndirectAddressX(s32& Cycles, Mem& memory);
 	void ST_IndirectAddressY(s32& Cycles, Mem& memory);
+	/* Relative mode*/
+	void RelativeModeClearIsJmp(const Byte FlagRegister, s32& Cycles, Mem& memory);
+	void RelativeModeSetIsJmp(const Byte FlagRegister, s32& Cycles, Mem& memory);
 
 };
