@@ -120,3 +120,220 @@ TEST_F(M6502Test1Branch, BCSBranchTestCrossPage)
 	EXPECT_EQ(cpu.PC, 0xF202);
 }
 
+////////////////
+TEST_F(M6502Test1Branch, BEQBranchTest)
+{
+	// given:
+	// start - inline a little program
+	cpu.X = 0x4;
+	cpu.ps = ZeroBit;
+
+	cpu.PC = 0xFFF0;
+	mem[0xFFF0] = m6502::CPU::INS_BEQ_REL;
+	mem[0xFFF1] = 0x3;
+	mem[0xFFF5] = m6502::CPU::INS_INX_IM;
+	// end - inline a little program
+	constexpr int CYCLES = 3 + 2;
+
+	STCyclesConfirm(cpu.X, 0x5, CYCLES, CYCLES);
+	EXPECT_EQ(cpu.PC, 0xFFF6);
+}
+
+TEST_F(M6502Test1Branch, BEQBranchTestCrossPage)
+{
+	// given:
+	// start - inline a little program
+	cpu.X = 0x4;
+	cpu.ps = ZeroBit;
+
+	cpu.PC = 0xF100;
+	mem[0xF100] = m6502::CPU::INS_BEQ_REL;
+	mem[0xF101] = 0xff;
+	mem[0xF201] = m6502::CPU::INS_INX_IM;
+	// end - inline a little program
+	constexpr int CYCLES = 4 + 2;
+
+	STCyclesConfirm(cpu.X, 0x5, CYCLES, CYCLES);
+	EXPECT_EQ(cpu.PC, 0xF202);
+}
+
+TEST_F(M6502Test1Branch, BNEBranchTest)
+{
+	// given:
+	// start - inline a little program
+	cpu.X = 0x4;
+	cpu.ps = ZeroBit & 0;
+	cpu.PC = 0xFFF0;
+	mem[0xFFF0] = m6502::CPU::INS_BNE_REL;
+	mem[0xFFF1] = 0x3;
+	mem[0xFFF5] = m6502::CPU::INS_INX_IM;
+	// end - inline a little program
+	constexpr int CYCLES = 3 + 2;
+
+	STCyclesConfirm(cpu.X, 0x5, CYCLES, CYCLES);
+	EXPECT_EQ(cpu.PC, 0xFFF6);
+}
+
+TEST_F(M6502Test1Branch, BNEBranchTestCrossPage)
+{
+	// given:
+	// start - inline a little program
+	cpu.X = 0x4;
+	cpu.ps = ZeroBit & 0;
+
+	cpu.PC = 0xF100;
+	mem[0xF100] = m6502::CPU::INS_BNE_REL;
+	mem[0xF101] = 0xff;
+	mem[0xF201] = m6502::CPU::INS_INX_IM;
+	// end - inline a little program
+	constexpr int CYCLES = 4 + 2;
+
+	STCyclesConfirm(cpu.X, 0x5, CYCLES, CYCLES);
+	EXPECT_EQ(cpu.PC, 0xF202);
+}
+
+////////////////
+TEST_F(M6502Test1Branch, BPLBranchTest)
+{
+	// given:
+	// start - inline a little program
+	cpu.X = 0x4;
+	cpu.ps = NagativeFlagBit & 0;
+
+	cpu.PC = 0xFFF0;
+	mem[0xFFF0] = m6502::CPU::INS_BPL_REL;
+	mem[0xFFF1] = 0x3;
+	mem[0xFFF5] = m6502::CPU::INS_INX_IM;
+	// end - inline a little program
+	constexpr int CYCLES = 3 + 2;
+
+	STCyclesConfirm(cpu.X, 0x5, CYCLES, CYCLES);
+	EXPECT_EQ(cpu.PC, 0xFFF6);
+}
+
+TEST_F(M6502Test1Branch, BPLBranchTestCrossPage)
+{
+	// given:
+	// start - inline a little program
+	cpu.X = 0x4;
+	cpu.ps = NagativeFlagBit & 0;
+
+	cpu.PC = 0xF100;
+	mem[0xF100] = m6502::CPU::INS_BPL_REL;
+	mem[0xF101] = 0xff;
+	mem[0xF201] = m6502::CPU::INS_INX_IM;
+	// end - inline a little program
+	constexpr int CYCLES = 4 + 2;
+
+	STCyclesConfirm(cpu.X, 0x5, CYCLES, CYCLES);
+	EXPECT_EQ(cpu.PC, 0xF202);
+}
+
+TEST_F(M6502Test1Branch, BMIBranchTest)
+{
+	// given:
+	// start - inline a little program
+	cpu.X = 0x4;
+	cpu.ps = NagativeFlagBit;
+
+	cpu.PC = 0xFFF0;
+	mem[0xFFF0] = m6502::CPU::INS_BMI_REL;
+	mem[0xFFF1] = 0x3;
+	mem[0xFFF5] = m6502::CPU::INS_INX_IM;
+	// end - inline a little program
+	constexpr int CYCLES = 3 + 2;
+
+	STCyclesConfirm(cpu.X, 0x5, CYCLES, CYCLES);
+	EXPECT_EQ(cpu.PC, 0xFFF6);
+}
+
+TEST_F(M6502Test1Branch, BMIBranchTestCrossPage)
+{
+	// given:
+	// start - inline a little program
+	cpu.X = 0x4;
+	cpu.ps = NagativeFlagBit;
+
+	cpu.PC = 0xF100;
+	mem[0xF100] = m6502::CPU::INS_BMI_REL;
+	mem[0xF101] = 0xff;
+	mem[0xF201] = m6502::CPU::INS_INX_IM;
+	// end - inline a little program
+	constexpr int CYCLES = 4 + 2;
+
+	STCyclesConfirm(cpu.X, 0x5, CYCLES, CYCLES);
+	EXPECT_EQ(cpu.PC, 0xF202);
+}
+////////////////
+TEST_F(M6502Test1Branch, BVCBranchTest)
+{
+	// given:
+	// start - inline a little program
+	cpu.X = 0x4;
+	cpu.ps = OverFlowFlagBit & 0;
+
+	cpu.PC = 0xFFF0;
+	mem[0xFFF0] = m6502::CPU::INS_BVC_REL;
+	mem[0xFFF1] = 0x3;
+	mem[0xFFF5] = m6502::CPU::INS_INX_IM;
+	// end - inline a little program
+	constexpr int CYCLES = 3 + 2;
+
+	STCyclesConfirm(cpu.X, 0x5, CYCLES, CYCLES);
+	EXPECT_EQ(cpu.PC, 0xFFF6);
+}
+
+TEST_F(M6502Test1Branch, BVCBranchTestCrossPage)
+{
+	// given:
+	// start - inline a little program
+	cpu.X = 0x4;
+	cpu.ps = OverFlowFlagBit & 0;
+
+	cpu.PC = 0xF100;
+	mem[0xF100] = m6502::CPU::INS_BVC_REL;
+	mem[0xF101] = 0xff;
+	mem[0xF201] = m6502::CPU::INS_INX_IM;
+	// end - inline a little program
+	constexpr int CYCLES = 4 + 2;
+
+	STCyclesConfirm(cpu.X, 0x5, CYCLES, CYCLES);
+	EXPECT_EQ(cpu.PC, 0xF202);
+}
+
+TEST_F(M6502Test1Branch, BVSBranchTest)
+{
+	// given:
+	// start - inline a little program
+	cpu.X = 0x4;
+	cpu.ps = OverFlowFlagBit;
+
+	cpu.PC = 0xFFF0;
+	mem[0xFFF0] = m6502::CPU::INS_BVS_REL;
+	mem[0xFFF1] = 0x3;
+	mem[0xFFF5] = m6502::CPU::INS_INX_IM;
+	// end - inline a little program
+	constexpr int CYCLES = 3 + 2;
+
+	STCyclesConfirm(cpu.X, 0x5, CYCLES, CYCLES);
+	EXPECT_EQ(cpu.PC, 0xFFF6);
+}
+
+TEST_F(M6502Test1Branch, BVSBranchTestCrossPage)
+{
+	// given:
+	// start - inline a little program
+	cpu.X = 0x4;
+	cpu.ps = OverFlowFlagBit;
+
+	cpu.PC = 0xF100;
+	mem[0xF100] = m6502::CPU::INS_BVS_REL;
+	mem[0xF101] = 0xff;
+	mem[0xF201] = m6502::CPU::INS_INX_IM;
+	// end - inline a little program
+	constexpr int CYCLES = 4 + 2;
+
+	STCyclesConfirm(cpu.X, 0x5, CYCLES, CYCLES);
+	EXPECT_EQ(cpu.PC, 0xF202);
+}
+

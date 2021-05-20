@@ -461,6 +461,30 @@ s32 CPU::Execute(s32 Cycles, Mem& memory)
 		{
 			RelativeModeSetIsJmp(CarryFlag, Cycles, memory);
 		}break;
+		case INS_BEQ_REL:
+		{
+			RelativeModeSetIsJmp(ZeroBit, Cycles, memory);
+		}break;
+		case INS_BMI_REL:
+		{
+			RelativeModeSetIsJmp(NagativeFlagBit, Cycles, memory);
+		}break;
+		case INS_BNE_REL:
+		{
+			RelativeModeClearIsJmp(ZeroBit, Cycles, memory);
+		}break;
+		case INS_BPL_REL:
+		{
+			RelativeModeClearIsJmp(NagativeFlagBit, Cycles, memory);
+		}break;
+		case INS_BVC_REL:
+		{
+			RelativeModeClearIsJmp(OverFlowFlagBit, Cycles, memory);
+		}break;
+		case INS_BVS_REL:
+		{
+			RelativeModeSetIsJmp(OverFlowFlagBit, Cycles, memory);
+		}break;
 		default:
 		{
 			printf("没有设置 0x%x 指令\n", Ins);
