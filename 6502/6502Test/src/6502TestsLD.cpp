@@ -15,15 +15,15 @@ public:
 	virtual void TearDown()
 	{
 	}
-	void CyclesConfirm(m6502::Byte* _register, const m6502::Byte& DataA, const m6502::s32 Cycles, const m6502::s32 RequestCycles)
+	void CyclesConfirm(uint8_t* _register, const uint8_t& DataA, const int32_t Cycles, const int32_t RequestCycles)
 	{
-		m6502::s32 CyclesUsed = cpu.Execute(Cycles, mem);
+		int32_t CyclesUsed = cpu.Execute(Cycles, mem);
 		EXPECT_EQ(*_register, DataA);
 		EXPECT_EQ(CyclesUsed, RequestCycles);
 	}
-	void STCyclesConfirm(const m6502::Byte& _register, const m6502::Byte& DataA, const m6502::s32 Cycles, const m6502::s32 RequestCycles)
+	void STCyclesConfirm(const uint8_t& _register, const uint8_t& DataA, const int32_t Cycles, const int32_t RequestCycles)
 	{
-		m6502::s32 CyclesUsed = cpu.Execute(Cycles, mem);
+		int32_t CyclesUsed = cpu.Execute(Cycles, mem);
 		EXPECT_EQ(_register, DataA);
 		EXPECT_EQ(CyclesUsed, RequestCycles);
 	}

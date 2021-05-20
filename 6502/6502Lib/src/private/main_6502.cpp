@@ -1,11 +1,11 @@
 #include "main_6502.h"
 using namespace m6502;
-s32 CPU::Execute(s32 Cycles, Mem& memory)
+int32_t CPU::Execute(int32_t Cycles, Mem& memory)
 {
-	s32 CyclesRequests = Cycles;
+	int32_t CyclesRequests = Cycles;
 	while (Cycles > 0)
 	{
-		Byte Ins = FetchByte(Cycles, memory);
+		uint8_t Ins = FetchByte(Cycles, memory);
 		switch (Ins)
 		{
 		case INS_LDA_IM: //立即寻址 Immediate
@@ -103,7 +103,7 @@ s32 CPU::Execute(s32 Cycles, Mem& memory)
 		}break;
 		case INS_BIT_ZP:
 		{
-			Byte Value = AddZeroPage(Cycles, memory);
+			uint8_t Value = AddZeroPage(Cycles, memory);
 			Flags.Z = !(Value & A);
 			Flags.N = (Value & NagativeFlagBit) != 0;
 			Flags.V = (Value & OverFlowFlagBit) != 0;
@@ -127,20 +127,20 @@ s32 CPU::Execute(s32 Cycles, Mem& memory)
 		//INC START
 		case INS_INC_ZP: //零页寻址 ..zero page
 		{
-			Byte Value = AddZeroPage(Cycles, memory) + 1;
-			Byte Address = memory[PC - 1];
+			uint8_t Value = AddZeroPage(Cycles, memory) + 1;
+			uint8_t Address = memory[PC - 1];
 			Cycles--;
 			//Byte Address = ReadByte(memory[PC - 1], Cycles, memory);
-			memory.WriteByte(Value, Address, Cycles);
+			WriteByte(Value, Address, Cycles, memory);
 			SetStatus(Value);
 		}break;
 		case INS_DEC_ZP: //零页寻址 ..zero page
 		{
-			Byte Value = AddZeroPage(Cycles, memory) - 1;
-			Byte Address = memory[PC - 1];
+			uint8_t Value = AddZeroPage(Cycles, memory) - 1;
+			uint8_t Address = memory[PC - 1];
 			Cycles--;
 			//Byte Address = ReadByte(memory[PC - 1], Cycles, memory);
-			memory.WriteByte(Value, Address, Cycles);
+			WriteByte(Value, Address, Cycles, memory);
 			SetStatus(Value);
 		}break;
 		// INC END
@@ -151,18 +151,18 @@ s32 CPU::Execute(s32 Cycles, Mem& memory)
 		}break;
 		case INS_INC_ZPX: //零页寻址 ..zero page x
 		{
-			Byte Value = AddZeroPageAdd(Cycles, memory, X) + 1;
-			Byte Address = memory[PC - 1] + X;
+			uint8_t Value = AddZeroPageAdd(Cycles, memory, X) + 1;
+			uint8_t Address = memory[PC - 1] + X;
 			Cycles--;
-			memory.WriteByte(Value, Address, Cycles);
+			WriteByte(Value, Address, Cycles, memory);
 			SetStatus(Value);
 		}break;
 		case INS_DEC_ZPX: //零页寻址 
 		{
-			Byte Value = AddZeroPageAdd(Cycles, memory, X) - 1;
-			Byte Address = memory[PC - 1] + X;
+			uint8_t Value = AddZeroPageAdd(Cycles, memory, X) - 1;
+			uint8_t Address = memory[PC - 1] + X;
 			Cycles--;
-			memory.WriteByte(Value, Address, Cycles);
+			WriteByte(Value, Address, Cycles, memory);
 			SetStatus(Value);
 		}break;
 		case INS_AND_ZPX: //零页寻址 ..zero page x
@@ -212,7 +212,7 @@ s32 CPU::Execute(s32 Cycles, Mem& memory)
 		}break;
 		case INS_BIT_ABS:
 		{
-			Byte Value = AbsoluteAddress(Cycles, memory);
+			uint8_t Value = AbsoluteAddress(Cycles, memory);
 			Flags.Z = !(Value & A);
 			Flags.N = (Value & NagativeFlagBit) != 0;
 			Flags.V = (Value & OverFlowFlagBit) != 0;
@@ -229,27 +229,27 @@ s32 CPU::Execute(s32 Cycles, Mem& memory)
 		}break;
 		case INS_INC_ABS:
 		{
-			Byte Value  = AbsoluteAddress(Cycles, memory)+1;
-			Word Address = ReadWord((Word)(PC-2), Cycles, memory);
+			uint8_t Value = AbsoluteAddress(Cycles, memory) + 1;
+			uint16_t Address = ReadWord((uint16_t)(PC - 2), Cycles, memory);
 			//这里不知道为什么，貌似真实的CPU写入不需要消耗周期
-			memory.WriteByte(Value, Address, Cycles);
+			WriteByte(Value, Address, Cycles, memory);
 			Cycles++;
 			//FIX ME
 			SetStatus(Value);
 		}break;
 		case INS_DEC_ABS:
 		{
-			Byte Value = AbsoluteAddress(Cycles, memory) - 1;
-			Word Address = ReadWord((Word)(PC - 2), Cycles, memory);
+			uint8_t Value = AbsoluteAddress(Cycles, memory) - 1;
+			uint16_t Address = ReadWord((uint16_t)(PC - 2), Cycles, memory);
 			//这里不知道为什么，貌似真实的CPU写入不需要消耗周期
-			memory.WriteByte(Value, Address, Cycles);
+			WriteByte(Value, Address, Cycles, memory);
 			Cycles++;
 			//FIX ME
 			SetStatus(Value);
 		}break;
 		case INS_LDA_ABS_X:
 		{
-			A = AbsoluteAddress_Register( Cycles,memory, X);
+			A = AbsoluteAddress_Register(Cycles, memory, X);
 			SetStatus(A);
 		}break;
 		case INS_AND_ABSX:
@@ -269,16 +269,16 @@ s32 CPU::Execute(s32 Cycles, Mem& memory)
 		}break;
 		case INS_INC_ABSX:
 		{
-			Byte Value = AbsoluteAddress_Register(Cycles, memory, X)+1;
-			Word Address = ReadWord(Word(PC - 2), Cycles, memory) + X;
-			memory.WriteByte(Value, Address, Cycles);
+			uint8_t Value = AbsoluteAddress_Register(Cycles, memory, X) + 1;
+			uint16_t Address = ReadWord(uint16_t(PC - 2), Cycles, memory) + X;
+			WriteByte(Value, Address, Cycles, memory);
 			SetStatus(Value);
 		}break;
 		case INS_DEC_ABSX:
 		{
-			Byte Value = AbsoluteAddress_Register(Cycles, memory, X) - 1;
-			Word Address = ReadWord(Word(PC - 2), Cycles, memory) + X;
-			memory.WriteByte(Value, Address, Cycles);
+			uint8_t Value = AbsoluteAddress_Register(Cycles, memory, X) - 1;
+			uint16_t Address = ReadWord(uint16_t(PC - 2), Cycles, memory) + X;
+			WriteByte(Value, Address, Cycles, memory);
 			SetStatus(Value);
 		}break;
 		case INS_LDA_ABS_Y:
@@ -313,7 +313,7 @@ s32 CPU::Execute(s32 Cycles, Mem& memory)
 		}break;
 		case INS_LDA_IND_X:
 		{
-			A = IndirectAddressX( Cycles, memory);
+			A = IndirectAddressX(Cycles, memory);
 			SetStatus(A);
 		}break;
 		case INS_AND_INDX:
@@ -357,7 +357,7 @@ s32 CPU::Execute(s32 Cycles, Mem& memory)
 		}break;
 		case INS_STA_ZPX:
 		{
-			ZeroPageST_Register(A,X, Cycles, memory);
+			ZeroPageST_Register(A, X, Cycles, memory);
 		}break;
 		case INS_STX_ZP:
 		{
@@ -365,7 +365,7 @@ s32 CPU::Execute(s32 Cycles, Mem& memory)
 		}break;
 		case INS_STX_ZPY:
 		{
-			ZeroPageST_Register(X,Y, Cycles, memory);
+			ZeroPageST_Register(X, Y, Cycles, memory);
 		}break;
 		case INS_STY_ZP:
 		{
@@ -389,11 +389,11 @@ s32 CPU::Execute(s32 Cycles, Mem& memory)
 		}break;
 		case INS_STA_ABS_X:
 		{
-			ST_AbsoluteAddress_Register(A,X, Cycles, memory);
+			ST_AbsoluteAddress_Register(A, X, Cycles, memory);
 		}break;
 		case INS_STA_ABS_Y:
 		{
-			ST_AbsoluteAddress_Register(A,Y, Cycles, memory);
+			ST_AbsoluteAddress_Register(A, Y, Cycles, memory);
 		}break;
 		case INS_STA_IND_X:
 		{
@@ -409,16 +409,16 @@ s32 CPU::Execute(s32 Cycles, Mem& memory)
 		}break;
 		case INS_JSR:
 		{
-			Word SubAddress = FetchWord(Cycles, memory); //两个周期
+			uint16_t SubAddress = FetchWord(Cycles, memory); //两个周期
 			PUSHPCTOAddress(memory, Cycles);
-			PC = SubAddress ;
+			PC = SubAddress;
 			Cycles--;
 		}break;
-		case INS_RTS :
+		case INS_RTS:
 		{
-			Word ReturnAddress = POPPCFROMAddress(Cycles,memory );
+			uint16_t ReturnAddress = POPPCFROMAddress(Cycles, memory);
 			PC = ReturnAddress + 1;
-			Cycles-=2;
+			Cycles -= 2;
 		}break;
 		case INS_TSX:
 		{
@@ -442,20 +442,20 @@ s32 CPU::Execute(s32 Cycles, Mem& memory)
 		}break;
 		case INS_PLA:
 		{
-			Byte Data = POPByteFROMAddress(Cycles, memory);
+			uint8_t Data = POPByteFROMAddress(Cycles, memory);
 			A = Data;
 			Cycles--;
 			SetStatus(A);
 		}break;
 		case INS_PLP:
 		{
-			Byte Data = POPByteFROMAddress(Cycles, memory);
+			uint8_t Data = POPByteFROMAddress(Cycles, memory);
 			ps = Data;
 			Cycles--;
 		}break;
 		case INS_BCC_REL:
 		{
-			RelativeModeClearIsJmp(CarryFlag,Cycles, memory);
+			RelativeModeClearIsJmp(CarryFlag, Cycles, memory);
 		}break;
 		case INS_BCS_REL:
 		{
@@ -497,47 +497,150 @@ s32 CPU::Execute(s32 Cycles, Mem& memory)
 	return CyclesRequests - Cycles;
 }
 
-Byte CPU::AddZeroPage(s32& Cycles, Mem& memory)
+void CPU::Reset(Mem& mem)
 {
-	return ReadByte( FetchByte(Cycles, memory) , Cycles, memory);
+	PC = 0xFFFC; //将PC寄存器初始化 LDX #$FF
+	SP = 0x00FF; //将栈寄存器初始化
+	Flags.C = Flags.Z = Flags.I = Flags.D = Flags.B = Flags.V = Flags.N = 0;		 //将标志寄存器初始化，
+				 //实际上是某个指令实现的初始化，这里暂时这样做
+				 //比如D=0可以写成CLD
+	A = X = Y = 0;
+	mem.Init();
 }
-Byte CPU::AddZeroPageAdd(s32& Cycles, Mem& memory, Byte _register)
+
+void CPU::SetStatus(uint8_t _register)
 {
-	Byte ZeroPageAddress = FetchByte(Cycles, memory);
+	Flags.Z = (_register == 0);
+	Flags.N = (_register & 0b10000000) > 0;
+}
+uint8_t CPU::FetchByte(int32_t& Cycles, Mem& memory)
+{
+	uint8_t Data = memory[PC];
+	PC++;
+	Cycles--;
+	return Data;
+}
+uint8_t CPU::ReadByte(uint8_t address, int32_t& Cycles, Mem& memory)
+{
+	uint8_t Data = memory[address];
+	Cycles--;
+	return Data;
+}
+uint8_t CPU::ReadByte(uint16_t address, int32_t& Cycles, Mem& memory)
+{
+	uint8_t Data = memory[address];
+	Cycles--;
+	return Data;
+}
+uint16_t CPU::ReadWord(uint16_t address, int32_t& Cycles, Mem& memory)
+{
+	uint16_t Data = memory[address];
+	Data |= (memory[address + 1] << 8);
+	Cycles -= 2;
+	return Data;
+}
+uint16_t CPU::ReadWord(uint8_t address, int32_t& Cycles, Mem& memory)
+{
+	uint16_t Data = memory[address];
+	Data |= (memory[address + 1] << 8);
+	Cycles -= 2;
+	return Data;
+}
+uint16_t CPU::FetchWord(int32_t& Cycles, Mem& memory)
+{
+	//小端存储数据  如果是大端口，需要调换数据顺序
+	uint16_t Data = memory[PC++];
+	Cycles--;
+	Data |= (memory[PC++] << 8);
+	Cycles--;
+	return Data;
+}
+uint16_t CPU::SPTOAddress()
+{
+	return 0x100 | SP;
+}
+//写入两个字节
+void CPU::WriteWord(const uint16_t Value, const uint32_t Address, int32_t& Cycles, Mem& memory)
+{
+	memory.Data[Address] = Value & 0xFF;
+	memory.Data[Address + 1] = (Value >> 8);
+	Cycles -= 2;
+}
+void CPU::WriteByte(const uint8_t Value, const uint32_t Address, int32_t& Cycles, Mem& memory)
+{
+	memory.Data[Address] = Value;
+	Cycles--;
+}
+
+void CPU::PUSHByteTOAddress(uint8_t Data, int32_t& Cycles, Mem& memory)
+{
+	WriteByte(Data, SPTOAddress(), Cycles, memory); //两个周期
+	SP--;
+	Cycles--;
+}
+void CPU::PUSHWordTOAddress(uint16_t Data, int32_t& Cycles, Mem& memory)
+{
+	WriteWord(Data, SPTOAddress() - 1, Cycles, memory); //两个周期
+	SP -= 2;
+}
+void CPU::PUSHPCTOAddress(Mem& memory, int32_t& Cycles)
+{
+	PUSHWordTOAddress(PC - 1, Cycles, memory);
+}
+uint8_t CPU::POPByteFROMAddress(int32_t& Cycles, Mem& memory)
+{
+	uint8_t Value = ReadByte((uint16_t)(SPTOAddress() + 1), Cycles, memory);
+	SP++;
+	Cycles--;
+	return Value;
+}
+uint16_t CPU::POPPCFROMAddress(int32_t& Cycles, Mem& memory)
+{
+	uint16_t Value = ReadWord((uint16_t)(SPTOAddress() + 1), Cycles, memory);
+	SP += 2;
+	Cycles--;
+	return Value;
+}
+uint8_t CPU::AddZeroPage(int32_t& Cycles, Mem& memory)
+{
+	return ReadByte(FetchByte(Cycles, memory), Cycles, memory);
+}
+uint8_t CPU::AddZeroPageAdd(int32_t& Cycles, Mem& memory, uint8_t _register)
+{
+	uint8_t ZeroPageAddress = FetchByte(Cycles, memory);
 	ZeroPageAddress += _register;
 	Cycles--;
 	return  ReadByte(ZeroPageAddress, Cycles, memory);
 }
-Byte CPU::AbsoluteAddress(s32& Cycles, Mem& memory)
+uint8_t CPU::AbsoluteAddress(int32_t& Cycles, Mem& memory)
 {
-	return ReadByte(FetchWord(Cycles, memory),Cycles,memory);
+	return ReadByte(FetchWord(Cycles, memory), Cycles, memory);
 }
-Byte CPU::AbsoluteAddress_Register(s32& Cycles, Mem& memory,Byte _register)
+uint8_t CPU::AbsoluteAddress_Register(int32_t& Cycles, Mem& memory, uint8_t _register)
 {
-	Word AbsAddress = FetchWord(Cycles, memory);
+	uint16_t AbsAddress = FetchWord(Cycles, memory);
 	auto Copy_AbsAddress = AbsAddress % 0x100;
 	// 下面有更好的写法，这里暂时这样写 https://github.com/davepoo/6502Emulator/blob/bb278fbf80d6e4f0f3bb60826afc2551977d9ead/6502/6502Lib/src/private/m6502.cpp#L1068 
 	AbsAddress += _register;
 	if (Copy_AbsAddress + _register > 0xff)
 		Cycles--;
-	return ReadByte(AbsAddress,Cycles,memory);
+	return ReadByte(AbsAddress, Cycles, memory);
 }
-
-Byte CPU::IndirectAddressX(s32& Cycles, Mem& memory)
+uint8_t CPU::IndirectAddressX(int32_t& Cycles, Mem& memory)
 {
-	Byte IndAddress = FetchByte(Cycles, memory);
+	uint8_t IndAddress = FetchByte(Cycles, memory);
 	IndAddress += X;
 	Cycles--;
-	Word ind_address_ = ReadWord(
+	uint16_t ind_address_ = ReadWord(
 		IndAddress,
 		Cycles,
 		memory);
-	return  ReadByte(ind_address_,Cycles,memory);
+	return  ReadByte(ind_address_, Cycles, memory);
 }
-Byte CPU::IndirectAddressY(s32& Cycles, Mem& memory)
+uint8_t CPU::IndirectAddressY(int32_t& Cycles, Mem& memory)
 {
-	Byte IndAddress = FetchByte(Cycles, memory);
-	Word ind_address_ = ReadWord(
+	uint8_t IndAddress = FetchByte(Cycles, memory);
+	uint16_t ind_address_ = ReadWord(
 		IndAddress,
 		Cycles,
 		memory);
@@ -547,54 +650,50 @@ Byte CPU::IndirectAddressY(s32& Cycles, Mem& memory)
 		Cycles--;
 	return  ReadByte(ind_address_, Cycles, memory);
 }
-
-void CPU::ZeroPageST_(Byte main_register, s32& Cycles, Mem& memory)
+void CPU::ZeroPageST_(uint8_t main_register, int32_t& Cycles, Mem& memory)
 {
-	Byte Address = FetchByte(Cycles, memory);
-	memory.WriteByte(main_register, Address, Cycles);
+	uint8_t Address = FetchByte(Cycles, memory);
+	WriteByte(main_register, Address, Cycles, memory);
 }
-
-void CPU::ZeroPageST_Register(Byte main_register, Byte __register, s32& Cycles, Mem& memory)
+void CPU::ZeroPageST_Register(uint8_t main_register, uint8_t __register, int32_t& Cycles, Mem& memory)
 {
-	Byte Address = FetchByte(Cycles, memory);
+	uint8_t Address = FetchByte(Cycles, memory);
 	Address += __register;
 	Cycles--;
-	memory.WriteByte(main_register, Address, Cycles);
+	WriteByte(main_register, Address, Cycles, memory);
 }
-
-void CPU::ST_AbsoluteAddress(Byte main_register, s32& Cycles, Mem& memory)
+void CPU::ST_AbsoluteAddress(uint8_t main_register, int32_t& Cycles, Mem& memory)
 {
-	Word Address = FetchWord(Cycles, memory);
-	memory.WriteByte(main_register, Address, Cycles);
+	uint16_t Address = FetchWord(Cycles, memory);
+	WriteByte(main_register, Address, Cycles, memory);
 }
-
-void CPU::ST_AbsoluteAddress_Register(Byte main_register, Byte __register,s32& Cycles, Mem& memory)
+void CPU::ST_AbsoluteAddress_Register(uint8_t main_register, uint8_t __register, int32_t& Cycles, Mem& memory)
 {
-	Word Address = FetchWord(Cycles, memory);
+	uint16_t Address = FetchWord(Cycles, memory);
 	Address += __register;
 	Cycles--;
-	memory.WriteByte(main_register, Address, Cycles);
+	WriteByte(main_register, Address, Cycles, memory);
 }
-void CPU::ST_IndirectAddressX(s32& Cycles, Mem& memory)
+void CPU::ST_IndirectAddressX(int32_t& Cycles, Mem& memory)
 {
-	Byte IndAddress = FetchByte(Cycles, memory);
+	uint8_t IndAddress = FetchByte(Cycles, memory);
 	IndAddress += X;
 	Cycles--;
-	Word IndAddressAddress = ReadWord(IndAddress, Cycles, memory);
-	memory.WriteByte(A, IndAddressAddress, Cycles);
+	uint16_t IndAddressAddress = ReadWord(IndAddress, Cycles, memory);
+	WriteByte(A, IndAddressAddress, Cycles, memory);
 }
-void CPU::ST_IndirectAddressY(s32& Cycles, Mem& memory)
+void CPU::ST_IndirectAddressY(int32_t& Cycles, Mem& memory)
 {
-	Byte IndAddress = FetchByte(Cycles, memory);
-	Word IndAddressAddress = ReadWord(IndAddress, Cycles, memory);
+	uint8_t IndAddress = FetchByte(Cycles, memory);
+	uint16_t IndAddressAddress = ReadWord(IndAddress, Cycles, memory);
 	IndAddressAddress += Y;
 	Cycles--;
-	memory.WriteByte(A, IndAddressAddress, Cycles);
+	WriteByte(A, IndAddressAddress, Cycles,memory);
 }
-void m6502::CPU::RelativeModeClearIsJmp(const Byte FlagRegister, s32& Cycles, Mem& memory)
+void m6502::CPU::RelativeModeClearIsJmp(const uint8_t FlagRegister, int32_t& Cycles, Mem& memory)
 {
-	Byte RelativeOffset = FetchByte(Cycles, memory);
-	if ((FlagRegister & ps)==0)
+	uint8_t RelativeOffset = FetchByte(Cycles, memory);
+	if ((FlagRegister & ps) == 0)
 	{
 		auto copyPC = PC;
 		PC += RelativeOffset;
@@ -605,10 +704,9 @@ void m6502::CPU::RelativeModeClearIsJmp(const Byte FlagRegister, s32& Cycles, Me
 			Cycles--;
 	}
 }
-
-void m6502::CPU::RelativeModeSetIsJmp(const Byte FlagRegister, s32& Cycles, Mem& memory)
+void m6502::CPU::RelativeModeSetIsJmp(const uint8_t FlagRegister, int32_t& Cycles, Mem& memory)
 {
-	Byte RelativeOffset = FetchByte(Cycles, memory);
+	uint8_t RelativeOffset = FetchByte(Cycles, memory);
 	if ((FlagRegister & ps) != 0)
 	{
 		auto copyPC = PC;

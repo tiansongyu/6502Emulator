@@ -1,175 +1,56 @@
 #pragma once 
 #include <stdio.h>
 #include <stdlib.h>
-
+#include <cstdint>
 // http://www.obelisk.me.uk/6502/
+
 namespace m6502
 {
-	using Byte = unsigned char;
-	using Word = unsigned short;
-	using u32 = unsigned int;
-	using s32 = signed int;
-
 	struct Mem;
 	struct CPU;
 	struct statusFlags;
 }
-static constexpr m6502::Byte
-	NagativeFlagBit = 0b10000000,
-	OverFlowFlagBit = 0b01000000,
-	BreakFlagBit = 0b00100000,
-	UnusedFlagBit = 0b00100000,
-	DecimalMode = 0b00001000,
-	InterruptDisableFlagBit = 0b000000100,
-	ZeroBit =	0b00000010,
-	CarryFlag = 0b00000001;
 
+static constexpr uint8_t
+NagativeFlagBit = 1 << 7,
+OverFlowFlagBit = 1 << 6,
+BreakFlagBit = 1 << 5,
+UnusedFlagBit = 1 << 4,
+DecimalMode = 1 << 3,
+InterruptDisableFlagBit = 1 << 2,
+ZeroBit = 1 << 1,
+CarryFlag = 1;
 
 struct m6502::Mem
 {
-	static constexpr u32 MAX_MEM = 1024 * 64;
-	Byte Data[MAX_MEM];
-	void Initialise()
-	{
-		for (u32 i = 0; i < MAX_MEM; i++) Data[i] = 0;
-	}
-	Byte operator[](u32 Address) const
-	{
-		return Data[Address];
-	}
-	Byte& operator[](u32 Address)
-	{
-		return Data[Address];
-	}
-	//写入两个字节
-	void WriteWord(const Word Value, const u32 Address, s32& Cycles)
-	{
-		Data[Address] = Value & 0xFF;
-		Data[Address + 1] = (Value >> 8);
-		Cycles -= 2;
-	}
-	void WriteByte(const Byte Value,const u32 Address, s32& Cycles)
-	{
-		Data[Address] = Value;
-		Cycles--;
-	}
+	static constexpr uint32_t MAX_MEM = 1024 * 64;
+	uint8_t Data[MAX_MEM];
+	void Init() { for (uint32_t i = 0; i < MAX_MEM; i++) Data[i] = 0; }
+	uint8_t operator[](uint32_t Address) const { return Data[Address]; }
+	uint8_t& operator[](uint32_t Address) { return Data[Address]; }
 };
 struct m6502::statusFlags
 {
-	Byte C : 1;
-	Byte Z : 1;
-	Byte I : 1;
-	Byte D : 1;
-	Byte B : 1;
-	Byte unused : 1;
-	Byte V : 1;
-	Byte N : 1;
+	uint8_t C : 1;
+	uint8_t Z : 1;
+	uint8_t I : 1;
+	uint8_t D : 1;
+	uint8_t B : 1;
+	uint8_t unused : 1;
+	uint8_t V : 1;
+	uint8_t N : 1;
 };
 
 struct m6502::CPU
-{	
-	Word PC;
-	Byte SP;
-
-	Byte A, X, Y;
-
+{
+	uint16_t PC;
+	uint8_t SP,A, X, Y;
 	union
 	{
-		Byte ps;
+		uint8_t ps;
 		statusFlags Flags;
 	};
-
-	void Reset(Mem& mem)
-	{
-		PC = 0xFFFC; //将PC寄存器初始化 LDX #$FF
-		SP = 0x00FF; //将栈寄存器初始化
-		Flags.C = Flags.Z = Flags.I = Flags.D = Flags.B = Flags.V = Flags.N = 0;		 //将标志寄存器初始化，
-					 //实际上是某个指令实现的初始化，这里暂时这样做
-					 //比如D=0可以写成CLD
-		A = X = Y = 0;
-		mem.Initialise();
-	}
-	Byte FetchByte(s32& Cycles, Mem& memory)
-	{
-		Byte Data = memory[PC];
-		PC++;
-		Cycles--;
-		return Data;
-	}
-	Byte ReadByte(Byte address, s32& Cycles, Mem& memory)
-	{
-		Byte Data = memory[address];
-		Cycles--;
-		return Data;
-	}
-	Byte ReadByte(Word address, s32& Cycles, Mem& memory)
-	{
-		Byte Data = memory[address];
-		Cycles--;
-		return Data;
-	}
-	Word ReadWord(Word address, s32& Cycles, Mem& memory)
-	{
-		Word Data = memory[address];
-		Data |= (memory[address+1] << 8);
-		Cycles-=2;
-		return Data;
-	}
-	Word ReadWord(Byte address, s32& Cycles, Mem& memory)
-	{
-		Word Data = memory[address];
-		Data |= (memory[address + 1] << 8);
-		Cycles -= 2;
-		return Data;
-	}
-	Word FetchWord(s32& Cycles, Mem& memory)
-	{
-		//小端存储数据  如果是大端口，需要调换数据顺序
-		Word Data = memory[PC];
-		PC++;
-
-		Cycles--;
-		Data |= (memory[PC] << 8);
-		PC++;
-
-		Cycles--;
-		return Data;
-	}
-	Word SPTOAddress()
-	{
-		return 0x100 | SP;
-	}
-	void PUSHByteTOAddress(Byte Data, m6502::s32& Cycles, Mem& memory )
-	{
-		memory.WriteByte(Data, SPTOAddress() , Cycles); //两个周期
-		SP--;
-		Cycles--;
-	}
-	void PUSHWordTOAddress(Word Data, m6502::s32& Cycles, Mem& memory)
-	{
-		memory.WriteWord(Data, SPTOAddress() - 1, Cycles); //两个周期
-		SP-=2;
-	}
-	void PUSHPCTOAddress(Mem&memory,m6502::s32& Cycles)
-	{
-		PUSHWordTOAddress(PC - 1, Cycles, memory);
-	}
-	Byte POPByteFROMAddress(m6502::s32& Cycles, Mem& memory)
-	{
-		Byte Value = ReadByte((Word)(SPTOAddress() + 1), Cycles, memory);
-		SP ++;
-		Cycles--;
-		return Value;
-	}
-	Word POPPCFROMAddress(m6502::s32& Cycles,Mem& memory )
-	{
-		Word Value = ReadWord((Word)(SPTOAddress()+1), Cycles, memory);
-		SP += 2;
-		Cycles--;
-		return Value;
-	}
-
-	static constexpr Byte   //LDA
+	static constexpr uint8_t   //LDA
 		INS_LDA_IM = 0xA9,
 		INS_LDA_ZP = 0xA5,
 		INS_LDA_ZPX = 0xB5,
@@ -198,8 +79,7 @@ struct m6502::CPU
 		INS_STA_ABS_Y = 0x99,
 		INS_STA_IND_X = 0x81,
 		INS_STA_IND_Y = 0x91,
-		//STX
-		// 							INS_LDX_IM = 0xA2,
+		//STX					
 		INS_STX_ZP = 0x86,
 		INS_STX_ZPY = 0x96,
 		INS_STX_ABS = 0x8E,
@@ -275,51 +155,69 @@ struct m6502::CPU
 		INS_BPL_REL = 0x10,
 		INS_BVC_REL = 0x50,
 		INS_BVS_REL = 0x70;
-		
 
-	void SetStatus(const m6502::Byte _register)
-	{
-		Flags.Z = (_register == 0);
-		Flags.N = (_register & 0b10000000) > 0;
-	}
+
+	//写入两个字节
+	void WriteWord(const uint16_t Value, const uint32_t Address, int32_t& Cycles, Mem& memory);
+	//写入一个字节
+	void WriteByte(const uint8_t Value, const uint32_t Address, int32_t& Cycles, Mem& memory);
+
+	//初始换内存
+	void Reset(Mem& mem);
+	//将一个字节压栈
+	void PUSHByteTOAddress(uint8_t Data, int32_t& Cycles, Mem& memory);
+	//将两个字节压栈
+	void PUSHWordTOAddress(uint16_t Data, int32_t& Cycles, Mem& memory);
+	//将PC压栈
+	void PUSHPCTOAddress(Mem& memory, int32_t& Cycles);
+	//将一个字节从栈弹出
+	uint8_t POPByteFROMAddress(int32_t& Cycles, Mem& memory);
+	//将PC从栈弹出
+	uint16_t POPPCFROMAddress(int32_t& Cycles, Mem& memory);
+	//指令的16进制代码
+	//获取一个字节并且PC++
+	inline uint8_t FetchByte(int32_t& Cycles, Mem& memory);
+	//获取两个字节并且PC+=2
+	inline uint16_t FetchWord(int32_t& Cycles, Mem& memory);
+	//高位取00，低位取addresss中的内容
+	inline uint8_t ReadByte(uint8_t address, int32_t& Cycles, Mem& memory);
+	//直接取address中两个字节的内容
+	inline uint8_t ReadByte(uint16_t address, int32_t& Cycles, Mem& memory);
+	//获取两个字节内容
+	inline uint16_t ReadWord(uint16_t address, int32_t& Cycles, Mem& memory);
+	//address高位为00，地位取address
+	inline uint16_t ReadWord(uint8_t address, int32_t& Cycles, Mem& memory);
+	//将SP寄存器转换为地址
+	inline uint16_t SPTOAddress();
+
+	//根据Register，设置NagativeFlagBit和ZeroBit的值
+	inline void SetStatus(uint8_t _register);
 
 	/* CPU判断指令函数*/
-	s32 Execute(s32 Cycles, Mem& memory);
-
+	int32_t Execute(int32_t Cycles, Mem& memory);
 	/* Zero Page处理函数*/
-	Byte AddZeroPage(s32& Cycles, Mem& memory);
-	
+	uint8_t AddZeroPage(int32_t& Cycles, Mem& memory);
 	/* Zero Page + X or Y 处理函数*/
-	Byte AddZeroPageAdd(s32& Cycles, Mem& memory,Byte _register);
-
+	uint8_t AddZeroPageAdd(int32_t& Cycles, Mem& memory, uint8_t _register);
 	/* Absolute address */
-	Byte AbsoluteAddress(s32& Cycles, Mem& memory);
-
+	uint8_t AbsoluteAddress(int32_t& Cycles, Mem& memory);
 	/* Absolute address + register*/
-	Byte AbsoluteAddress_Register(s32& Cycles, Mem& memory, Byte _register);
-
+	uint8_t AbsoluteAddress_Register(int32_t& Cycles, Mem& memory, uint8_t _register);
 	/* Indirect address X */
-	Byte IndirectAddressX(s32& Cycles, Mem& memory);
-
+	uint8_t IndirectAddressX(int32_t& Cycles, Mem& memory);
 	/* Indirect address Y*/
-	Byte IndirectAddressY(s32& Cycles, Mem& memory);
-
+	uint8_t IndirectAddressY(int32_t& Cycles, Mem& memory);
 	/* Zero Page ST*  */
-	void ZeroPageST_(Byte _register, s32& Cycles, Mem& memory);
-
+	void ZeroPageST_(uint8_t _register, int32_t& Cycles, Mem& memory);
 	/* Add Zero Page register ST*  */
-	void ZeroPageST_Register(Byte main_register, Byte __register, s32& Cycles, Mem& memory);
-
+	void ZeroPageST_Register(uint8_t main_register, uint8_t __register, int32_t& Cycles, Mem& memory);
 	/* Absolute address */
-	void ST_AbsoluteAddress(Byte _register, s32& Cycles, Mem& memory);
-
+	void ST_AbsoluteAddress(uint8_t _register, int32_t& Cycles, Mem& memory);
 	/* Absolute address + register*/
-	void ST_AbsoluteAddress_Register(Byte main_register, Byte __register, s32& Cycles, Mem& memory);
-
-	void ST_IndirectAddressX(s32& Cycles, Mem& memory);
-	void ST_IndirectAddressY(s32& Cycles, Mem& memory);
-	/* Relative mode*/
-	void RelativeModeClearIsJmp(const Byte FlagRegister, s32& Cycles, Mem& memory);
-	void RelativeModeSetIsJmp(const Byte FlagRegister, s32& Cycles, Mem& memory);
-
+	void ST_AbsoluteAddress_Register(uint8_t main_register, uint8_t __register, int32_t& Cycles, Mem& memory);
+	void ST_IndirectAddressX(int32_t& Cycles, Mem& memory);
+	void ST_IndirectAddressY(int32_t& Cycles, Mem& memory);
+	/* Relative mode */
+	void RelativeModeClearIsJmp(const uint8_t FlagRegister, int32_t& Cycles, Mem& memory);
+	void RelativeModeSetIsJmp(const uint8_t FlagRegister, int32_t& Cycles, Mem& memory);
 };

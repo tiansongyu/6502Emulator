@@ -15,15 +15,15 @@ public:
 	virtual void TearDown()
 	{
 	}
-	void CyclesConfirm(m6502::Byte* _register, const m6502::Byte& DataA, const m6502::s32 Cycles, const m6502::s32 RequestCycles)
+	void CyclesConfirm(uint8_t* _register, const uint8_t& DataA, const int32_t Cycles, const int32_t RequestCycles)
 	{
-		m6502::s32 CyclesUsed = cpu.Execute(Cycles, mem);
+		int32_t CyclesUsed = cpu.Execute(Cycles, mem);
 		EXPECT_EQ(*_register, DataA);
 		EXPECT_EQ(CyclesUsed, RequestCycles);
 	}
-	void STCyclesConfirm(const m6502::Byte& _register, const m6502::Byte& DataA, const m6502::s32 Cycles, const m6502::s32 RequestCycles)
+	void STCyclesConfirm(const uint8_t& _register, const uint8_t& DataA, const int32_t Cycles, const int32_t RequestCycles)
 	{
-		m6502::s32 CyclesUsed = cpu.Execute(Cycles, mem);
+		int32_t CyclesUsed = cpu.Execute(Cycles, mem);
 		EXPECT_EQ(_register, DataA);
 		EXPECT_EQ(CyclesUsed, RequestCycles);
 	}
@@ -61,7 +61,7 @@ TEST_F(M6502Test1J, JSRANDRTSTEST)
 	// end - inline a little program
 	constexpr int CYCLES = 6 + 6 + 2;
 
-	m6502::Byte SPCopy = cpu.SP;
+	uint8_t SPCopy = cpu.SP;
 	STCyclesConfirm(cpu.A, 0x23, CYCLES, CYCLES);
 	EXPECT_EQ(SPCopy, cpu.SP);
 }
@@ -78,7 +78,7 @@ TEST_F(M6502Test1J, JMPANDRTSTEST)
 	// end - inline a little program
 	constexpr int CYCLES = 3 + 2;
 
-	m6502::Byte SPCopy = cpu.SP;
+	uint8_t SPCopy = cpu.SP;
 	STCyclesConfirm(cpu.A, 0x67, CYCLES, CYCLES);
 	EXPECT_EQ(SPCopy, cpu.SP);
 }
@@ -114,7 +114,7 @@ TEST_F(M6502Test1J, PHATEST)
 	// end - inline a little program
 	constexpr int CYCLES = 3;
 
-	m6502::Byte SPCopy = cpu.SP;
+	uint8_t SPCopy = cpu.SP;
 	STCyclesConfirm(0x69, mem[0x100+ SPCopy], CYCLES, CYCLES);
 	EXPECT_EQ(SPCopy-1, cpu.SP);
 
@@ -128,8 +128,8 @@ TEST_F(M6502Test1J, PHPANDstatusflagsTEST)
 	// end - inline a little program
 	constexpr int CYCLES = 3;
 
-	m6502::Byte SPCopy = cpu.SP;
-	m6502::Byte psCopy = cpu.ps;
+	uint8_t SPCopy = cpu.SP;
+	uint8_t psCopy = cpu.ps;
 	STCyclesConfirm(cpu.ps, mem[0x100 + SPCopy], CYCLES, CYCLES);
 	EXPECT_EQ(SPCopy - 1, cpu.SP);
 }
@@ -146,8 +146,8 @@ TEST_F(M6502Test1J, PLAANDstatusflagsTEST)
 	// end - inline a little program
 	constexpr int CYCLES = 4;
 
-	m6502::Byte SPCopy = cpu.SP;
-	m6502::Byte psCopy = cpu.ps;
+	uint8_t SPCopy = cpu.SP;
+	uint8_t psCopy = cpu.ps;
 	STCyclesConfirm(cpu.A, 0b11110000, CYCLES, CYCLES);
 	EXPECT_EQ(SPCopy + 1, cpu.SP);
 	EXPECT_FALSE(cpu.Flags.Z);
@@ -165,8 +165,8 @@ TEST_F(M6502Test1J, PLPANDstatusflagsTEST)
 	// end - inline a little program
 	constexpr int CYCLES = 4;
 
-	m6502::Byte SPCopy = cpu.SP;
-	m6502::Byte psCopy = cpu.ps;
+	uint8_t SPCopy = cpu.SP;
+	uint8_t psCopy = cpu.ps;
 	STCyclesConfirm(cpu.ps, 0b11110000, CYCLES, CYCLES);
 }
 TEST_F(M6502Test1J, TAXANDstatusflagsTEST)
