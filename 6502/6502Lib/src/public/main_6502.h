@@ -200,6 +200,8 @@ INS_CPX_ABS = 0xEC,
 INS_CPY_IM = 0xC0,
 INS_CPY_ZP = 0xC4,
 INS_CPY_ABS = 0xCC;
+
+
 	//写入两个字节
 	void WriteWord(const uint16_t Value, const uint32_t Address, int32_t& Cycles, Mem& memory);
 	//写入一个字节

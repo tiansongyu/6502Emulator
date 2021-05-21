@@ -24,6 +24,13 @@ int32_t CPU::Execute(int32_t Cycles, Mem& memory)
 		Flags.V = IsTheSameFlag && ((A ^ Value) & NegativeFlagBit);
 		SetStatus(A);
 	};
+	auto CompareRegister = [this](uint8_t Value,uint8_t Register)
+	{
+		Flags.Z = Register == Value;
+		Flags.C = Register >= Value;
+		Flags.N = ((Register - Value) & NegativeFlagBit > 0);
+	};
+
 	int32_t CyclesRequests = Cycles;
 	while (Cycles > 0)
 	{
@@ -626,6 +633,77 @@ int32_t CPU::Execute(int32_t Cycles, Mem& memory)
 		{
 			uint32_t Value = IndirectAddressY(Cycles, memory);
 			SBC(Value);
+		}break;
+		//////////////
+		case INS_CMP_IM:
+		{
+			uint32_t Value = FetchByte(Cycles, memory);
+			CompareRegister(Value,A);
+		}break;
+		case INS_CMP_ZP:
+		{
+			uint32_t Value = AddZeroPage(Cycles, memory);
+			CompareRegister(Value, A);
+		}break;
+		case INS_CMP_ZPX:
+		{
+			uint32_t Value = AddZeroPageAdd(Cycles, memory, X);
+			CompareRegister(Value, A);
+		}break;
+		case INS_CMP_ABS:
+		{
+			uint32_t Value = AbsoluteAddress(Cycles, memory);
+			CompareRegister(Value, A);
+		}break;
+		case INS_CMP_ABS_X:
+		{
+			uint32_t Value = AbsoluteAddress_Register(Cycles, memory, X);
+			CompareRegister(Value, A);
+		}break;
+		case INS_CMP_ABS_Y:
+		{
+			uint32_t Value = AbsoluteAddress_Register(Cycles, memory, Y);
+			CompareRegister(Value, A);
+		}break;
+		case INS_CMP_IND_X:
+		{
+			uint32_t Value = IndirectAddressX(Cycles, memory);
+			CompareRegister(Value, A);
+		}break;
+		case INS_CMP_IND_Y:
+		{
+			uint32_t Value = IndirectAddressY(Cycles, memory);
+			CompareRegister(Value, A);
+		}break;
+		case INS_CPX_IM:
+		{
+			uint32_t Value = FetchByte(Cycles, memory);
+			CompareRegister(Value, X);
+		}break;
+		case INS_CPX_ZP:
+		{
+			uint32_t Value = AddZeroPage(Cycles, memory);
+			CompareRegister(Value, X);
+		}break;
+		case INS_CPX_ABS:
+		{
+			uint32_t Value = AbsoluteAddress(Cycles, memory);
+			CompareRegister(Value, X);
+		}break;
+		case INS_CPY_IM:
+		{
+			uint32_t Value = FetchByte(Cycles, memory);
+			CompareRegister(Value, Y);
+		}break;
+		case INS_CPY_ZP:
+		{
+			uint32_t Value = AddZeroPage(Cycles, memory);
+			CompareRegister(Value, Y);
+		}break;
+		case INS_CPY_ABS:
+		{
+			uint32_t Value = AbsoluteAddress(Cycles, memory);
+			CompareRegister(Value, Y);
 		}break;
 		default:
 		{
