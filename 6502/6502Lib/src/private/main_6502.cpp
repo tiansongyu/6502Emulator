@@ -17,8 +17,8 @@ int32_t CPU::Execute(int32_t Cycles, Mem& memory)
 	{
 		const bool IsTheSameFlag = !((A ^ Value) & NegativeFlagBit);
 		uint32_t Sum = A;
-		Sum -= Value;
-		Sum -= Flags.C;
+		Sum += (~Value & 0xFF);
+		Sum += (~Flags.C & 1);
 		A = Sum & 0xFF;
 		Flags.C = Sum > 0xFF;
 		Flags.V = IsTheSameFlag && ((A ^ Value) & NegativeFlagBit);

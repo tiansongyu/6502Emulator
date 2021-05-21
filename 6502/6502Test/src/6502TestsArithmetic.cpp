@@ -280,19 +280,19 @@ TEST_F(M6502Test1Arithmetic, SBCBranchTest)
 {
 	// given:
 	// start - inline a little program
-	cpu.A = 0x32;
+	cpu.A = 0b00110010;
 	cpu.Flags.C = 1;
 	cpu.PC = 0xFFF0;
 	mem[0xFFF0] = m6502::CPU::INS_SBC_IM;
-	mem[0xFFF1] = 0x11;
+	mem[0xFFF1] = 0b00010001;
 	// end - inline a little program
 	constexpr int CYCLES = 2;
 
-	STCyclesConfirm(cpu.A, 0x32 - 0x1 - 0x11, CYCLES, CYCLES);
+	STCyclesConfirm(cpu.A, 0x32 +  (~0x1)&1 + (~0b00010001)&0xff, CYCLES, CYCLES);
 	EXPECT_EQ(cpu.Flags.Z, false);
 	EXPECT_EQ(cpu.Flags.N, false);
 	EXPECT_EQ(cpu.Flags.V, false);
-	EXPECT_EQ(cpu.Flags.C, false);
+	EXPECT_EQ(cpu.Flags.C, true);
 }
 
 TEST_F(M6502Test1Arithmetic, SBCBranchOverFlowAndCarryTest)
@@ -300,14 +300,14 @@ TEST_F(M6502Test1Arithmetic, SBCBranchOverFlowAndCarryTest)
 	// given:
 	// start - inline a little program
 	cpu.A = 0b11111111;
-	cpu.Flags.C = 0;
+	cpu.Flags.C = 1;
 	cpu.PC = 0xFFF0;
 	mem[0xFFF0] = m6502::CPU::INS_SBC_IM;
 	mem[0xFFF1] = 0b10000000;
 	// end - inline a little program
 	constexpr int CYCLES = 2;
 
-	STCyclesConfirm(cpu.A, 0b11111111 - 0x0 - 0b10000000, CYCLES, CYCLES);
+	STCyclesConfirm(cpu.A, 0b11111111 + (~0b1 &1) + (~0b10000000&0xFF), CYCLES, CYCLES);
 	EXPECT_EQ(cpu.Flags.Z, false);
 	EXPECT_EQ(cpu.Flags.N, false);
 	EXPECT_EQ(cpu.Flags.V, true);
@@ -325,8 +325,8 @@ TEST_F(M6502Test1Arithmetic, SBCBranchJustOverFlowTest)
 	mem[0xFFF1] = 0b01111111;
 	// end - inline a little program
 	constexpr int CYCLES = 2;
-
-	STCyclesConfirm(cpu.A, 0b00000000 - 0x1 - 0b01111111, CYCLES, CYCLES);
+	
+	STCyclesConfirm(cpu.A, 0b00000000 + (~0x1&1) + (~0b01111111)&0xFF, CYCLES, CYCLES);
 	EXPECT_EQ(cpu.Flags.Z, false);
 	EXPECT_EQ(cpu.Flags.N, true);
 	EXPECT_EQ(cpu.Flags.V, true);
@@ -344,11 +344,11 @@ TEST_F(M6502Test1Arithmetic, SBCBranchJustCarryTest)
 	// end - inline a little program
 	constexpr int CYCLES = 2;
 
-	STCyclesConfirm(cpu.A, 0b10000000 - 0x1 - 0b11111111, CYCLES, CYCLES);
+	STCyclesConfirm(cpu.A, 0b10000000 + (~0x1&1) + (~0b11111111& 0xFF), CYCLES, CYCLES);
 	EXPECT_EQ(cpu.Flags.Z, false);
 	EXPECT_EQ(cpu.Flags.N, true);
 	EXPECT_EQ(cpu.Flags.V, false);
-	EXPECT_EQ(cpu.Flags.C, true);
+	EXPECT_EQ(cpu.Flags.C, false);
 }
 
 TEST_F(M6502Test1Arithmetic, SBCBranchZeroPageTest)
@@ -364,11 +364,11 @@ TEST_F(M6502Test1Arithmetic, SBCBranchZeroPageTest)
 	// end - inline a little program
 	constexpr int CYCLES = 3;
 
-	STCyclesConfirm(cpu.A, 0b10000000 - 0x1 - 0b11111111, CYCLES, CYCLES);
+	STCyclesConfirm(cpu.A, 0b10000000+(~0x1&1)+(~0b11111111&0xFF), CYCLES, CYCLES);
 	EXPECT_EQ(cpu.Flags.Z, false);
 	EXPECT_EQ(cpu.Flags.N, true);
 	EXPECT_EQ(cpu.Flags.V, false);
-	EXPECT_EQ(cpu.Flags.C, true);
+	EXPECT_EQ(cpu.Flags.C, false);
 }
 //TODO
 TEST_F(M6502Test1Arithmetic, SBCBranchZeroPageXTest)
@@ -385,11 +385,11 @@ TEST_F(M6502Test1Arithmetic, SBCBranchZeroPageXTest)
 	// end - inline a little program
 	constexpr int CYCLES = 4;
 
-	STCyclesConfirm(cpu.A, 0b10000000 - 0x1 - 0b11111111, CYCLES, CYCLES);
+	STCyclesConfirm(cpu.A, 0b10000000 + (~0b11111111&0xFF), CYCLES, CYCLES);
 	EXPECT_EQ(cpu.Flags.Z, false);
 	EXPECT_EQ(cpu.Flags.N, true);
 	EXPECT_EQ(cpu.Flags.V, false);
-	EXPECT_EQ(cpu.Flags.C, true);
+	EXPECT_EQ(cpu.Flags.C, false);
 }
 //TODO
 TEST_F(M6502Test1Arithmetic, SBCBranchAbsoluteTest)
@@ -406,11 +406,11 @@ TEST_F(M6502Test1Arithmetic, SBCBranchAbsoluteTest)
 	// end - inline a little program
 	constexpr int CYCLES = 4;
 
-	STCyclesConfirm(cpu.A, 0b10000000 - 0x1 - 0b11111111, CYCLES, CYCLES);
+	STCyclesConfirm(cpu.A, 0b10000000+(~0b11111111&0xFF), CYCLES, CYCLES);
 	EXPECT_EQ(cpu.Flags.Z, false);
 	EXPECT_EQ(cpu.Flags.N, true);
 	EXPECT_EQ(cpu.Flags.V, false);
-	EXPECT_EQ(cpu.Flags.C, true);
+	EXPECT_EQ(cpu.Flags.C, false);
 }
 //TODO
 TEST_F(M6502Test1Arithmetic, SBCBranchAbsoluteXTest)
@@ -428,11 +428,11 @@ TEST_F(M6502Test1Arithmetic, SBCBranchAbsoluteXTest)
 	// end - inline a little program
 	constexpr int CYCLES = 4;
 
-	STCyclesConfirm(cpu.A, 0b10000000 - 0x1 - 0b11111111, CYCLES, CYCLES);
+	STCyclesConfirm(cpu.A, 0b10000000 + (~0b11111111&0xFF), CYCLES, CYCLES);
 	EXPECT_EQ(cpu.Flags.Z, false);
 	EXPECT_EQ(cpu.Flags.N, true);
 	EXPECT_EQ(cpu.Flags.V, false);
-	EXPECT_EQ(cpu.Flags.C, true);
+	EXPECT_EQ(cpu.Flags.C, false);
 }
 //TODO
 TEST_F(M6502Test1Arithmetic, SBCBranchAbsoluteYTest)
@@ -450,11 +450,11 @@ TEST_F(M6502Test1Arithmetic, SBCBranchAbsoluteYTest)
 	// end - inline a little program
 	constexpr int CYCLES = 4;
 
-	STCyclesConfirm(cpu.A, 0b10000000 - 0x1 - 0b11111111, CYCLES, CYCLES);
+	STCyclesConfirm(cpu.A, 0b10000000 + (~0b11111111&0xFF), CYCLES, CYCLES);
 	EXPECT_EQ(cpu.Flags.Z, false);
 	EXPECT_EQ(cpu.Flags.N, true);
 	EXPECT_EQ(cpu.Flags.V, false);
-	EXPECT_EQ(cpu.Flags.C, true);
+	EXPECT_EQ(cpu.Flags.C, false);
 }
 //TODO
 TEST_F(M6502Test1Arithmetic, SBCBranchIndirectXTest)
@@ -473,11 +473,11 @@ TEST_F(M6502Test1Arithmetic, SBCBranchIndirectXTest)
 	// end - inline a little program
 	constexpr int CYCLES = 6;
 
-	STCyclesConfirm(cpu.A, 0b10000000 - 0x1 - 0b11111111, CYCLES, CYCLES);
+	STCyclesConfirm(cpu.A, 0b10000000 + (~0b11111111&0xFF), CYCLES, CYCLES);
 	EXPECT_EQ(cpu.Flags.Z, false);
 	EXPECT_EQ(cpu.Flags.N, true);
 	EXPECT_EQ(cpu.Flags.V, false);
-	EXPECT_EQ(cpu.Flags.C, true);
+	EXPECT_EQ(cpu.Flags.C, false);
 }
 //TODO
 TEST_F(M6502Test1Arithmetic, SBCBranchIndirectYTest)
@@ -496,10 +496,10 @@ TEST_F(M6502Test1Arithmetic, SBCBranchIndirectYTest)
 	// end - inline a little program
 	constexpr int CYCLES = 5;
 
-	STCyclesConfirm(cpu.A, 0b10000000 - 0x1 - 0b11111111, CYCLES, CYCLES);
+	STCyclesConfirm(cpu.A, 0b10000000 + (~0b11111111&0xFF), CYCLES, CYCLES);
 	EXPECT_EQ(cpu.Flags.Z, false);
 	EXPECT_EQ(cpu.Flags.N, true);
 	EXPECT_EQ(cpu.Flags.V, false);
-	EXPECT_EQ(cpu.Flags.C, true);
+	EXPECT_EQ(cpu.Flags.C, false);
 }
 //TODO
