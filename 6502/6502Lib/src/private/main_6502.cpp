@@ -2,6 +2,28 @@
 using namespace m6502;
 int32_t CPU::Execute(int32_t Cycles, Mem& memory)
 {
+	auto ADC = [this](uint8_t Value)
+	{
+		const bool IsTheSameFlag = !((A ^ Value) & NegativeFlagBit);
+		uint32_t Sum = A;
+		Sum += Value;
+		Sum += Flags.C;
+		A = Sum & 0xFF;
+		Flags.C = Sum > 0xFF;
+		Flags.V = IsTheSameFlag && ((A ^ Value) & NegativeFlagBit);
+		SetStatus(A);
+	};
+	auto SBC = [this](uint8_t Value)
+	{
+		const bool IsTheSameFlag = !((A ^ Value) & NegativeFlagBit);
+		uint32_t Sum = A;
+		Sum -= Value;
+		Sum -= Flags.C;
+		A = Sum & 0xFF;
+		Flags.C = Sum > 0xFF;
+		Flags.V = IsTheSameFlag && ((A ^ Value) & NegativeFlagBit);
+		SetStatus(A);
+	};
 	int32_t CyclesRequests = Cycles;
 	while (Cycles > 0)
 	{
@@ -105,7 +127,7 @@ int32_t CPU::Execute(int32_t Cycles, Mem& memory)
 		{
 			uint8_t Value = AddZeroPage(Cycles, memory);
 			Flags.Z = !(Value & A);
-			Flags.N = (Value & NagativeFlagBit) != 0;
+			Flags.N = (Value & NegativeFlagBit) != 0;
 			Flags.V = (Value & OverFlowFlagBit) != 0;
 		}break;
 		case INS_ORA_ZP: //¡„“≥—∞÷∑ ..zero page
@@ -214,7 +236,7 @@ int32_t CPU::Execute(int32_t Cycles, Mem& memory)
 		{
 			uint8_t Value = AbsoluteAddress(Cycles, memory);
 			Flags.Z = !(Value & A);
-			Flags.N = (Value & NagativeFlagBit) != 0;
+			Flags.N = (Value & NegativeFlagBit) != 0;
 			Flags.V = (Value & OverFlowFlagBit) != 0;
 		}break;
 		case INS_LDX_ABS:
@@ -467,7 +489,7 @@ int32_t CPU::Execute(int32_t Cycles, Mem& memory)
 		}break;
 		case INS_BMI_REL:
 		{
-			RelativeModeSetIsJmp(NagativeFlagBit, Cycles, memory);
+			RelativeModeSetIsJmp(NegativeFlagBit, Cycles, memory);
 		}break;
 		case INS_BNE_REL:
 		{
@@ -475,7 +497,7 @@ int32_t CPU::Execute(int32_t Cycles, Mem& memory)
 		}break;
 		case INS_BPL_REL:
 		{
-			RelativeModeClearIsJmp(NagativeFlagBit, Cycles, memory);
+			RelativeModeClearIsJmp(NegativeFlagBit, Cycles, memory);
 		}break;
 		case INS_BVC_REL:
 		{
@@ -484,6 +506,126 @@ int32_t CPU::Execute(int32_t Cycles, Mem& memory)
 		case INS_BVS_REL:
 		{
 			RelativeModeSetIsJmp(OverFlowFlagBit, Cycles, memory);
+		}break;
+		case INS_CLC_IM:
+		{
+			Flags.C = 0;
+			Cycles--;
+		}break;
+		case INS_CLD_IM:
+		{
+			Flags.D = 0;
+			Cycles--;
+		}break;
+		case INS_CLI_IM:
+		{
+			Flags.I = 0;
+			Cycles--;
+		}break;
+		case INS_CLV_IM:
+		{
+			Flags.V = 0;
+			Cycles--;
+		}break;
+		case INS_SEC_IM:
+		{
+			Flags.C = 1;
+			Cycles--;
+		}break;
+		case INS_SED_IM:
+		{
+			Flags.D = 1;
+			Cycles--;
+		}break;
+		case INS_SEI_IM:
+		{
+			Flags.I = 1;
+			Cycles--;
+		}break;
+		case INS_NOP:
+		{
+			Cycles--;
+		}break;
+		case INS_ADC_IM:
+		{
+			uint32_t Value = FetchByte(Cycles, memory);
+			ADC(Value);
+		}break;
+		case INS_ADC_ZP:
+		{
+			uint32_t Value = AddZeroPage(Cycles, memory);
+			ADC(Value);
+		}break;
+		case INS_ADC_ZPX:
+		{
+			uint32_t Value = AddZeroPageAdd(Cycles, memory,X);
+			ADC(Value);
+		}break;
+		case INS_ADC_ABS:
+		{
+			uint32_t Value = AbsoluteAddress(Cycles, memory);
+			ADC(Value);
+		}break;
+		case INS_ADC_ABS_X:
+		{
+			uint32_t Value = AbsoluteAddress_Register(Cycles, memory,X);
+			ADC(Value);
+		}break;
+		case INS_ADC_ABS_Y:
+		{
+			uint32_t Value = AbsoluteAddress_Register(Cycles, memory, Y);
+			ADC(Value);
+		}break;
+		case INS_ADC_IND_X:
+		{
+			uint32_t Value = IndirectAddressX(Cycles, memory);
+			ADC(Value);
+		}break;
+		case INS_ADC_IND_Y:
+		{
+			uint32_t Value = IndirectAddressY(Cycles, memory);
+			ADC(Value);
+		}break;
+//////////////
+		case INS_SBC_IM:
+		{
+			uint32_t Value = FetchByte(Cycles, memory);
+			SBC(Value);
+		}break;
+		case INS_SBC_ZP:
+		{
+			uint32_t Value = AddZeroPage(Cycles, memory);
+			SBC(Value);
+		}break;
+		case INS_SBC_ZPX:
+		{
+			uint32_t Value = AddZeroPageAdd(Cycles, memory, X);
+			SBC(Value);
+		}break;
+		case INS_SBC_ABS:
+		{
+			uint32_t Value = AbsoluteAddress(Cycles, memory);
+			SBC(Value);
+		}break;
+		case INS_SBC_ABS_X:
+		{
+			uint32_t Value = AbsoluteAddress_Register(Cycles, memory, X);
+			SBC(Value);
+		}break;
+		case INS_SBC_ABS_Y:
+		{
+			uint32_t Value = AbsoluteAddress_Register(Cycles, memory, Y);
+			SBC(Value);
+		}break;
+		case INS_SBC_IND_X:
+		{
+			uint32_t Value = IndirectAddressX(Cycles, memory);
+			SBC(Value);
+		}break;
+		case INS_SBC_IND_Y:
+		{
+			uint32_t Value = IndirectAddressY(Cycles, memory);
+			SBC(Value);
 		}break;
 		default:
 		{

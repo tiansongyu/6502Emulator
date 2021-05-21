@@ -198,7 +198,7 @@ TEST_F(M6502Test1Branch, BPLBranchTest)
 	// given:
 	// start - inline a little program
 	cpu.X = 0x4;
-	cpu.ps = NagativeFlagBit & 0;
+	cpu.ps = NegativeFlagBit & 0;
 
 	cpu.PC = 0xFFF0;
 	mem[0xFFF0] = m6502::CPU::INS_BPL_REL;
@@ -216,7 +216,7 @@ TEST_F(M6502Test1Branch, BPLBranchTestCrossPage)
 	// given:
 	// start - inline a little program
 	cpu.X = 0x4;
-	cpu.ps = NagativeFlagBit & 0;
+	cpu.ps = NegativeFlagBit & 0;
 
 	cpu.PC = 0xF100;
 	mem[0xF100] = m6502::CPU::INS_BPL_REL;
@@ -234,7 +234,7 @@ TEST_F(M6502Test1Branch, BMIBranchTest)
 	// given:
 	// start - inline a little program
 	cpu.X = 0x4;
-	cpu.ps = NagativeFlagBit;
+	cpu.ps = NegativeFlagBit;
 
 	cpu.PC = 0xFFF0;
 	mem[0xFFF0] = m6502::CPU::INS_BMI_REL;
@@ -252,7 +252,7 @@ TEST_F(M6502Test1Branch, BMIBranchTestCrossPage)
 	// given:
 	// start - inline a little program
 	cpu.X = 0x4;
-	cpu.ps = NagativeFlagBit;
+	cpu.ps = NegativeFlagBit;
 
 	cpu.PC = 0xF100;
 	mem[0xF100] = m6502::CPU::INS_BMI_REL;
