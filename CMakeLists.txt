@@ -8,6 +8,6 @@ project( 6502 )
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 # Sub-directories where more CMakeLists.txt exist
-add_subdirectory(6502/6502Test)
+#add_subdirectory(6502/6502Test)
 add_subdirectory(6502/6502Lib)
 add_subdirectory(6502/6502Emulator)

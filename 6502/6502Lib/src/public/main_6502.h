@@ -2,37 +2,26 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <cstdint>
+#include <map>
+#include <string>
+#include <vector>
 // http://www.obelisk.me.uk/6502/
 
-namespace m6502
+class Bus;
+class CPU;
+class statusFlags;
+static constexpr uint8_t
+	NegativeFlagBit = 1 << 7,
+	OverFlowFlagBit = 1 << 6,
+	BreakFlagBit = 1 << 5,
+	UnusedFlagBit = 1 << 4,
+	DecimalMode = 1 << 3,
+	InterruptDisableFlagBit = 1 << 2,
+	ZeroBit = 1 << 1,
+	CarryFlag = 1;
+class statusFlags
 {
-	struct Mem;
-	struct CPU;
-	struct statusFlags;
-
-	static constexpr uint8_t
-		NegativeFlagBit = 1 << 7,
-		OverFlowFlagBit = 1 << 6,
-		BreakFlagBit = 1 << 5,
-		UnusedFlagBit = 1 << 4,
-		DecimalMode = 1 << 3,
-		InterruptDisableFlagBit = 1 << 2,
-		ZeroBit = 1 << 1,
-		CarryFlag = 1;
-}
-
-
-
-struct m6502::Mem
-{
-	static constexpr uint32_t MAX_MEM = 1024 * 64;
-	uint8_t Data[MAX_MEM];
-	void Init() { for (uint32_t i = 0; i < MAX_MEM; i++) Data[i] = 0; }
-	uint8_t operator[](uint32_t Address) const { return Data[Address]; }
-	uint8_t& operator[](uint32_t Address) { return Data[Address]; }
-};
-struct m6502::statusFlags
-{
+public:
 	uint8_t C : 1;
 	uint8_t Z : 1;
 	uint8_t I : 1;
@@ -43,8 +32,11 @@ struct m6502::statusFlags
 	uint8_t N : 1;
 };
 
-struct m6502::CPU
+class CPU
 {
+public:
+	Bus* bus = nullptr;
+
 	uint16_t PC;
 	uint8_t SP,A, X, Y;
 	union
@@ -230,68 +222,102 @@ INS_NOP = 0xEA,
 INS_BRK_IM = 0x00,
 INS_RTI_IM = 0x40;
 
+void ConnectBus(Bus* bus);
 
 	//д�������ֽ�
-	void WriteWord(const uint16_t Value, const uint32_t Address, int32_t& Cycles, Mem& memory);
+	void WriteWord(const uint16_t Value, const uint32_t Address, int32_t& Cycles);
 	//д��һ���ֽ�
-	void WriteByte(const uint8_t Value, const uint32_t Address, int32_t& Cycles, Mem& memory);
+	void WriteByte(const uint8_t Value, const uint32_t Address, int32_t& Cycles);
 
 	//��ʼ���ڴ�
-	void Reset(Mem& mem);
+	void Reset();
 	//��һ���ֽ�ѹջ
-	void PushByteToAddress(uint8_t Data, int32_t& Cycles, Mem& memory);
+	void PushByteToAddress(uint8_t Data, int32_t& Cycles);
 	//�������ֽ�ѹջ
-	void PUSHWordTOAddress(uint16_t Data, int32_t& Cycles, Mem& memory);
+	void PUSHWordTOAddress(uint16_t Data, int32_t& Cycles);
 	//��һ���ֽڴ�ջ����
-	uint8_t PopByteFromAddress(int32_t& Cycles, Mem& memory);
+	uint8_t PopByteFromAddress(int32_t& Cycles);
 	//��PC��ջ����
-	uint16_t PopWordFromAddress(int32_t& Cycles, Mem& memory);
+	uint16_t PopWordFromAddress(int32_t& Cycles);
 	//ָ���16���ƴ���
 	//��ȡһ���ֽڲ���PC++
-	inline uint8_t FetchByte(int32_t& Cycles, Mem& memory);
+	inline uint8_t FetchByte(int32_t& Cycles);
 	//��ȡ�����ֽڲ���PC+=2
-	inline uint16_t FetchWord(int32_t& Cycles, Mem& memory);
+	inline uint16_t FetchWord(int32_t& Cycles);
 	//��λȡ00����λȡaddresss�е�����
-	inline uint8_t ReadByte(uint8_t address, int32_t& Cycles, Mem& memory);
+	inline uint8_t ReadByte(uint8_t address, int32_t& Cycles);
 	//ֱ��ȡaddress�������ֽڵ�����
-	inline uint8_t ReadByte(uint16_t address, int32_t& Cycles, Mem& memory);
+	inline uint8_t ReadByte(uint16_t address, int32_t& Cycles);
 	//��ȡ�����ֽ�����
-	inline uint16_t ReadWord(uint16_t address, int32_t& Cycles, Mem& memory);
+	inline uint16_t ReadWord(uint16_t address, int32_t& Cycles);
 	//address��λΪ00����λȡaddress
-	inline uint16_t ReadWord(uint8_t address, int32_t& Cycles, Mem& memory);
+	inline uint16_t ReadWord(uint8_t address, int32_t& Cycles);
 	//��SP�Ĵ���ת��Ϊ��ַ
 	inline uint16_t SPTOAddress();
 
-	//����Register������NagativeFlagBit��m6502::ZeroBit��ֵ
+	//����Register������NagativeFlagBit��ZeroBit��ֵ
 	inline void SetStatus(uint8_t _register);
 
 	/* CPU�ж�ָ���*/
-	int32_t Execute(int32_t Cycles, Mem& memory);
+	int32_t Execute(int32_t Cycles);
 	/* Zero Page��������*/
-	uint8_t AddZeroPage(int32_t& Cycles, Mem& memory);
+	uint8_t AddZeroPage(int32_t& Cycles);
 	/* Zero Page + X or Y ��������*/
-	uint8_t AddZeroPageAdd(int32_t& Cycles, Mem& memory, uint8_t _register);
+	uint8_t AddZeroPageAdd(int32_t& Cycles, uint8_t _register);
 	/* Absolute address */
-	uint8_t AbsoluteAddress(int32_t& Cycles, Mem& memory);
+	uint8_t AbsoluteAddress(int32_t& Cycles);
 	/* Absolute address + register*/
-	uint8_t AbsoluteAddress_Register(int32_t& Cycles, Mem& memory, uint8_t _register);
+	uint8_t AbsoluteAddress_Register(int32_t& Cycles, uint8_t _register);
 	/* Absolute address + register*/
-	uint8_t AbsoluteAddress_RegisterShifts(int32_t& Cycles, Mem& memory, uint8_t _register);
+	uint8_t AbsoluteAddress_RegisterShifts(int32_t& Cycles, uint8_t _register);
 	/* Indirect address X */
-	uint8_t IndirectAddressX(int32_t& Cycles, Mem& memory);
+	uint8_t IndirectAddressX(int32_t& Cycles);
 	/* Indirect address Y*/
-	uint8_t IndirectAddressY(int32_t& Cycles, Mem& memory);
+	uint8_t IndirectAddressY(int32_t& Cycles);
 	/* Zero Page ST*  */
-	void ZeroPageST(uint8_t _register, int32_t& Cycles, Mem& memory);
+	void ZeroPageST(uint8_t _register, int32_t& Cycles);
 	/* Add Zero Page register ST*  */
-	void ZeroPageSTRegister(uint8_t main_register, uint8_t __register, int32_t& Cycles, Mem& memory);
+	void ZeroPageSTRegister(uint8_t main_register, uint8_t __register, int32_t& Cycles);
 	/* Absolute address */
-	void STAbsoluteAddress(uint8_t _register, int32_t& Cycles, Mem& memory);
+	void STAbsoluteAddress(uint8_t _register, int32_t& Cycles);
 	/* Absolute address + register*/
-	void STAbsoluteAddress_Register(uint8_t main_register, uint8_t __register, int32_t& Cycles, Mem& memory);
-	void STIndirectAddressX(int32_t& Cycles, Mem& memory);
-	void STIndirectAddressY(int32_t& Cycles, Mem& memory);
+	void STAbsoluteAddress_Register(uint8_t main_register, uint8_t __register, int32_t& Cycles);
+	void STIndirectAddressX(int32_t& Cycles);
+	void STIndirectAddressY(int32_t& Cycles);
 	/* Relative mode */
-	void RelativeModeClearIsJmp(const uint8_t FlagRegister, int32_t& Cycles, Mem& memory);
-	void RelativeModeSetIsJmp(const uint8_t FlagRegister, int32_t& Cycles, Mem& memory);
+	void RelativeModeClearIsJmp(const uint8_t FlagRegister, int32_t& Cycles);
+	void RelativeModeSetIsJmp(const uint8_t FlagRegister, int32_t& Cycles);
+	//反汇编模块
+	//from olc https://github.com/OneLoneCoder/olcNES
+	std::map<uint16_t, std::string> disassemble(uint16_t nStart, uint16_t nStop);
 };
+/*
+struct INSTRUCTION
+{
+	std::string name;
+	uint8_t(olc6502::* operate)(void) = nullptr;
+	uint8_t(olc6502::* addrmode)(void) = nullptr;
+	uint8_t     cycles = 0;
+};
+
+std::vector<INSTRUCTION> lookup;
+lookup =
+{
+	{ "BRK", &a::BRK, &a::IMM, 7 },{ "ORA", &a::ORA, &a::IZX, 6 },{ "???", &a::XXX, &a::IMP, 2 },{ "???", &a::XXX, &a::IMP, 8 },{ "???", &a::NOP, &a::IMP, 3 },{ "ORA", &a::ORA, &a::ZP0, 3 },{ "ASL", &a::ASL, &a::ZP0, 5 },{ "???", &a::XXX, &a::IMP, 5 },{ "PHP", &a::PHP, &a::IMP, 3 },{ "ORA", &a::ORA, &a::IMM, 2 },{ "ASL", &a::ASL, &a::IMP, 2 },{ "???", &a::XXX, &a::IMP, 2 },{ "???", &a::NOP, &a::IMP, 4 },{ "ORA", &a::ORA, &a::ABS, 4 },{ "ASL", &a::ASL, &a::ABS, 6 },{ "???", &a::XXX, &a::IMP, 6 },
+	{ "BPL", &a::BPL, &a::REL, 2 },{ "ORA", &a::ORA, &a::IZY, 5 },{ "???", &a::XXX, &a::IMP, 2 },{ "???", &a::XXX, &a::IMP, 8 },{ "???", &a::NOP, &a::IMP, 4 },{ "ORA", &a::ORA, &a::ZPX, 4 },{ "ASL", &a::ASL, &a::ZPX, 6 },{ "???", &a::XXX, &a::IMP, 6 },{ "CLC", &a::CLC, &a::IMP, 2 },{ "ORA", &a::ORA, &a::ABY, 4 },{ "???", &a::NOP, &a::IMP, 2 },{ "???", &a::XXX, &a::IMP, 7 },{ "???", &a::NOP, &a::IMP, 4 },{ "ORA", &a::ORA, &a::ABX, 4 },{ "ASL", &a::ASL, &a::ABX, 7 },{ "???", &a::XXX, &a::IMP, 7 },
+	{ "JSR", &a::JSR, &a::ABS, 6 },{ "AND", &a::AND, &a::IZX, 6 },{ "???", &a::XXX, &a::IMP, 2 },{ "???", &a::XXX, &a::IMP, 8 },{ "BIT", &a::BIT, &a::ZP0, 3 },{ "AND", &a::AND, &a::ZP0, 3 },{ "ROL", &a::ROL, &a::ZP0, 5 },{ "???", &a::XXX, &a::IMP, 5 },{ "PLP", &a::PLP, &a::IMP, 4 },{ "AND", &a::AND, &a::IMM, 2 },{ "ROL", &a::ROL, &a::IMP, 2 },{ "???", &a::XXX, &a::IMP, 2 },{ "BIT", &a::BIT, &a::ABS, 4 },{ "AND", &a::AND, &a::ABS, 4 },{ "ROL", &a::ROL, &a::ABS, 6 },{ "???", &a::XXX, &a::IMP, 6 },
+	{ "BMI", &a::BMI, &a::REL, 2 },{ "AND", &a::AND, &a::IZY, 5 },{ "???", &a::XXX, &a::IMP, 2 },{ "???", &a::XXX, &a::IMP, 8 },{ "???", &a::NOP, &a::IMP, 4 },{ "AND", &a::AND, &a::ZPX, 4 },{ "ROL", &a::ROL, &a::ZPX, 6 },{ "???", &a::XXX, &a::IMP, 6 },{ "SEC", &a::SEC, &a::IMP, 2 },{ "AND", &a::AND, &a::ABY, 4 },{ "???", &a::NOP, &a::IMP, 2 },{ "???", &a::XXX, &a::IMP, 7 },{ "???", &a::NOP, &a::IMP, 4 },{ "AND", &a::AND, &a::ABX, 4 },{ "ROL", &a::ROL, &a::ABX, 7 },{ "???", &a::XXX, &a::IMP, 7 },
+	{ "RTI", &a::RTI, &a::IMP, 6 },{ "EOR", &a::EOR, &a::IZX, 6 },{ "???", &a::XXX, &a::IMP, 2 },{ "???", &a::XXX, &a::IMP, 8 },{ "???", &a::NOP, &a::IMP, 3 },{ "EOR", &a::EOR, &a::ZP0, 3 },{ "LSR", &a::LSR, &a::ZP0, 5 },{ "???", &a::XXX, &a::IMP, 5 },{ "PHA", &a::PHA, &a::IMP, 3 },{ "EOR", &a::EOR, &a::IMM, 2 },{ "LSR", &a::LSR, &a::IMP, 2 },{ "???", &a::XXX, &a::IMP, 2 },{ "JMP", &a::JMP, &a::ABS, 3 },{ "EOR", &a::EOR, &a::ABS, 4 },{ "LSR", &a::LSR, &a::ABS, 6 },{ "???", &a::XXX, &a::IMP, 6 },
+	{ "BVC", &a::BVC, &a::REL, 2 },{ "EOR", &a::EOR, &a::IZY, 5 },{ "???", &a::XXX, &a::IMP, 2 },{ "???", &a::XXX, &a::IMP, 8 },{ "???", &a::NOP, &a::IMP, 4 },{ "EOR", &a::EOR, &a::ZPX, 4 },{ "LSR", &a::LSR, &a::ZPX, 6 },{ "???", &a::XXX, &a::IMP, 6 },{ "CLI", &a::CLI, &a::IMP, 2 },{ "EOR", &a::EOR, &a::ABY, 4 },{ "???", &a::NOP, &a::IMP, 2 },{ "???", &a::XXX, &a::IMP, 7 },{ "???", &a::NOP, &a::IMP, 4 },{ "EOR", &a::EOR, &a::ABX, 4 },{ "LSR", &a::LSR, &a::ABX, 7 },{ "???", &a::XXX, &a::IMP, 7 },
+	{ "RTS", &a::RTS, &a::IMP, 6 },{ "ADC", &a::ADC, &a::IZX, 6 },{ "???", &a::XXX, &a::IMP, 2 },{ "???", &a::XXX, &a::IMP, 8 },{ "???", &a::NOP, &a::IMP, 3 },{ "ADC", &a::ADC, &a::ZP0, 3 },{ "ROR", &a::ROR, &a::ZP0, 5 },{ "???", &a::XXX, &a::IMP, 5 },{ "PLA", &a::PLA, &a::IMP, 4 },{ "ADC", &a::ADC, &a::IMM, 2 },{ "ROR", &a::ROR, &a::IMP, 2 },{ "???", &a::XXX, &a::IMP, 2 },{ "JMP", &a::JMP, &a::IND, 5 },{ "ADC", &a::ADC, &a::ABS, 4 },{ "ROR", &a::ROR, &a::ABS, 6 },{ "???", &a::XXX, &a::IMP, 6 },
+	{ "BVS", &a::BVS, &a::REL, 2 },{ "ADC", &a::ADC, &a::IZY, 5 },{ "???", &a::XXX, &a::IMP, 2 },{ "???", &a::XXX, &a::IMP, 8 },{ "???", &a::NOP, &a::IMP, 4 },{ "ADC", &a::ADC, &a::ZPX, 4 },{ "ROR", &a::ROR, &a::ZPX, 6 },{ "???", &a::XXX, &a::IMP, 6 },{ "SEI", &a::SEI, &a::IMP, 2 },{ "ADC", &a::ADC, &a::ABY, 4 },{ "???", &a::NOP, &a::IMP, 2 },{ "???", &a::XXX, &a::IMP, 7 },{ "???", &a::NOP, &a::IMP, 4 },{ "ADC", &a::ADC, &a::ABX, 4 },{ "ROR", &a::ROR, &a::ABX, 7 },{ "???", &a::XXX, &a::IMP, 7 },
+	{ "???", &a::NOP, &a::IMP, 2 },{ "STA", &a::STA, &a::IZX, 6 },{ "???", &a::NOP, &a::IMP, 2 },{ "???", &a::XXX, &a::IMP, 6 },{ "STY", &a::STY, &a::ZP0, 3 },{ "STA", &a::STA, &a::ZP0, 3 },{ "STX", &a::STX, &a::ZP0, 3 },{ "???", &a::XXX, &a::IMP, 3 },{ "DEY", &a::DEY, &a::IMP, 2 },{ "???", &a::NOP, &a::IMP, 2 },{ "TXA", &a::TXA, &a::IMP, 2 },{ "???", &a::XXX, &a::IMP, 2 },{ "STY", &a::STY, &a::ABS, 4 },{ "STA", &a::STA, &a::ABS, 4 },{ "STX", &a::STX, &a::ABS, 4 },{ "???", &a::XXX, &a::IMP, 4 },
+	{ "BCC", &a::BCC, &a::REL, 2 },{ "STA", &a::STA, &a::IZY, 6 },{ "???", &a::XXX, &a::IMP, 2 },{ "???", &a::XXX, &a::IMP, 6 },{ "STY", &a::STY, &a::ZPX, 4 },{ "STA", &a::STA, &a::ZPX, 4 },{ "STX", &a::STX, &a::ZPY, 4 },{ "???", &a::XXX, &a::IMP, 4 },{ "TYA", &a::TYA, &a::IMP, 2 },{ "STA", &a::STA, &a::ABY, 5 },{ "TXS", &a::TXS, &a::IMP, 2 },{ "???", &a::XXX, &a::IMP, 5 },{ "???", &a::NOP, &a::IMP, 5 },{ "STA", &a::STA, &a::ABX, 5 },{ "???", &a::XXX, &a::IMP, 5 },{ "???", &a::XXX, &a::IMP, 5 },
+	{ "LDY", &a::LDY, &a::IMM, 2 },{ "LDA", &a::LDA, &a::IZX, 6 },{ "LDX", &a::LDX, &a::IMM, 2 },{ "???", &a::XXX, &a::IMP, 6 },{ "LDY", &a::LDY, &a::ZP0, 3 },{ "LDA", &a::LDA, &a::ZP0, 3 },{ "LDX", &a::LDX, &a::ZP0, 3 },{ "???", &a::XXX, &a::IMP, 3 },{ "TAY", &a::TAY, &a::IMP, 2 },{ "LDA", &a::LDA, &a::IMM, 2 },{ "TAX", &a::TAX, &a::IMP, 2 },{ "???", &a::XXX, &a::IMP, 2 },{ "LDY", &a::LDY, &a::ABS, 4 },{ "LDA", &a::LDA, &a::ABS, 4 },{ "LDX", &a::LDX, &a::ABS, 4 },{ "???", &a::XXX, &a::IMP, 4 },
+	{ "BCS", &a::BCS, &a::REL, 2 },{ "LDA", &a::LDA, &a::IZY, 5 },{ "???", &a::XXX, &a::IMP, 2 },{ "???", &a::XXX, &a::IMP, 5 },{ "LDY", &a::LDY, &a::ZPX, 4 },{ "LDA", &a::LDA, &a::ZPX, 4 },{ "LDX", &a::LDX, &a::ZPY, 4 },{ "???", &a::XXX, &a::IMP, 4 },{ "CLV", &a::CLV, &a::IMP, 2 },{ "LDA", &a::LDA, &a::ABY, 4 },{ "TSX", &a::TSX, &a::IMP, 2 },{ "???", &a::XXX, &a::IMP, 4 },{ "LDY", &a::LDY, &a::ABX, 4 },{ "LDA", &a::LDA, &a::ABX, 4 },{ "LDX", &a::LDX, &a::ABY, 4 },{ "???", &a::XXX, &a::IMP, 4 },
+	{ "CPY", &a::CPY, &a::IMM, 2 },{ "CMP", &a::CMP, &a::IZX, 6 },{ "???", &a::NOP, &a::IMP, 2 },{ "???", &a::XXX, &a::IMP, 8 },{ "CPY", &a::CPY, &a::ZP0, 3 },{ "CMP", &a::CMP, &a::ZP0, 3 },{ "DEC", &a::DEC, &a::ZP0, 5 },{ "???", &a::XXX, &a::IMP, 5 },{ "INY", &a::INY, &a::IMP, 2 },{ "CMP", &a::CMP, &a::IMM, 2 },{ "DEX", &a::DEX, &a::IMP, 2 },{ "???", &a::XXX, &a::IMP, 2 },{ "CPY", &a::CPY, &a::ABS, 4 },{ "CMP", &a::CMP, &a::ABS, 4 },{ "DEC", &a::DEC, &a::ABS, 6 },{ "???", &a::XXX, &a::IMP, 6 },
+	{ "BNE", &a::BNE, &a::REL, 2 },{ "CMP", &a::CMP, &a::IZY, 5 },{ "???", &a::XXX, &a::IMP, 2 },{ "???", &a::XXX, &a::IMP, 8 },{ "???", &a::NOP, &a::IMP, 4 },{ "CMP", &a::CMP, &a::ZPX, 4 },{ "DEC", &a::DEC, &a::ZPX, 6 },{ "???", &a::XXX, &a::IMP, 6 },{ "CLD", &a::CLD, &a::IMP, 2 },{ "CMP", &a::CMP, &a::ABY, 4 },{ "NOP", &a::NOP, &a::IMP, 2 },{ "???", &a::XXX, &a::IMP, 7 },{ "???", &a::NOP, &a::IMP, 4 },{ "CMP", &a::CMP, &a::ABX, 4 },{ "DEC", &a::DEC, &a::ABX, 7 },{ "???", &a::XXX, &a::IMP, 7 },
+	{ "CPX", &a::CPX, &a::IMM, 2 },{ "SBC", &a::SBC, &a::IZX, 6 },{ "???", &a::NOP, &a::IMP, 2 },{ "???", &a::XXX, &a::IMP, 8 },{ "CPX", &a::CPX, &a::ZP0, 3 },{ "SBC", &a::SBC, &a::ZP0, 3 },{ "INC", &a::INC, &a::ZP0, 5 },{ "???", &a::XXX, &a::IMP, 5 },{ "INX", &a::INX, &a::IMP, 2 },{ "SBC", &a::SBC, &a::IMM, 2 },{ "NOP", &a::NOP, &a::IMP, 2 },{ "???", &a::SBC, &a::IMP, 2 },{ "CPX", &a::CPX, &a::ABS, 4 },{ "SBC", &a::SBC, &a::ABS, 4 },{ "INC", &a::INC, &a::ABS, 6 },{ "???", &a::XXX, &a::IMP, 6 },
+	{ "BEQ", &a::BEQ, &a::REL, 2 },{ "SBC", &a::SBC, &a::IZY, 5 },{ "???", &a::XXX, &a::IMP, 2 },{ "???", &a::XXX, &a::IMP, 8 },{ "???", &a::NOP, &a::IMP, 4 },{ "SBC", &a::SBC, &a::ZPX, 4 },{ "INC", &a::INC, &a::ZPX, 6 },{ "???", &a::XXX, &a::IMP, 6 },{ "SED", &a::SED, &a::IMP, 2 },{ "SBC", &a::SBC, &a::ABY, 4 },{ "NOP", &a::NOP, &a::IMP, 2 },{ "???", &a::XXX, &a::IMP, 7 },{ "???", &a::NOP, &a::IMP, 4 },{ "SBC", &a::SBC, &a::ABX, 4 },{ "INC", &a::INC, &a::ABX, 7 },{ "???", &a::XXX, &a::IMP, 7 },
+};
+*/

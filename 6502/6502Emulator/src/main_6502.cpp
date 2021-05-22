@@ -2,49 +2,52 @@
 #include "olcPixelGameEngine.h"
 #include "olcPGEX_Sound.h"
 #include "main_6502.h"
+#include "Bus.h"
 class Emulator6502 : public olc::PixelGameEngine
 {
 public:
-	m6502::Mem mem;
-	m6502::CPU cpu;
+	Bus nes;
 	Emulator6502()
 	{
 		sAppName = "6502Emulator";
 	}
-
 public:
 	bool OnUserCreate() override
 	{
-		cpu.Reset(mem);
+		nes.cpu.Reset();
 		return true;
 	}
 
 	bool OnUserUpdate(float fElapsedTime) override
 	{
 		Clear(olc::DARK_BLUE);
+		//cpu RUN
 
+
+		//Draw Everything
 		DrawCPU(510, 2);
 
 		return true;
 	}
 private:
+
 	void DrawCPU(int x,int y)
 	{
 		std::string status = "STATUS: ";
 		DrawString(x, y, "STATUS:", olc::WHITE);
-		DrawString(x + 64, y, "N", cpu.ps & m6502::NegativeFlagBit? olc::GREEN : olc::RED);
-		DrawString(x + 80, y, "V", cpu.ps& m6502::OverFlowFlagBit ? olc::GREEN : olc::RED);
-		DrawString(x + 96, y, "-", cpu.ps& m6502::UnusedFlagBit ? olc::GREEN : olc::RED);
-		DrawString(x + 112, y, "B",cpu.ps & m6502::BreakFlagBit ? olc::GREEN : olc::RED);
-		DrawString(x + 128, y, "D",cpu.ps & m6502::DecimalMode ? olc::GREEN : olc::RED);
-		DrawString(x + 144, y, "I",cpu.ps & m6502::InterruptDisableFlagBit ? olc::GREEN : olc::RED);
-		DrawString(x + 160, y, "Z",cpu.ps & m6502::ZeroBit ? olc::GREEN : olc::RED);
-		DrawString(x + 178, y, "C",cpu.ps & m6502::CarryFlag ? olc::GREEN : olc::RED);
-		DrawString(x, y + 10, "PC: $" + hex(cpu.PC, 4));
-		DrawString(x, y + 20, "A: $" + hex(cpu.A, 2) + "  [" + std::to_string(cpu.A) + "]");
-		DrawString(x, y + 30, "X: $" + hex(cpu.X, 2) + "  [" + std::to_string(cpu.X) + "]");
-		DrawString(x, y + 40, "Y: $" + hex(cpu.Y, 2) + "  [" + std::to_string(cpu.Y) + "]");
-		DrawString(x, y + 50, "Stack P: $" + hex(cpu.SP+0x100, 4));
+		DrawString(x + 64, y, "N", nes.cpu.ps & NegativeFlagBit? olc::GREEN : olc::RED);
+		DrawString(x + 80, y, "V", nes.cpu.ps& OverFlowFlagBit ? olc::GREEN : olc::RED);
+		DrawString(x + 96, y, "-", nes.cpu.ps& UnusedFlagBit ? olc::GREEN : olc::RED);
+		DrawString(x + 112, y, "B",nes.cpu.ps & BreakFlagBit ? olc::GREEN : olc::RED);
+		DrawString(x + 128, y, "D",nes.cpu.ps & DecimalMode ? olc::GREEN : olc::RED);
+		DrawString(x + 144, y, "I",nes.cpu.ps & InterruptDisableFlagBit ? olc::GREEN : olc::RED);
+		DrawString(x + 160, y, "Z",nes.cpu.ps & ZeroBit ? olc::GREEN : olc::RED);
+		DrawString(x + 178, y, "C",nes.cpu.ps & CarryFlag ? olc::GREEN : olc::RED);
+		DrawString(x, y + 10, "PC: $" + hex(nes.cpu.PC, 4));
+		DrawString(x, y + 20, "A: $" + hex(nes.cpu.A, 2) + "  [" + std::to_string(nes.cpu.A) + "]");
+		DrawString(x, y + 30, "X: $" + hex(nes.cpu.X, 2) + "  [" + std::to_string(nes.cpu.X) + "]");
+		DrawString(x, y + 40, "Y: $" + hex(nes.cpu.Y, 2) + "  [" + std::to_string(nes.cpu.Y) + "]");
+		DrawString(x, y + 50, "Stack P: $" + hex(nes.cpu.SP+0x100, 4));
 	}
 	std::string hex(uint32_t Data, uint8_t length)
 	{

@@ -11,7 +11,10 @@ endif()
 
 set  (M6502_SOURCES
     "src/public/main_6502.h"
-    "src/private/main_6502.cpp")
+    "src/private/main_6502.cpp"
+	"src/public/Bus.h"
+	"src/public/Bus.cpp"
+	)
 		
 source_group("src" FILES ${M6502_SOURCES})
 		
