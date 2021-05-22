@@ -51,21 +51,21 @@ struct m6502::CPU
 		statusFlags Flags;
 	};
 	static constexpr uint8_t   //LDA
-		INS_LDA_IM = 0xA9,
-		INS_LDA_ZP = 0xA5,
-		INS_LDA_ZPX = 0xB5,
-		INS_LDA_ABS = 0xAD,
-		INS_LDA_ABS_X = 0xBD,
-		INS_LDA_ABS_Y = 0xB9,
-		INS_LDA_IND_X = 0xA1,
-		INS_LDA_IND_Y = 0xB1,
-		//LDX
-		INS_LDX_IM = 0xA2,
-		INS_LDX_ZP = 0xA6,
-		INS_LDX_ZPY = 0xB6,
-		INS_LDX_ABS = 0xAE,
-		INS_LDX_ABS_Y = 0xBE,
-		// LDY
+INS_LDA_IM = 0xA9,
+INS_LDA_ZP = 0xA5,
+INS_LDA_ZPX = 0xB5,
+INS_LDA_ABS = 0xAD,
+INS_LDA_ABS_X = 0xBD,
+INS_LDA_ABS_Y = 0xB9,
+INS_LDA_IND_X = 0xA1,
+INS_LDA_IND_Y = 0xB1,
+//LDX
+INS_LDX_IM = 0xA2,
+INS_LDX_ZP = 0xA6,
+INS_LDX_ZPY = 0xB6,
+INS_LDX_ABS = 0xAE,
+INS_LDX_ABS_Y = 0xBE,
+// LDY
 INS_LDY_IM = 0xA0,
 INS_LDY_ZP = 0xA4,
 INS_LDY_ZPX = 0xB4,
@@ -237,15 +237,13 @@ INS_RTI_IM = 0x40;
 	//初始换内存
 	void Reset(Mem& mem);
 	//将一个字节压栈
-	void PUSHByteTOAddress(uint8_t Data, int32_t& Cycles, Mem& memory);
+	void PushByteToAddress(uint8_t Data, int32_t& Cycles, Mem& memory);
 	//将两个字节压栈
 	void PUSHWordTOAddress(uint16_t Data, int32_t& Cycles, Mem& memory);
-	//将PC压栈
-	void PUSHPCTOAddress(Mem& memory, int32_t& Cycles);
 	//将一个字节从栈弹出
-	uint8_t POPByteFROMAddress(int32_t& Cycles, Mem& memory);
+	uint8_t PopByteFromAddress(int32_t& Cycles, Mem& memory);
 	//将PC从栈弹出
-	uint16_t POPPCFROMAddress(int32_t& Cycles, Mem& memory);
+	uint16_t PopWordFromAddress(int32_t& Cycles, Mem& memory);
 	//指令的16进制代码
 	//获取一个字节并且PC++
 	inline uint8_t FetchByte(int32_t& Cycles, Mem& memory);
@@ -282,15 +280,15 @@ INS_RTI_IM = 0x40;
 	/* Indirect address Y*/
 	uint8_t IndirectAddressY(int32_t& Cycles, Mem& memory);
 	/* Zero Page ST*  */
-	void ZeroPageST_(uint8_t _register, int32_t& Cycles, Mem& memory);
+	void ZeroPageST(uint8_t _register, int32_t& Cycles, Mem& memory);
 	/* Add Zero Page register ST*  */
-	void ZeroPageST_Register(uint8_t main_register, uint8_t __register, int32_t& Cycles, Mem& memory);
+	void ZeroPageSTRegister(uint8_t main_register, uint8_t __register, int32_t& Cycles, Mem& memory);
 	/* Absolute address */
-	void ST_AbsoluteAddress(uint8_t _register, int32_t& Cycles, Mem& memory);
+	void STAbsoluteAddress(uint8_t _register, int32_t& Cycles, Mem& memory);
 	/* Absolute address + register*/
-	void ST_AbsoluteAddress_Register(uint8_t main_register, uint8_t __register, int32_t& Cycles, Mem& memory);
-	void ST_IndirectAddressX(int32_t& Cycles, Mem& memory);
-	void ST_IndirectAddressY(int32_t& Cycles, Mem& memory);
+	void STAbsoluteAddress_Register(uint8_t main_register, uint8_t __register, int32_t& Cycles, Mem& memory);
+	void STIndirectAddressX(int32_t& Cycles, Mem& memory);
+	void STIndirectAddressY(int32_t& Cycles, Mem& memory);
 	/* Relative mode */
 	void RelativeModeClearIsJmp(const uint8_t FlagRegister, int32_t& Cycles, Mem& memory);
 	void RelativeModeSetIsJmp(const uint8_t FlagRegister, int32_t& Cycles, Mem& memory);
