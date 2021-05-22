@@ -9,17 +9,19 @@ namespace m6502
 	struct Mem;
 	struct CPU;
 	struct statusFlags;
+
+	static constexpr uint8_t
+		NegativeFlagBit = 1 << 7,
+		OverFlowFlagBit = 1 << 6,
+		BreakFlagBit = 1 << 5,
+		UnusedFlagBit = 1 << 4,
+		DecimalMode = 1 << 3,
+		InterruptDisableFlagBit = 1 << 2,
+		ZeroBit = 1 << 1,
+		CarryFlag = 1;
 }
 
-static constexpr uint8_t
-NegativeFlagBit = 1 << 7,
-OverFlowFlagBit = 1 << 6,
-BreakFlagBit = 1 << 5,
-UnusedFlagBit = 1 << 4,
-DecimalMode = 1 << 3,
-InterruptDisableFlagBit = 1 << 2,
-ZeroBit = 1 << 1,
-CarryFlag = 1;
+
 
 struct m6502::Mem
 {
@@ -229,45 +231,45 @@ INS_BRK_IM = 0x00,
 INS_RTI_IM = 0x40;
 
 
-	//Ð´ÈëÁ½¸ö×Ö½Ú
+	//Ð´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö½ï¿½
 	void WriteWord(const uint16_t Value, const uint32_t Address, int32_t& Cycles, Mem& memory);
-	//Ð´ÈëÒ»¸ö×Ö½Ú
+	//Ð´ï¿½ï¿½Ò»ï¿½ï¿½ï¿½Ö½ï¿½
 	void WriteByte(const uint8_t Value, const uint32_t Address, int32_t& Cycles, Mem& memory);
 
-	//³õÊ¼»»ÄÚ´æ
+	//ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½Ú´ï¿½
 	void Reset(Mem& mem);
-	//½«Ò»¸ö×Ö½ÚÑ¹Õ»
+	//ï¿½ï¿½Ò»ï¿½ï¿½ï¿½Ö½ï¿½Ñ¹Õ»
 	void PushByteToAddress(uint8_t Data, int32_t& Cycles, Mem& memory);
-	//½«Á½¸ö×Ö½ÚÑ¹Õ»
+	//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö½ï¿½Ñ¹Õ»
 	void PUSHWordTOAddress(uint16_t Data, int32_t& Cycles, Mem& memory);
-	//½«Ò»¸ö×Ö½Ú´ÓÕ»µ¯³ö
+	//ï¿½ï¿½Ò»ï¿½ï¿½ï¿½Ö½Ú´ï¿½Õ»ï¿½ï¿½ï¿½ï¿½
 	uint8_t PopByteFromAddress(int32_t& Cycles, Mem& memory);
-	//½«PC´ÓÕ»µ¯³ö
+	//ï¿½ï¿½PCï¿½ï¿½Õ»ï¿½ï¿½ï¿½ï¿½
 	uint16_t PopWordFromAddress(int32_t& Cycles, Mem& memory);
-	//Ö¸ÁîµÄ16½øÖÆ´úÂë
-	//»ñÈ¡Ò»¸ö×Ö½Ú²¢ÇÒPC++
+	//Ö¸ï¿½ï¿½ï¿½16ï¿½ï¿½ï¿½Æ´ï¿½ï¿½ï¿½
+	//ï¿½ï¿½È¡Ò»ï¿½ï¿½ï¿½Ö½Ú²ï¿½ï¿½ï¿½PC++
 	inline uint8_t FetchByte(int32_t& Cycles, Mem& memory);
-	//»ñÈ¡Á½¸ö×Ö½Ú²¢ÇÒPC+=2
+	//ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½ï¿½Ö½Ú²ï¿½ï¿½ï¿½PC+=2
 	inline uint16_t FetchWord(int32_t& Cycles, Mem& memory);
-	//¸ßÎ»È¡00£¬µÍÎ»È¡addresssÖÐµÄÄÚÈÝ
+	//ï¿½ï¿½Î»È¡00ï¿½ï¿½ï¿½ï¿½Î»È¡addresssï¿½Ðµï¿½ï¿½ï¿½ï¿½ï¿½
 	inline uint8_t ReadByte(uint8_t address, int32_t& Cycles, Mem& memory);
-	//Ö±½ÓÈ¡addressÖÐÁ½¸ö×Ö½ÚµÄÄÚÈÝ
+	//Ö±ï¿½ï¿½È¡addressï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö½Úµï¿½ï¿½ï¿½ï¿½ï¿½
 	inline uint8_t ReadByte(uint16_t address, int32_t& Cycles, Mem& memory);
-	//»ñÈ¡Á½¸ö×Ö½ÚÄÚÈÝ
+	//ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½ï¿½Ö½ï¿½ï¿½ï¿½ï¿½ï¿½
 	inline uint16_t ReadWord(uint16_t address, int32_t& Cycles, Mem& memory);
-	//address¸ßÎ»Îª00£¬µØÎ»È¡address
+	//addressï¿½ï¿½Î»Îª00ï¿½ï¿½ï¿½ï¿½Î»È¡address
 	inline uint16_t ReadWord(uint8_t address, int32_t& Cycles, Mem& memory);
-	//½«SP¼Ä´æÆ÷×ª»»ÎªµØÖ·
+	//ï¿½ï¿½SPï¿½Ä´ï¿½ï¿½ï¿½×ªï¿½ï¿½Îªï¿½ï¿½Ö·
 	inline uint16_t SPTOAddress();
 
-	//¸ù¾ÝRegister£¬ÉèÖÃNagativeFlagBitºÍZeroBitµÄÖµ
+	//ï¿½ï¿½ï¿½ï¿½Registerï¿½ï¿½ï¿½ï¿½ï¿½ï¿½NagativeFlagBitï¿½ï¿½m6502::ZeroBitï¿½ï¿½Öµ
 	inline void SetStatus(uint8_t _register);
 
-	/* CPUÅÐ¶ÏÖ¸Áîº¯Êý*/
+	/* CPUï¿½Ð¶ï¿½Ö¸ï¿½îº¯ï¿½ï¿½*/
 	int32_t Execute(int32_t Cycles, Mem& memory);
-	/* Zero Page´¦Àíº¯Êý*/
+	/* Zero Pageï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½*/
 	uint8_t AddZeroPage(int32_t& Cycles, Mem& memory);
-	/* Zero Page + X or Y ´¦Àíº¯Êý*/
+	/* Zero Page + X or Y ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½*/
 	uint8_t AddZeroPageAdd(int32_t& Cycles, Mem& memory, uint8_t _register);
 	/* Absolute address */
 	uint8_t AbsoluteAddress(int32_t& Cycles, Mem& memory);

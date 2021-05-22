@@ -52,7 +52,7 @@ TEST_F(M6502Test1Branch, BCCBranchTest)
 	// given:
 	// start - inline a little program
 	cpu.X = 0x4;
-	cpu.ps = ~CarryFlag;
+	cpu.ps = ~m6502::CarryFlag;
 
 	cpu.PC = 0xFFF0;
 	mem[0xFFF0] = m6502::CPU::INS_BCC_REL;
@@ -70,7 +70,7 @@ TEST_F(M6502Test1Branch, BCCBranchTestCrossPage)
 	// given:
 	// start - inline a little program
 	cpu.X = 0x4;
-	cpu.ps = ~CarryFlag;
+	cpu.ps = ~m6502::CarryFlag;
 
 	cpu.PC = 0xF100;
 	mem[0xF100] = m6502::CPU::INS_BCC_REL;
@@ -89,7 +89,7 @@ TEST_F(M6502Test1Branch, BCSBranchTest)
 	// given:
 	// start - inline a little program
 	cpu.X = 0x4;
-	cpu.ps = CarryFlag;
+	cpu.ps = m6502::CarryFlag;
 
 	cpu.PC = 0xFFF0;
 	mem[0xFFF0] = m6502::CPU::INS_BCS_REL;
@@ -107,7 +107,7 @@ TEST_F(M6502Test1Branch, BCSBranchTestCrossPage)
 	// given:
 	// start - inline a little program
 	cpu.X = 0x4;
-	cpu.ps = CarryFlag;
+	cpu.ps = m6502::CarryFlag;
 
 	cpu.PC = 0xF100;
 	mem[0xF100] = m6502::CPU::INS_BCS_REL;
@@ -126,7 +126,7 @@ TEST_F(M6502Test1Branch, BEQBranchTest)
 	// given:
 	// start - inline a little program
 	cpu.X = 0x4;
-	cpu.ps = ZeroBit;
+	cpu.ps = m6502::ZeroBit;
 
 	cpu.PC = 0xFFF0;
 	mem[0xFFF0] = m6502::CPU::INS_BEQ_REL;
@@ -144,7 +144,7 @@ TEST_F(M6502Test1Branch, BEQBranchTestCrossPage)
 	// given:
 	// start - inline a little program
 	cpu.X = 0x4;
-	cpu.ps = ZeroBit;
+	cpu.ps = m6502::ZeroBit;
 
 	cpu.PC = 0xF100;
 	mem[0xF100] = m6502::CPU::INS_BEQ_REL;
@@ -162,7 +162,7 @@ TEST_F(M6502Test1Branch, BNEBranchTest)
 	// given:
 	// start - inline a little program
 	cpu.X = 0x4;
-	cpu.ps = ZeroBit & 0;
+	cpu.ps = m6502::ZeroBit & 0;
 	cpu.PC = 0xFFF0;
 	mem[0xFFF0] = m6502::CPU::INS_BNE_REL;
 	mem[0xFFF1] = 0x3;
@@ -179,7 +179,7 @@ TEST_F(M6502Test1Branch, BNEBranchTestCrossPage)
 	// given:
 	// start - inline a little program
 	cpu.X = 0x4;
-	cpu.ps = ZeroBit & 0;
+	cpu.ps = m6502::ZeroBit & 0;
 
 	cpu.PC = 0xF100;
 	mem[0xF100] = m6502::CPU::INS_BNE_REL;
@@ -198,7 +198,7 @@ TEST_F(M6502Test1Branch, BPLBranchTest)
 	// given:
 	// start - inline a little program
 	cpu.X = 0x4;
-	cpu.ps = NegativeFlagBit & 0;
+	cpu.ps = m6502::NegativeFlagBit & 0;
 
 	cpu.PC = 0xFFF0;
 	mem[0xFFF0] = m6502::CPU::INS_BPL_REL;
@@ -216,7 +216,7 @@ TEST_F(M6502Test1Branch, BPLBranchTestCrossPage)
 	// given:
 	// start - inline a little program
 	cpu.X = 0x4;
-	cpu.ps = NegativeFlagBit & 0;
+	cpu.ps = m6502::NegativeFlagBit & 0;
 
 	cpu.PC = 0xF100;
 	mem[0xF100] = m6502::CPU::INS_BPL_REL;
@@ -234,7 +234,7 @@ TEST_F(M6502Test1Branch, BMIBranchTest)
 	// given:
 	// start - inline a little program
 	cpu.X = 0x4;
-	cpu.ps = NegativeFlagBit;
+	cpu.ps = m6502::NegativeFlagBit;
 
 	cpu.PC = 0xFFF0;
 	mem[0xFFF0] = m6502::CPU::INS_BMI_REL;
@@ -252,7 +252,7 @@ TEST_F(M6502Test1Branch, BMIBranchTestCrossPage)
 	// given:
 	// start - inline a little program
 	cpu.X = 0x4;
-	cpu.ps = NegativeFlagBit;
+	cpu.ps = m6502::NegativeFlagBit;
 
 	cpu.PC = 0xF100;
 	mem[0xF100] = m6502::CPU::INS_BMI_REL;
@@ -270,7 +270,7 @@ TEST_F(M6502Test1Branch, BVCBranchTest)
 	// given:
 	// start - inline a little program
 	cpu.X = 0x4;
-	cpu.ps = OverFlowFlagBit & 0;
+	cpu.ps = m6502::OverFlowFlagBit & 0;
 
 	cpu.PC = 0xFFF0;
 	mem[0xFFF0] = m6502::CPU::INS_BVC_REL;
@@ -288,7 +288,7 @@ TEST_F(M6502Test1Branch, BVCBranchTestCrossPage)
 	// given:
 	// start - inline a little program
 	cpu.X = 0x4;
-	cpu.ps = OverFlowFlagBit & 0;
+	cpu.ps = m6502::OverFlowFlagBit & 0;
 
 	cpu.PC = 0xF100;
 	mem[0xF100] = m6502::CPU::INS_BVC_REL;
@@ -306,7 +306,7 @@ TEST_F(M6502Test1Branch, BVSBranchTest)
 	// given:
 	// start - inline a little program
 	cpu.X = 0x4;
-	cpu.ps = OverFlowFlagBit;
+	cpu.ps = m6502::OverFlowFlagBit;
 
 	cpu.PC = 0xFFF0;
 	mem[0xFFF0] = m6502::CPU::INS_BVS_REL;
@@ -324,7 +324,7 @@ TEST_F(M6502Test1Branch, BVSBranchTestCrossPage)
 	// given:
 	// start - inline a little program
 	cpu.X = 0x4;
-	cpu.ps = OverFlowFlagBit;
+	cpu.ps = m6502::OverFlowFlagBit;
 
 	cpu.PC = 0xF100;
 	mem[0xF100] = m6502::CPU::INS_BVS_REL;

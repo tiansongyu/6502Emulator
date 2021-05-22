@@ -6,8 +6,15 @@
 3. **执行make_VS2019.bat命令，会使用cmake自动生成vs2019工程，找到sln文件，进入工程(vs2019关闭警告作为错误选项)**（vs2017 vs2016 vs2015等皆可使用本源码，需要修改**make_VS2019.bat**中的`cmake -G "Visual Studio 16 2019" -A x64 ..\ -Dgtest_force_shared_crt=on` 指令,查询相关资料，修改为对应的vs版本工程）
 
 
+### 工程划分
+本项目分四个工程:
+- 6502Emulator用UI界面的方式呈现6502寄存器的状态
+- gtest是谷歌的测试框架，属于Lib库
+- M6502Lib是6502CPU的指令实现
+- M6502Test是单元测试代码
 
-工程包括分两个模块，一个是6502CPU实现模块，另外一个是使用[Google test](https://github.com/google/googletest/)工具进行单元测试，用来测试实现的指令。
+
+工程包括分个模块。一个是6502CPU实现模块，另外一个是使用[Google test](https://github.com/google/googletest/)工具进行单元测试，用来测试实现的指令。
 本工程只包括6502指令实现，可以进行执行所有逻辑、算数等指令(WIP),如果需要学习6502有关实现，可以查阅6502应用相关资料，进行应用实现。
 
 ## 参考资料 

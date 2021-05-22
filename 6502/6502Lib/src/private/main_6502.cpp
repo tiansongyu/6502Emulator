@@ -4,35 +4,35 @@ int32_t CPU::Execute(int32_t Cycles, Mem& memory)
 {
 	auto ADC = [this](uint8_t Value)
 	{
-		const bool IsTheSameFlag = !((A ^ Value) & NegativeFlagBit);
+		const bool IsTheSameFlag = !((A ^ Value) & m6502::NegativeFlagBit);
 		uint32_t Sum = A;
 		Sum += Value;
 		Sum += Flags.C;
 		A = Sum & 0xFF;
 		Flags.C = Sum > 0xFF;
-		Flags.V = IsTheSameFlag && ((A ^ Value) & NegativeFlagBit);
+		Flags.V = IsTheSameFlag && ((A ^ Value) & m6502::NegativeFlagBit);
 		SetStatus(A);
 	};
 	auto SBC = [this](uint8_t Value)
 	{
-		const bool IsTheSameFlag = !((A ^ Value) & NegativeFlagBit);
+		const bool IsTheSameFlag = !((A ^ Value) & m6502::NegativeFlagBit);
 		uint32_t Sum = A;
 		Sum += (~Value & 0xFF);
 		Sum += (~Flags.C & 1);
 		A = Sum & 0xFF;
 		Flags.C = Sum > 0xFF;
-		Flags.V = IsTheSameFlag && ((A ^ Value) & NegativeFlagBit);
+		Flags.V = IsTheSameFlag && ((A ^ Value) & m6502::NegativeFlagBit);
 		SetStatus(A);
 	};
 	auto CompareRegister = [this](uint8_t Value,uint8_t Register)
 	{
 		Flags.Z = Register == Value;
 		Flags.C = Register >= Value;
-		Flags.N = (((Register - Value) & NegativeFlagBit )> 0);
+		Flags.N = (((Register - Value) & m6502::NegativeFlagBit )> 0);
 	};
 	auto ASL = [&Cycles,this](uint8_t& Value)
 	{
-		Flags.C = (Value & NegativeFlagBit) > 0;
+		Flags.C = (Value & m6502::NegativeFlagBit) > 0;
 		Value <<= 1;
 		SetStatus(Value);
 		Cycles--;
@@ -40,7 +40,7 @@ int32_t CPU::Execute(int32_t Cycles, Mem& memory)
 	};
 	auto LSR = [&Cycles, this](uint8_t& Value)
 	{
-		Flags.C = (Value & CarryFlag) > 0;
+		Flags.C = (Value & m6502::CarryFlag) > 0;
 		Value >>= 1;
 		SetStatus(Value);
 		Cycles--;
@@ -48,8 +48,8 @@ int32_t CPU::Execute(int32_t Cycles, Mem& memory)
 	};
 	auto ROL = [&Cycles, this](uint8_t& Value)
 	{
-		uint8_t NewBit = Flags.C ? CarryFlag : 0;
-		Flags.C = (Value & NegativeFlagBit) > 0;
+		uint8_t NewBit = Flags.C ? m6502::CarryFlag : 0;
+		Flags.C = (Value & m6502::NegativeFlagBit) > 0;
 		Value <<= 1;
 		Value |= NewBit;
 		SetStatus(Value);
@@ -58,9 +58,9 @@ int32_t CPU::Execute(int32_t Cycles, Mem& memory)
 	};
 	auto ROR = [&Cycles, this](uint8_t& Value)
 	{
-		bool OldBit = (Value & CarryFlag) > 0;
+		bool OldBit = (Value & m6502::CarryFlag) > 0;
 		Value >>= 1;
-		Value |= Flags.C ? NegativeFlagBit : 0;
+		Value |= Flags.C ? m6502::NegativeFlagBit : 0;
 		Flags.C = OldBit;
 		SetStatus(Value);
 		Cycles--;
@@ -169,8 +169,8 @@ int32_t CPU::Execute(int32_t Cycles, Mem& memory)
 		{
 			uint8_t Value = AddZeroPage(Cycles, memory);
 			Flags.Z = !(Value & A);
-			Flags.N = (Value & NegativeFlagBit) != 0;
-			Flags.V = (Value & OverFlowFlagBit) != 0;
+			Flags.N = (Value & m6502::NegativeFlagBit) != 0;
+			Flags.V = (Value & m6502::OverFlowFlagBit) != 0;
 		}break;
 		case INS_ORA_ZP: //¡„“≥—∞÷∑ ..zero page
 		{
@@ -278,8 +278,8 @@ int32_t CPU::Execute(int32_t Cycles, Mem& memory)
 		{
 			uint8_t Value = AbsoluteAddress(Cycles, memory);
 			Flags.Z = !(Value & A);
-			Flags.N = (Value & NegativeFlagBit) != 0;
-			Flags.V = (Value & OverFlowFlagBit) != 0;
+			Flags.N = (Value & m6502::NegativeFlagBit) != 0;
+			Flags.V = (Value & m6502::OverFlowFlagBit) != 0;
 		}break;
 		case INS_LDX_ABS:
 		{
@@ -519,35 +519,35 @@ int32_t CPU::Execute(int32_t Cycles, Mem& memory)
 		}break;
 		case INS_BCC_REL:
 		{
-			RelativeModeClearIsJmp(CarryFlag, Cycles, memory);
+			RelativeModeClearIsJmp(m6502::CarryFlag, Cycles, memory);
 		}break;
 		case INS_BCS_REL:
 		{
-			RelativeModeSetIsJmp(CarryFlag, Cycles, memory);
+			RelativeModeSetIsJmp(m6502::CarryFlag, Cycles, memory);
 		}break;
 		case INS_BEQ_REL:
 		{
-			RelativeModeSetIsJmp(ZeroBit, Cycles, memory);
+			RelativeModeSetIsJmp(m6502::ZeroBit, Cycles, memory);
 		}break;
 		case INS_BMI_REL:
 		{
-			RelativeModeSetIsJmp(NegativeFlagBit, Cycles, memory);
+			RelativeModeSetIsJmp(m6502::NegativeFlagBit, Cycles, memory);
 		}break;
 		case INS_BNE_REL:
 		{
-			RelativeModeClearIsJmp(ZeroBit, Cycles, memory);
+			RelativeModeClearIsJmp(m6502::ZeroBit, Cycles, memory);
 		}break;
 		case INS_BPL_REL:
 		{
-			RelativeModeClearIsJmp(NegativeFlagBit, Cycles, memory);
+			RelativeModeClearIsJmp(m6502::NegativeFlagBit, Cycles, memory);
 		}break;
 		case INS_BVC_REL:
 		{
-			RelativeModeClearIsJmp(OverFlowFlagBit, Cycles, memory);
+			RelativeModeClearIsJmp(m6502::OverFlowFlagBit, Cycles, memory);
 		}break;
 		case INS_BVS_REL:
 		{
-			RelativeModeSetIsJmp(OverFlowFlagBit, Cycles, memory);
+			RelativeModeSetIsJmp(m6502::OverFlowFlagBit, Cycles, memory);
 		}break;
 		case INS_CLC_IM:
 		{
