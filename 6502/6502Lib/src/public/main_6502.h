@@ -163,8 +163,6 @@ INS_CLV_IM = 0xB8,
 INS_SEC_IM = 0x38,
 INS_SED_IM = 0xF8,
 INS_SEI_IM = 0x78,
-//System Functions
-INS_NOP = 0xEA,
 //Arithmetic
 INS_ADC_IM = 0x69,
 INS_ADC_ZP = 0x65,
@@ -199,7 +197,36 @@ INS_CPX_ABS = 0xEC,
 
 INS_CPY_IM = 0xC0,
 INS_CPY_ZP = 0xC4,
-INS_CPY_ABS = 0xCC;
+INS_CPY_ABS = 0xCC,
+//Shifts
+INS_ASL_ACC = 0x0A,
+INS_ASL_ZP = 0x06,
+INS_ASL_ZPX = 0x16,
+INS_ASL_ABS = 0x0E,
+INS_ASL_ABSX = 0x1E,
+
+INS_LSR_ACC = 0x4A,
+INS_LSR_ZP = 0x46,
+INS_LSR_ZPX = 0x56,
+INS_LSR_ABS = 0x4E,
+INS_LSR_ABSX = 0x5E,
+
+INS_ROL_ACC = 0x2A,
+INS_ROL_ZP = 0x26,
+INS_ROL_ZPX = 0x36,
+INS_ROL_ABS = 0x2E,
+INS_ROL_ABSX = 0x3E,
+
+INS_ROR_ACC = 0x6A,
+INS_ROR_ZP = 0x66,
+INS_ROR_ZPX = 0x76,
+INS_ROR_ABS = 0x6E,
+INS_ROR_ABSX = 0x7E,
+
+//System Functions
+INS_NOP = 0xEA,
+INS_BRK_IM = 0x00,
+INS_RTI_IM = 0x40;
 
 
 	//写入两个字节
@@ -248,6 +275,8 @@ INS_CPY_ABS = 0xCC;
 	uint8_t AbsoluteAddress(int32_t& Cycles, Mem& memory);
 	/* Absolute address + register*/
 	uint8_t AbsoluteAddress_Register(int32_t& Cycles, Mem& memory, uint8_t _register);
+	/* Absolute address + register*/
+	uint8_t AbsoluteAddress_RegisterShifts(int32_t& Cycles, Mem& memory, uint8_t _register);
 	/* Indirect address X */
 	uint8_t IndirectAddressX(int32_t& Cycles, Mem& memory);
 	/* Indirect address Y*/

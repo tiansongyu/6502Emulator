@@ -46,6 +46,7 @@ set  (M6502_SOURCES
 		"src/6502TestsLogical.cpp"
 		"src/6502TestsBranch.cpp"
 		"src/6502TestsArithmetic.cpp"
+		"src/6502TestsSytemFunctionsAndShifts.cpp"
 		)
 		
 source_group("src" FILES ${M6502_SOURCES})

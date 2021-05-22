@@ -495,7 +495,6 @@ TEST_F(M6502Test1Arithmetic, SBCBranchIndirectYTest)
 	mem[0x0406] = 0b11111111;
 	// end - inline a little program
 	constexpr int CYCLES = 5;
-
 	STCyclesConfirm(cpu.A, 0b10000000 + (~0b11111111&0xFF), CYCLES, CYCLES);
 	EXPECT_EQ(cpu.Flags.Z, false);
 	EXPECT_EQ(cpu.Flags.N, true);

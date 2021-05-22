@@ -28,9 +28,44 @@ int32_t CPU::Execute(int32_t Cycles, Mem& memory)
 	{
 		Flags.Z = Register == Value;
 		Flags.C = Register >= Value;
-		Flags.N = ((Register - Value) & NegativeFlagBit > 0);
+		Flags.N = (((Register - Value) & NegativeFlagBit )> 0);
 	};
-
+	auto ASL = [&Cycles,this](uint8_t& Value)
+	{
+		Flags.C = (Value & NegativeFlagBit) > 0;
+		Value <<= 1;
+		SetStatus(Value);
+		Cycles--;
+		return Value;
+	};
+	auto LSR = [&Cycles, this](uint8_t& Value)
+	{
+		Flags.C = (Value & CarryFlag) > 0;
+		Value >>= 1;
+		SetStatus(Value);
+		Cycles--;
+		return Value;
+	};
+	auto ROL = [&Cycles, this](uint8_t& Value)
+	{
+		uint8_t NewBit = Flags.C ? CarryFlag : 0;
+		Flags.C = (Value & NegativeFlagBit) > 0;
+		Value <<= 1;
+		Value |= NewBit;
+		SetStatus(Value);
+		Cycles--;
+		return Value;
+	};
+	auto ROR = [&Cycles, this](uint8_t& Value)
+	{
+		bool OldBit = (Value & CarryFlag) > 0;
+		Value >>= 1;
+		Value |= Flags.C ? NegativeFlagBit : 0;
+		Flags.C = OldBit;
+		SetStatus(Value);
+		Cycles--;
+		return Value;
+	};
 	int32_t CyclesRequests = Cycles;
 	while (Cycles > 0)
 	{
@@ -705,6 +740,139 @@ int32_t CPU::Execute(int32_t Cycles, Mem& memory)
 			uint32_t Value = AbsoluteAddress(Cycles, memory);
 			CompareRegister(Value, Y);
 		}break;
+		case INS_ASL_ACC:
+		{
+			A = ASL(A);
+		}break;
+		case INS_ASL_ZP:
+		{
+			uint8_t Value = AddZeroPage(Cycles,memory);
+			uint8_t result = ASL(Value);
+			WriteByte(result, memory[PC - 1], Cycles, memory);
+		}break;
+		case INS_ASL_ZPX:
+		{
+			uint8_t Value = AddZeroPageAdd(Cycles,memory,X);
+			uint8_t result = ASL(Value);
+			WriteByte(result, memory[PC - 1], Cycles, memory);
+		}break;
+		case INS_ASL_ABS:
+		{
+			uint8_t Value = AbsoluteAddress(Cycles,memory);
+			uint8_t result = ASL(Value); int tmp = 2;
+			uint16_t Address = ReadWord((uint16_t)(PC - 2), tmp, memory);
+			WriteByte(result, Address, Cycles, memory);
+		}break;
+		case INS_ASL_ABSX:
+		{
+			uint8_t Value = AbsoluteAddress_RegisterShifts(Cycles,memory,X);
+			uint8_t result = ASL(Value); int tmp = 2;
+			uint16_t Address = ReadWord((uint16_t)(PC - 2), tmp, memory);
+			WriteByte(result, Address+X, Cycles, memory);
+		}break;
+		case INS_LSR_ACC:
+		{
+			A = LSR(A);
+		}break;
+		case INS_LSR_ZP:
+		{
+			uint8_t Value = AddZeroPage(Cycles, memory);
+			uint8_t result = LSR(Value);
+			WriteByte(result, memory[PC - 1], Cycles, memory);
+		}break;
+		case INS_LSR_ZPX:
+		{
+			uint8_t Value = AddZeroPageAdd(Cycles, memory, X);
+			uint8_t result = LSR(Value);
+			WriteByte(result, memory[PC - 1], Cycles, memory);
+		}break;
+		case INS_LSR_ABS:
+		{
+			uint8_t Value = AbsoluteAddress(Cycles, memory);
+			uint8_t result = LSR(Value); int tmp = 2;
+			uint16_t Address = ReadWord((uint16_t)(PC - 2), tmp, memory);
+			WriteByte(result, Address, Cycles, memory);
+		}break;
+		case INS_LSR_ABSX:
+		{
+			uint8_t Value = AbsoluteAddress_RegisterShifts(Cycles, memory, X);
+			uint8_t result = LSR(Value); int tmp = 2;
+			uint16_t Address = ReadWord((uint16_t)(PC - 2), tmp, memory);
+			WriteByte(result, Address+X, Cycles, memory);
+		}break;
+		case INS_ROL_ACC:
+		{
+			A = ROL(A);
+		}break;
+		case INS_ROL_ZP:
+		{
+			uint8_t Value = AddZeroPage(Cycles, memory);
+			uint8_t result = ROL(Value);
+			WriteByte(result, memory[PC - 1], Cycles, memory);
+		}break;
+		case INS_ROL_ZPX:
+		{
+			uint8_t Value = AddZeroPageAdd(Cycles, memory, X);
+			uint8_t result = ROL(Value);
+			WriteByte(result, memory[PC - 1], Cycles, memory);
+		}break;
+		case INS_ROL_ABS:
+		{
+			uint8_t Value = AbsoluteAddress(Cycles, memory);
+			uint8_t result = ROL(Value); int tmp = 2;
+			uint16_t Address = ReadWord((uint16_t)(PC - 2), tmp, memory);
+			WriteByte(result, Address, Cycles, memory);
+		}break;
+		case INS_ROL_ABSX:
+		{
+			uint8_t Value = AbsoluteAddress_RegisterShifts(Cycles, memory, X);
+			uint8_t result = ROL(Value); int tmp = 2;
+			uint16_t Address = ReadWord((uint16_t)(PC - 2), tmp, memory);
+			WriteByte(result, Address+ X, Cycles, memory);
+		}break;
+		case INS_ROR_ACC:
+		{
+			A = ROR(A);
+		}break;
+		case INS_ROR_ZP:
+		{
+			uint8_t Value = AddZeroPage(Cycles, memory);
+			uint8_t result = ROR(Value);
+			WriteByte(result, memory[PC - 1], Cycles, memory);
+		}break;
+		case INS_ROR_ZPX:
+		{
+			uint8_t Value = AddZeroPageAdd(Cycles, memory, X);
+			uint8_t result = ROR(Value);
+			WriteByte(result, memory[PC - 1], Cycles, memory);
+		}break;
+		case INS_ROR_ABS:
+		{
+			uint8_t Value = AbsoluteAddress(Cycles, memory);
+			uint8_t result = ROR(Value); int tmp = 2;
+			uint16_t Address = ReadWord((uint16_t)(PC - 2), tmp, memory);
+			WriteByte(result, Address, Cycles, memory);
+		}break;
+		case INS_ROR_ABSX:
+		{
+			uint8_t Value = AbsoluteAddress_RegisterShifts(Cycles, memory, X);
+			uint8_t result = ROR(Value); int tmp = 2;
+			uint16_t Address = ReadWord((uint16_t)(PC - 2), tmp, memory);
+			WriteByte(result, Address+X, Cycles, memory);
+		}break;
+		case INS_BRK_IM:
+		{
+			PUSHPCTOAddress(memory, Cycles);
+			PUSHByteTOAddress(ps, Cycles, memory);
+			PC = ReadWord((uint16_t)0xFFFE, Cycles, memory);
+			Flags.B = true;
+		}break;
+		case INS_RTI_IM:
+		{
+			ps = POPByteFROMAddress(Cycles, memory);
+			PC = POPPCFROMAddress(Cycles, memory);
+			PC += 2;
+		}break;
 		default:
 		{
 			printf("没有设置 0x%x 指令\n", Ins);
@@ -844,6 +1012,15 @@ uint8_t CPU::AbsoluteAddress_Register(int32_t& Cycles, Mem& memory, uint8_t _reg
 	AbsAddress += _register;
 	if (Copy_AbsAddress + _register > 0xff)
 		Cycles--;
+	return ReadByte(AbsAddress, Cycles, memory);
+}
+uint8_t CPU::AbsoluteAddress_RegisterShifts(int32_t& Cycles, Mem& memory, uint8_t _register)
+{
+	uint16_t AbsAddress = FetchWord(Cycles, memory);
+	auto Copy_AbsAddress = AbsAddress % 0x100;
+	// 下面有更好的写法，这里暂时这样写 https://github.com/davepoo/6502Emulator/blob/bb278fbf80d6e4f0f3bb60826afc2551977d9ead/6502/6502Lib/src/private/m6502.cpp#L1068 
+	AbsAddress += _register;
+	Cycles--;
 	return ReadByte(AbsAddress, Cycles, memory);
 }
 uint8_t CPU::IndirectAddressX(int32_t& Cycles, Mem& memory)
