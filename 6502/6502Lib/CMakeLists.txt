@@ -10,8 +10,8 @@ else()
 endif()
 
 set  (M6502_SOURCES
-    "src/public/main_6502.h"
-    "src/private/main_6502.cpp"
+    "src/public/olc6502.h"
+    "src/private/olc6502.cpp"
 	"src/public/Bus.h"
 	"src/public/Bus.cpp"
 	)
