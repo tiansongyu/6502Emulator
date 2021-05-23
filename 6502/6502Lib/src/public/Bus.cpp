@@ -1,5 +1,7 @@
 #include "Bus.h"
 
+
+
 Bus::Bus()
 {
 	// Connect CPU to communication bus
@@ -8,6 +10,7 @@ Bus::Bus()
 	// Clear RAM contents, just in case :P
 	for (auto& i : ram) i = 0x00;
 }
+
 
 Bus::~Bus()
 {
