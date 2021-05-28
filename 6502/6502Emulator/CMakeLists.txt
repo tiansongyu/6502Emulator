@@ -13,9 +13,7 @@ else()
 endif()
 
 set  (M6502_SOURCES
-		"src/main_6502.cpp"
-		"src/olcPixelGameEngine.h"
-		"src/olcPGEX_Sound.h"
+		"src/olcNes_Video2_2C02.cpp"
 		)
 		
 source_group("src" FILES ${M6502_SOURCES})

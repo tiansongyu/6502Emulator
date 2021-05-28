@@ -1,5 +1,5 @@
 /*
-	olc::NES - System Bus
+	olc::NES - Picture Processing Unit (PPU) 2C02
 	"Thanks Dad for believing computers were gonna be a big deal..." - javidx9
 
 	License (OLC-3)
@@ -54,46 +54,59 @@
 	David Barr, aka javidx9, ©OneLoneCoder 2019
 */
 
-
 #pragma once
 #include <cstdint>
-#include <array>
+#include <memory>
 
-#include "olc6502.h"
-#include "olc2C02.h"
+#include "olcPixelGameEngine.h"
+
 #include "Cartridge.h"
 
-class Bus
+class olc2C02
 {
 public:
-	Bus();
-	~Bus();
+	olc2C02();
+	~olc2C02();
 
-public: // Devices on Main Bus
-
-	// The 6502 derived processor
-	olc6502 cpu;	
-	// The 2C02 Picture Processing Unit
-	olc2C02 ppu;
-	// The Cartridge or "GamePak"
-	std::shared_ptr<Cartridge> cart;
-	// 2KB of RAM
-	uint8_t cpuRam[2048];
-
-public: // Main Bus Read & Write
-	void    cpuWrite(uint16_t addr, uint8_t data);
-	uint8_t cpuRead(uint16_t addr, bool bReadOnly = false);
+private:		
+	uint8_t     tblName[2][1024];
+	uint8_t     tblPattern[2][4096];
+	uint8_t		tblPalette[32];
 
 private:
-	// A count of how many clocks have passed
-	uint32_t nSystemClockCounter = 0;
+	olc::Pixel  palScreen[0x40];
+	olc::Sprite sprScreen          =   olc::Sprite(256, 240);
+	olc::Sprite sprNameTable[2]    = { olc::Sprite(256, 240), olc::Sprite(256, 240) };
+	olc::Sprite sprPatternTable[2] = { olc::Sprite(128, 128), olc::Sprite(128, 128) };
 
-public: // System Interface
-	// Connects a cartridge object to the internal buses
-	void insertCartridge(const std::shared_ptr<Cartridge>& cartridge);
-	// Resets the system
-	void reset();
-	// Clocks the system - a single whole systme tick
+public:
+	// Debugging Utilities
+	olc::Sprite& GetScreen();
+	olc::Sprite& GetNameTable(uint8_t i);
+	olc::Sprite& GetPatternTable(uint8_t i);
+	bool frame_complete = false;
+
+private:
+	int16_t scanline = 0;
+	int16_t cycle = 0;
+	
+
+public:
+	// Communications with Main Bus
+	uint8_t cpuRead(uint16_t addr, bool rdonly = false);
+	void    cpuWrite(uint16_t addr, uint8_t  data);
+
+	// Communications with PPU Bus
+	uint8_t ppuRead(uint16_t addr, bool rdonly = false);
+	void    ppuWrite(uint16_t addr, uint8_t data);
+
+private:
+	// The Cartridge or "GamePak"
+	std::shared_ptr<Cartridge> cart;
+
+public:
+	// Interface
+	void ConnectCartridge(const std::shared_ptr<Cartridge>& cartridge);
 	void clock();
 };
 

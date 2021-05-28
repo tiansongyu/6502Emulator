@@ -45,7 +45,7 @@
 
 	In February 2019, I decided to undertake a selfish personal project and
 	build a NES emulator. Ive always wanted to, and as such I've avoided
-	looking at source code for such things. This made making this a real
+	looking at source code for such things. This made making this a real 
 	personal challenge. I know its been done countless times, and very likely
 	in far more clever and accurate ways than mine, but I'm proud of this.
 
@@ -68,7 +68,7 @@
 
 	Author
 	~~~~~~
-	David Barr, aka javidx9, ï¿½OneLoneCoder 2019
+	David Barr, aka javidx9, ©OneLoneCoder 2019
 */
 
 #pragma once
@@ -112,13 +112,13 @@ public:
 public:
 	// CPU Core registers, exposed as public here for ease of access from external
 	// examinors. This is all the 6502 has.
-	uint8_t  a = 0x00;		// Accumulator Register
-	uint8_t  x = 0x00;		// X Register
-	uint8_t  y = 0x00;		// Y Register
-	uint8_t  stkp = 0x00;		// Stack Pointer (points to location on bus)
-	uint16_t pc = 0x0000;	// Program Counter
+	uint8_t  a      = 0x00;		// Accumulator Register
+	uint8_t  x      = 0x00;		// X Register
+	uint8_t  y      = 0x00;		// Y Register
+	uint8_t  stkp   = 0x00;		// Stack Pointer (points to location on bus)
+	uint16_t pc     = 0x0000;	// Program Counter
 	uint8_t  status = 0x00;		// Status Register
-
+	
 	// External event functions. In hardware these represent pins that are asserted
 	// to produce a change in state.
 	void reset();	// Reset Interrupt - Forces CPU into known state
@@ -132,7 +132,7 @@ public:
 	bool complete();
 
 	// Link this CPU to a communications bus
-	void ConnectBus(Bus* n) { bus = n; }
+	void ConnectBus(Bus *n) { bus = n; }
 
 	// Produces a map of strings, with keys equivalent to instruction start locations
 	// in memory, for the specified address range
@@ -158,18 +158,18 @@ private:
 	// Convenience functions to access status register
 	uint8_t GetFlag(FLAGS6502 f);
 	void    SetFlag(FLAGS6502 f, bool v);
-
+	
 	// Assisstive variables to facilitate emulation
-	uint8_t  fetched = 0x00;   // Represents the working input value to the ALU
-	uint16_t temp = 0x0000; // A convenience variable used everywhere
-	uint16_t addr_abs = 0x0000; // All used memory addresses end up in here
-	uint16_t addr_rel = 0x00;   // Represents absolute address following a branch
-	uint8_t  opcode = 0x00;   // Is the instruction byte
-	uint8_t  cycles = 0;	   // Counts how many cycles the instruction has remaining
+	uint8_t  fetched     = 0x00;   // Represents the working input value to the ALU
+	uint16_t temp        = 0x0000; // A convenience variable used everywhere
+	uint16_t addr_abs    = 0x0000; // All used memory addresses end up in here
+	uint16_t addr_rel    = 0x00;   // Represents absolute address following a branch
+	uint8_t  opcode      = 0x00;   // Is the instruction byte
+	uint8_t  cycles      = 0;	   // Counts how many cycles the instruction has remaining
 	uint32_t clock_count = 0;	   // A global accumulation of the number of clocks
 
 	// Linkage to the communications bus
-	Bus* bus = nullptr;
+	Bus     *bus = nullptr;
 	uint8_t read(uint16_t a);
 	void    write(uint16_t a, uint8_t d);
 
@@ -186,21 +186,21 @@ private:
 	//	Pneumonic : A textual representation of the instruction (used for disassembly)
 	//	Opcode Function: A function pointer to the implementation of the opcode
 	//	Opcode Address Mode : A function pointer to the implementation of the 
-	//						  addressing mechanism used by the instruction
+    //						  addressing mechanism used by the instruction
 	//	Cycle Count : An integer that represents the base number of clock cycles the
 	//				  CPU requires to perform the instruction
 
 	struct INSTRUCTION
 	{
-		std::string name;
-		uint8_t(olc6502::* operate)(void) = nullptr;
-		uint8_t(olc6502::* addrmode)(void) = nullptr;
+		std::string name;		
+		uint8_t     (olc6502::*operate )(void) = nullptr;
+		uint8_t     (olc6502::*addrmode)(void) = nullptr;
 		uint8_t     cycles = 0;
 	};
 
 	std::vector<INSTRUCTION> lookup;
-
-private:
+	
+private: 
 	// Addressing Modes =============================================
 	// The 6502 has a variety of addressing modes to access data in 
 	// memory, some of which are direct and some are indirect (like
@@ -217,14 +217,14 @@ private:
 	// and how the memory is accessed, so they return the required
 	// adjustment.
 
-	uint8_t IMP();	uint8_t IMM();
-	uint8_t ZP0();	uint8_t ZPX();
+	uint8_t IMP();	uint8_t IMM();	
+	uint8_t ZP0();	uint8_t ZPX();	
 	uint8_t ZPY();	uint8_t REL();
-	uint8_t ABS();	uint8_t ABX();
-	uint8_t ABY();	uint8_t IND();
+	uint8_t ABS();	uint8_t ABX();	
+	uint8_t ABY();	uint8_t IND();	
 	uint8_t IZX();	uint8_t IZY();
 
-private:
+private: 
 	// Opcodes ======================================================
 	// There are 56 "legitimate" opcodes provided by the 6502 CPU. I
 	// have not modelled "unofficial" opcodes. As each opcode is 
@@ -262,11 +262,9 @@ private:
 	uint8_t STX();	uint8_t STY();	uint8_t TAX();	uint8_t TAY();
 	uint8_t TSX();	uint8_t TXA();	uint8_t TXS();	uint8_t TYA();
 
-	uint8_t XXX();
-
 	// I capture all "unofficial" opcodes with this function. It is
 	// functionally identical to a NOP
-
+	uint8_t XXX();
 
 #ifdef LOGMODE
 private:

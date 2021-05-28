@@ -1,5 +1,5 @@
 /*
-	olc::NES - System Bus
+	olc::NES - Mapper Base Class (Abstract)
 	"Thanks Dad for believing computers were gonna be a big deal..." - javidx9
 
 	License (OLC-3)
@@ -54,46 +54,26 @@
 	David Barr, aka javidx9, ©OneLoneCoder 2019
 */
 
-
 #pragma once
 #include <cstdint>
-#include <array>
 
-#include "olc6502.h"
-#include "olc2C02.h"
-#include "Cartridge.h"
-
-class Bus
+class Mapper
 {
 public:
-	Bus();
-	~Bus();
+	Mapper(uint8_t prgBanks, uint8_t chrBanks);
+	~Mapper();
 
-public: // Devices on Main Bus
+public:
+	// Transform CPU bus address into PRG ROM offset
+	virtual bool cpuMapRead(uint16_t addr, uint32_t &mapped_addr)	 = 0;
+	virtual bool cpuMapWrite(uint16_t addr, uint32_t &mapped_addr)	 = 0;
+	// Transform PPU bus address into CHR ROM offset
+	virtual bool ppuMapRead(uint16_t addr, uint32_t &mapped_addr)	 = 0;
+	virtual bool ppuMapWrite(uint16_t addr, uint32_t &mapped_addr)	 = 0;
 
-	// The 6502 derived processor
-	olc6502 cpu;	
-	// The 2C02 Picture Processing Unit
-	olc2C02 ppu;
-	// The Cartridge or "GamePak"
-	std::shared_ptr<Cartridge> cart;
-	// 2KB of RAM
-	uint8_t cpuRam[2048];
-
-public: // Main Bus Read & Write
-	void    cpuWrite(uint16_t addr, uint8_t data);
-	uint8_t cpuRead(uint16_t addr, bool bReadOnly = false);
-
-private:
-	// A count of how many clocks have passed
-	uint32_t nSystemClockCounter = 0;
-
-public: // System Interface
-	// Connects a cartridge object to the internal buses
-	void insertCartridge(const std::shared_ptr<Cartridge>& cartridge);
-	// Resets the system
-	void reset();
-	// Clocks the system - a single whole systme tick
-	void clock();
+protected:
+	// These are stored locally as many of the mappers require this information
+	uint8_t nPRGBanks = 0;
+	uint8_t nCHRBanks = 0;
 };
 

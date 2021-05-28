@@ -10,10 +10,20 @@ else()
 endif()
 
 set  (M6502_SOURCES
-    "src/public/olc6502.h"
-    "src/private/olc6502.cpp"
 	"src/public/Bus.h"
 	"src/public/Bus.cpp"
+	"src/public/Cartridge.h"
+	"src/public/Cartridge.cpp"
+	"src/public/Mapper.h"
+	"src/public/Mapper.cpp"
+	"src/public/Mapper_000.h"
+	"src/public/Mapper_000.cpp"
+	"src/public/olc2C02.h"
+	"src/public/olc2C02.cpp"
+	"src/public/olc6502.h"
+	"src/public/olc6502.cpp"
+ 	"src/public/olcPGEX_Sound.h"
+	"src/public/olcPixelGameEngine.h"
 	)
 		
 source_group("src" FILES ${M6502_SOURCES})
