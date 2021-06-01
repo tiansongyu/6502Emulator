@@ -96,7 +96,12 @@ void Bus::cpuWrite(uint16_t addr, uint8_t data)
 		// use bitwise AND operation to mask the bottom 3 bits, 
 		// which is the equivalent of addr % 8.
 		ppu.cpuWrite(addr & 0x0007, data);
-	}		
+	}	
+	else if (addr >= 0x4016 && addr <= 0x4017)
+	{
+		controller_state[addr & 0x0001] = controller[addr & 0x0001];
+	}
+	
 }
 
 uint8_t Bus::cpuRead(uint16_t addr, bool bReadOnly)
@@ -116,6 +121,11 @@ uint8_t Bus::cpuRead(uint16_t addr, bool bReadOnly)
 		// PPU Address range, mirrored every 8
 		data = ppu.cpuRead(addr & 0x0007, bReadOnly);
 	}
+	else if (addr >= 0x4016 && addr <= 0x4017)
+	{
+		data = (controller_state[addr & 0x0001] & 0x80) > 0;
+		controller_state[addr & 0x0001] <<= 1;
+	}
 
 	return data;
 }
@@ -129,7 +139,9 @@ void Bus::insertCartridge(const std::shared_ptr<Cartridge>& cartridge)
 
 void Bus::reset()
 {
+	cart->reset();
 	cpu.reset();
+	ppu.reset();
 	nSystemClockCounter = 0;
 }
 
@@ -152,6 +164,15 @@ void Bus::clock()
 	if (nSystemClockCounter % 3 == 0)
 	{
 		cpu.clock();
+	}
+
+	// The PPU is capable of emitting an interrupt to indicate the
+	// vertical blanking period has been entered. If it has, we need
+	// to send that irq to the CPU.
+	if (ppu.nmi)
+	{
+		ppu.nmi = false;
+		cpu.nmi();
 	}
 
 	nSystemClockCounter++;
