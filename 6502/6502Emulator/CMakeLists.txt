@@ -13,7 +13,7 @@ else()
 endif()
 
 set  (M6502_SOURCES
-		"src/olcNes_Video2_2C02.cpp"
+		"src/olcNes_PPU_Backgrounds.cpp"
 		)
 		
 source_group("src" FILES ${M6502_SOURCES})
