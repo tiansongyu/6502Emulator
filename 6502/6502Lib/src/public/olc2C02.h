@@ -51,7 +51,7 @@
 
 	Author
 	~~~~~~
-	David Barr, aka javidx9, �OneLoneCoder 2019
+	David Barr, aka javidx9, �OneLoneCoder 2019
 */
 
 #pragma once
@@ -81,7 +81,7 @@ private:
 
 public:
 	// Debugging Utilities
-	olc::Sprite& GetScreen();
+	olc::Sprite& GetScreen(); //屏幕
 	olc::Sprite& GetNameTable(uint8_t i);
 	olc::Sprite& GetPatternTable(uint8_t i, uint8_t palette);
 

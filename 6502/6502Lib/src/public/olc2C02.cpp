@@ -51,7 +51,7 @@
 
 	Author
 	~~~~~~
-	David Barr, aka javidx9, �OneLoneCoder 2019
+	David Barr, aka javidx9, �OneLoneCoder 2019
 */
 
 #include "olc2C02.h"
@@ -177,6 +177,12 @@ olc::Sprite& olc2C02::GetPatternTable(uint8_t i, uint8_t palette)
 	//
 	// The planes are stored as 8 bytes of LSB, followed by 8 bytes of MSB
 
+	/*此函数使用指定的调色板将给定模式表的 CHR ROM 绘制到 olc::Sprite 中。模式表由 16x16 的“瓷砖或字符”组成。它独立于正在运行的仿真并且使用它不会改变系统状态，尽管它从实时系统中获取它需要的所有数据。因此，如果游戏尚未建立调色板或映射到相关的 CHR ROM 库，则精灵可能看起来是空的。这种方法允许“实时”提取模式表，确切地说是 NES，最终玩家会看到它。]
+
+ 图块由 8x8 像素组成。在 NES 上，像素是 2 位，它给出了特定调色板的 4 种不同颜色的索引。有 8 种调色板可供选择。每个调色板中的颜色“0”实际上被认为是透明的，因为内存中的那些位置“反映”了正在使用的全局背景颜色。这个机制在 ppuRead() & ppuWrite() 中有详细展示
+
+NES 使用 2 位像素存储字符。这些不是按顺序存储的，而是存储在单个位平面中。例如：
+	*/
 	// Loop through all 16x16 tiles
 	for (uint16_t nTileY = 0; nTileY < 16; nTileY++)
 	{

@@ -51,7 +51,7 @@
 
 	Author
 	~~~~~~
-	David Barr, aka javidx9, ©OneLoneCoder 2019
+	David Barr, aka javidx9, ï¿½OneLoneCoder 2019
 */
 
 #pragma once
@@ -59,7 +59,7 @@
 #include <string>
 #include <fstream>
 #include <vector>
-
+#include <memory>
 
 #include "Mapper_000.h"
 //#include "Mapper_002.h"

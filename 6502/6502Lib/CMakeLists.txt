@@ -34,3 +34,5 @@ target_include_directories ( M6502Lib PUBLIC "${PROJECT_SOURCE_DIR}/src/public")
 target_include_directories ( M6502Lib PRIVATE "${PROJECT_SOURCE_DIR}/src/private")
 
 #set_target_properties(M6502Lib PROPERTIES FOLDER "M6502Lib")
+TARGET_LINK_LIBRARIES(M6502Lib -lasound -lX11 -lGL -lpthread -lpng -lstdc++fs )
+add_definitions(-std=c++14)
