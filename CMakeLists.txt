@@ -11,3 +11,6 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 #add_subdirectory(6502/6502Test)
 add_subdirectory(6502/6502Lib)
 add_subdirectory(6502/6502Emulator)
+
+LINK_LIBRARIES(-lasound -lX11 -lGL -lpthread -lpng -lstdc++fs )
+add_definitions(-std=c++14)

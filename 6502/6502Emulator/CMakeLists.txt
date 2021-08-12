@@ -19,8 +19,11 @@ set  (M6502_SOURCES
 		)
 		
 source_group("src" FILES ${M6502_SOURCES})
-		
+
 add_executable( 6502Emulator ${M6502_SOURCES} 	)
 add_dependencies( 6502Emulator M6502Lib )
 target_link_libraries(6502Emulator M6502Lib)
+
+TARGET_LINK_LIBRARIES(6502Emulator -lasound -lX11 -lGL -lpthread -lpng -lstdc++fs )
+add_definitions(-std=c++14)
 
