@@ -51,7 +51,7 @@
 
 	Author
 	~~~~~~
-	David Barr, aka javidx9, ©OneLoneCoder 2019
+	David Barr, aka javidx9, ï¿½OneLoneCoder 2019
 */
 
 #include "Mapper.h"
@@ -61,15 +61,10 @@ Mapper::Mapper(uint8_t prgBanks, uint8_t chrBanks)
 	nPRGBanks = prgBanks;
 	nCHRBanks = chrBanks;
 
-	reset();
+	//reset();
 }
-
 
 Mapper::~Mapper()
 {
 }
 
-void Mapper::reset()
-{
-
-}
