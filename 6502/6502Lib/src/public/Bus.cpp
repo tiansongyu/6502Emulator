@@ -51,7 +51,7 @@
 
 	Author
 	~~~~~~
-	David Barr, aka javidx9, �OneLoneCoder 2019
+	David Barr, aka javidx9, �OneLoneCoder 2019
 */
 
 #include "Bus.h"
@@ -59,6 +59,7 @@
 Bus::Bus()
 {
 	// Connect CPU to communication bus
+	//连接cpu
 	cpu.ConnectBus(this);
 	
 }
@@ -67,9 +68,19 @@ Bus::Bus()
 Bus::~Bus()
 {
 }
+// 总线可以访问所有位置,并根据地址位置写入不同设备数据
 
+// 这里注意，Bus中可以读取 cpu ppu mapper ram等所有的内存区域
+// 所以当 cpu需要执行read 或者 write 执行时，其实是先使用bus->read(write)去读取，
+// 再根据bus 中的地址，来判断是读写 cpu 还是 ppu 还是 mapper 还是ram 等区域
+
+// 这里的关系是bus中包含cpu ,cpu中也有bus 
+// cpu 将调用指令传递到 bus中，然后由bus再去执行读写，这样就达到了，使用bus来控制所有的内存区域
+// 但其实所有的操作都是由cpu来执行的，bus只不过充当了一个运输read write指令的作用，使得cpu可以访问所有的内存区域
+// 因为bus中是包含所有的设备的!!!!!!!!!!
 void Bus::cpuWrite(uint16_t addr, uint8_t data)
 {	
+	// addr >= 0x8000 && addr <= 0xFFFF
 	if (cart->cpuWrite(addr, data))
 	{
 		// The cartridge "sees all" and has the facility to veto

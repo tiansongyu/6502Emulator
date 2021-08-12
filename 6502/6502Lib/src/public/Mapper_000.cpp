@@ -51,7 +51,7 @@
 
 	Author
 	~~~~~~
-	David Barr, aka javidx9, �OneLoneCoder 2019
+	David Barr, aka javidx9, �OneLoneCoder 2019
 */
 #include "Mapper_000.h"
 
@@ -75,6 +75,9 @@ bool Mapper_000::cpuMapRead(uint16_t addr, uint32_t &mapped_addr)
 	//     0x8000 -> 0xFFFF: Map    0x0000 -> 0x7FFF	
 	if (addr >= 0x8000 && addr <= 0xFFFF)
 	{
+		// 如果 nPRGBanks 大于 1 说明是32kb ，则 addr 映射地址 需要 & 0x7fff 
+		// 如果 等于 1 说明 是16kb，则 0x8000 -> 0xBFFF 内存区域到 0xC000 -> 0xFFFF 是相同的数据
+		// 转化为 RPG ROM区域的内容即为 0x0000 -> 0x3FFF
 		mapped_addr = addr & (nPRGBanks > 1 ? 0x7FFF : 0x3FFF);
 		return true;
 	}

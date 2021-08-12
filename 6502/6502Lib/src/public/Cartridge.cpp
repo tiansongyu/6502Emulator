@@ -33,6 +33,7 @@ Cartridge::Cartridge(const std::string& sFileName)
 			ifs.seekg(512, std::ios_base::cur);
 
 		// Determine Mapper ID
+		// 由mapper1和mapper2的相应位置组成 Mapper ID 
 		nMapperID = ((header.mapper2 >> 4) << 4) | (header.mapper1 >> 4);
 		mirror = (header.mapper1 & 0x01) ? VERTICAL : HORIZONTAL;
 
@@ -47,11 +48,17 @@ Cartridge::Cartridge(const std::string& sFileName)
 		if (nFileType == 1)
 		{
 			nPRGBanks = header.prg_rom_chunks;
+			//使用vector<int>来作为一个动态内存分配工具！
 			vPRGMemory.resize(nPRGBanks * 16384);
+			// nPRGBanks存储有多少个16384 
+			// 将nes文件中的 nPRGBanks * 16384大小信息存储到 vPRGMemory中
 			ifs.read((char*)vPRGMemory.data(), vPRGMemory.size());
 
 			nCHRBanks = header.chr_rom_chunks;
 			vCHRMemory.resize(nCHRBanks * 8192);
+			// nCHRBanks存储有多少个16384 
+			// 将nes文件中的 nCHRBanks * 16384大小信息存储到 vCHRMemory
+			// 这里说明 prg和chr是连续存储的
 			ifs.read((char*)vCHRMemory.data(), vCHRMemory.size());
 		}
 
@@ -63,6 +70,7 @@ Cartridge::Cartridge(const std::string& sFileName)
 		// Load appropriate mapper
 		switch (nMapperID)
 		{
+			//暂时设定只有一个mapper
 		case 0: pMapper = std::make_shared<Mapper_000>(nPRGBanks, nCHRBanks); break;
 		}
 
