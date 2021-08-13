@@ -341,11 +341,10 @@ uint8_t olc2C02::cpuRead(uint16_t addr, bool rdonly)
 			// 从 $3F00-$3FFF 读取调色板数据的工作方式不同。
 			// 调色板数据立即放置在数据总线上，因此不需要启动读取
 			if (vram_addr.reg >= 0x3F00) data = ppu_data_buffer;  //????????
-			// All reads from PPU data automatically increment the nametable
-			// address depending upon the mode set in the control register.
-			// If set to vertical mode, the increment is 32, so it skips
-			// one whole nametable row; in horizontal mode it just increments
-			// by 1, moving to the next column
+			// 根据控制寄存器中设置的模式，
+			// 所有从 PPU 数据读取的数据都会自动递增命名表地址。 
+			// 如果设置为垂直模式，则增量为 32，因此跳过一整行名称表； 
+			// 在水平模式下它只是增加 1，移动到下一列
 			vram_addr.reg += (control.increment_mode ? 32 : 1);
 			break;
 		}
@@ -400,6 +399,7 @@ void olc2C02::cpuWrite(uint16_t addr, uint8_t data)
 	    // ppu地址是一个16字节地址，所以分两次传输
 		// 第一次传输高8字节
 		// 第二次传输底8字节
+		// 两个周期
 		if (address_latch == 0)
 		{
 			// PPU address bus can be accessed by CPU via the ADDR and DATA
@@ -423,11 +423,10 @@ void olc2C02::cpuWrite(uint16_t addr, uint8_t data)
 		break;
 	case 0x0007: // PPU Data
 		ppuWrite(vram_addr.reg, data);
-		// All writes from PPU data automatically increment the nametable
-		// address depending upon the mode set in the control register.
-		// If set to vertical mode, the increment is 32, so it skips
-		// one whole nametable row; in horizontal mode it just increments
-		// by 1, moving to the next column
+		//  根据控制寄存器中设置的模式，所有从 PPU 数据写入的数据都会自动递增命名表地址。 
+		// 如果设置为垂直模式，则增量为 32，
+		// 因此跳过一整行名称表； 
+		// 在水平模式下它只是增加 1，移动到下一列
 		vram_addr.reg += (control.increment_mode ? 32 : 1);
 		break;
 	}
@@ -570,6 +569,8 @@ void olc2C02::reset()
 
 void olc2C02::clock()
 {
+	// 这里做了大部分内容
+	// ppu相当于一个状态机
 	// As we progress through scanlines and cycles, the PPU is effectively
 	// a state machine going through the motions of fetching background 
 	// information and sprite information, compositing them into a pixel
@@ -581,6 +582,7 @@ void olc2C02::clock()
 
 	// ==============================================================================
 	// Increment the background tile "pointer" one tile/column horizontally
+	// 将背景图块“指针”水平增加一个图块/列
 	auto IncrementScrollX = [&]()
 	{
 		// Note: pixel perfect scrolling horizontally is handled by the 
@@ -760,16 +762,22 @@ void olc2C02::clock()
 
 	// All but 1 of the secanlines is visible to the user. The pre-render scanline
 	// at -1, is used to configure the "shifters" for the first visible scanline, 0.
+	// 初始化的scanline的值为 0 
+	// 但是当帧数大于 1 时 scanline 从 -1 开始
 	if (scanline >= -1 && scanline < 240)
 	{		
+		// 这里的scanline 指的是行数 ，渲染的行数为 0 - 239
+		// cycle 指的是 Pixel 列数
 		if (scanline == 0 && cycle == 0)
 		{
 			// "Odd Frame" cycle skip
+			// 第一cycle时， 直接跳过
 			cycle = 1;
 		}
-
+		// 当 scanline == -1 && cycle == 1 说明是一个新的frame
 		if (scanline == -1 && cycle == 1)
 		{
+			// 初始化数据
 			// Effectively start of new frame, so clear vertical blank flag
 			status.vertical_blank = 0;
 
@@ -780,6 +788,10 @@ void olc2C02::clock()
 			status.sprite_zero_hit = 0;
 
 			// Clear Shifters
+			// Shifters 移位器
+			// 一行最多有 8 个精灵 
+			// 每个精灵的 x 值最大 为 256 
+			// 每个精灵的 y 值最大 为 240
 			for (int i = 0; i < 8; i++)
 			{
 				sprite_shifter_pattern_lo[i] = 0;
@@ -791,7 +803,6 @@ void olc2C02::clock()
 		if ((cycle >= 2 && cycle < 258) || (cycle >= 321 && cycle < 338))
 		{
 			UpdateShifters();
-			
 			
 			// In these cycles we are collecting and working with visible data
 			// The "shifters" have been preloaded by the end of the previous
@@ -805,6 +816,7 @@ void olc2C02::clock()
 			{
 			case 0:
 				// Load the current background tile pattern and attributes into the "shifter"
+				// 这个是背景，所有的x坐标开始都是 8 的整数倍
 				LoadBackgroundShifters();
 
 				// Fetch the next background tile ID
@@ -960,6 +972,7 @@ void olc2C02::clock()
 		//...and reset the x position
 		if (cycle == 257)
 		{
+			// 非渲染时间 准备下一次的坐标
 			LoadBackgroundShifters();
 			TransferAddressX();
 		}
@@ -967,11 +980,13 @@ void olc2C02::clock()
 		// Superfluous reads of tile id at end of scanline
 		if (cycle == 338 || cycle == 340)
 		{
+			// 0x2000 - 0x2FFF
 			bg_next_tile_id = ppuRead(0x2000 | (vram_addr.reg & 0x0FFF));
 		}
 
 		if (scanline == -1 && cycle >= 280 && cycle < 305)
 		{
+			// 开始新的一个frame,重新设定新的nametable的起始位置
 			// End of vertical blank period so reset the Y address ready for rendering
 			TransferAddressY();
 		}
@@ -1021,7 +1036,7 @@ void olc2C02::clock()
 		{
 			// Note the conversion to signed numbers here
 			int16_t diff = ((int16_t)scanline - (int16_t)OAM[nOAMEntry].y);
-
+			// zerohitpossible的条件之一就是  ： 0号精灵，必须在最上方！！！
 			// If the difference is positive then the scanline is at least at the
 			// same height as the sprite, so check if it resides in the sprite vertically
 			// depending on the current "sprite height mode"
@@ -1159,6 +1174,7 @@ void olc2C02::clock()
 
 			// If the sprite is flipped horizontally, we need to flip the
 			// pattern bytes.
+			// 镜像翻转精灵
 			if (spriteScanline[i].attribute & 0x40)
 			{
 				// This little lambda function "flips" a byte
@@ -1253,6 +1269,7 @@ void olc2C02::clock()
 		for (uint8_t i = 0; i < sprite_count; i++)
 		{
 			// Scanline cycle has "collided" with sprite, shifters taking over
+			// 最上方的精灵
 			if (spriteScanline[i].x == 0)
 			{
 				// Note Fine X scrolling does not apply to sprites, the game
@@ -1268,7 +1285,7 @@ void olc2C02::clock()
 				// that foreground palettes are the latter 4 in the
 				// palette memory.
 				fg_palette = (spriteScanline[i].attribute & 0x03) + 0x04;
-				fg_priority = (spriteScanline[i].attribute & 0x20) == 0;
+				fg_priority = (spriteScanline[i].attribute & 0x20) == 0; // 前景色 后景色
 
 				// If pixel is not transparent, we render it, and dont
 				// bother checking the rest because the earlier sprites
@@ -1277,6 +1294,7 @@ void olc2C02::clock()
 				{
 					if (i == 0) // Is this sprite zero?
 					{
+						// 既是最上方的精灵，又是最上方的第一个精灵，所以是bSpriteZeroBeingRendered = true;
 						bSpriteZeroBeingRendered = true;
 					}
 
@@ -1337,6 +1355,8 @@ void olc2C02::clock()
 		}
 
 		// Sprite Zero Hit detection
+		// bSpriteZeroHitPossible ： 0号精灵在最上方 ！ 
+		// 
 		if (bSpriteZeroHitPossible && bSpriteZeroBeingRendered)
 		{
 			// Sprite zero is a collision between foreground and background

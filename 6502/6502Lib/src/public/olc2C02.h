@@ -145,11 +145,11 @@ private:
 		struct
 		{
 
-			uint16_t coarse_x : 5;
-			uint16_t coarse_y : 5;
-			uint16_t nametable_x : 1;
+			uint16_t coarse_x : 5; // 0 - 31 nametable的 x 轴坐标
+			uint16_t coarse_y : 5; // 0 - 31 nametable的 y 轴坐标
+			uint16_t nametable_x : 1; //
 			uint16_t nametable_y : 1;
-			uint16_t fine_y : 3;
+			uint16_t fine_y : 3;  //0- 8 很可能是用来记录此 pixel 绘制的y 坐标，  
 			uint16_t unused : 1;
 		};
 
