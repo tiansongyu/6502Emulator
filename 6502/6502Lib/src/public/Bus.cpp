@@ -51,7 +51,7 @@
 
 	Author
 	~~~~~~
-	David Barr, aka javidx9, �OneLoneCoder 2019
+	David Barr, aka javidx9, �OneLoneCoder 2019
 */
 
 #include "Bus.h"
@@ -96,7 +96,14 @@ void Bus::cpuWrite(uint16_t addr, uint8_t data)
 		// use bitwise AND operation to mask the bottom 3 bits, 
 		// which is the equivalent of addr % 8.
 		ppu.cpuWrite(addr & 0x0007, data);
-	}	
+	}
+	else if (addr == 0x4014)
+	{
+		// A write to this address initiates a DMA transfer
+		dma_page = data;
+		dma_addr = 0x00;
+		dma_transfer = true;
+	}
 	else if (addr >= 0x4016 && addr <= 0x4017)
 	{
 		controller_state[addr & 0x0001] = controller[addr & 0x0001];
@@ -143,6 +150,11 @@ void Bus::reset()
 	cpu.reset();
 	ppu.reset();
 	nSystemClockCounter = 0;
+	dma_page = 0x00;
+	dma_addr = 0x00;
+	dma_data = 0x00;
+	dma_dummy = true;
+	dma_transfer = false;
 }
 
 void Bus::clock()
@@ -163,7 +175,53 @@ void Bus::clock()
 	// have a global counter to keep track of this.
 	if (nSystemClockCounter % 3 == 0)
 	{
-		cpu.clock();
+		// Is the system performing a DMA transfer form CPU memory to
+		// OAM memory on PPU?...
+		if (dma_transfer)
+		{
+			// ...Yes! We need to wait until the next even CPU clock cycle
+			// before it starts...
+			//第一个去掉，必须使用偶数循环周期
+			if (dma_dummy)
+			{
+				// ...So hang around in here each clock until 1 or 2 cycles
+				// have elapsed...
+				if (nSystemClockCounter % 2 == 1)
+				{
+					// ...and finally allow DMA to start
+					dma_dummy = false;
+				}
+			}
+			else
+			{
+				// DMA can take place!
+				//偶数循环周期命中，读取dma数据
+				if (nSystemClockCounter % 2 == 0)
+				{
+					// On even clock cycles, read from CPU bus
+					dma_data = cpuRead(dma_page << 8 | dma_addr);
+				}
+				else
+				{
+					// 在奇数周期 将数据写入到Ppu中，
+					// 实现偶数读取数据，奇数周期写入ppu
+					// On odd clock cycles, write to PPU OAM
+					ppu.pOAM[dma_addr] = dma_data;
+					// Increment the lo byte of the address
+					dma_addr++;
+					// If this wraps around, we know that 256
+					// bytes have been written, so end the DMA
+					// transfer, and proceed as normal
+					if (dma_addr == 0x00)
+					{
+						dma_transfer = false;
+						dma_dummy = true;
+					}
+				}
+			}
+		}
+		else
+			cpu.clock();
 	}
 
 	// The PPU is capable of emitting an interrupt to indicate the

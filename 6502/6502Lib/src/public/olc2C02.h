@@ -181,6 +181,38 @@ private:
 	uint16_t bg_shifter_attrib_lo  = 0x0000;
 	uint16_t bg_shifter_attrib_hi  = 0x0000;
 
+	// Foreground "Sprite" rendering ================================
+	// The OAM is an additional memory internal to the PPU. It is
+	// not connected via the any bus. It stores the locations of
+	// 64off 8x8 (or 8x16) tiles to be drawn on the next frame.
+	struct sObjectAttributeEntry
+	{
+		uint8_t y;		   // Y position of sprite
+		uint8_t id;		   // ID of tile from pattern memory
+		uint8_t attribute; // Flags define how sprite should be rendered
+		uint8_t x;		   // X position of sprite
+	} OAM[64];
+
+	// A register to store the address when the CPU manually communicates
+	// with OAM via PPU registers. This is not commonly used because it
+	// is very slow, and instead a 256-Byte DMA transfer is used. See
+	// the Bus header for a description of this.
+	uint8_t oam_addr = 0x00;
+
+	sObjectAttributeEntry spriteScanline[8];
+	uint8_t sprite_count;
+	uint8_t sprite_shifter_pattern_lo[8];
+	uint8_t sprite_shifter_pattern_hi[8];
+
+	// Sprite Zero Collision Flags
+	bool bSpriteZeroHitPossible = false;
+	bool bSpriteZeroBeingRendered = false;
+
+	// The OAM is conveniently package above to work with, but the DMA
+	// mechanism will need access to it for writing one byute at a time
+public:
+	uint8_t *pOAM = (uint8_t *)OAM;
+
 public:
 	// Communications with Main Bus
 	uint8_t cpuRead(uint16_t addr, bool rdonly = false);
