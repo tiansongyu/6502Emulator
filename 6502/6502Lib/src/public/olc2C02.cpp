@@ -178,10 +178,8 @@ olc::Sprite& olc2C02::GetPatternTable(uint8_t i, uint8_t palette)
 	// The planes are stored as 8 bytes of LSB, followed by 8 bytes of MSB
 
 	/*此函数使用指定的调色板将给定模式表的 CHR ROM 绘制到 olc::Sprite 中。模式表由 16x16 的“瓷砖或字符”组成。它独立于正在运行的仿真并且使用它不会改变系统状态，尽管它从实时系统中获取它需要的所有数据。因此，如果游戏尚未建立调色板或映射到相关的 CHR ROM 库，则精灵可能看起来是空的。这种方法允许“实时”提取模式表，确切地说是 NES，最终玩家会看到它。]
-
- 图块由 8x8 像素组成。在 NES 上，像素是 2 位，它给出了特定调色板的 4 种不同颜色的索引。有 8 种调色板可供选择。每个调色板中的颜色“0”实际上被认为是透明的，因为内存中的那些位置“反映”了正在使用的全局背景颜色。这个机制在 ppuRead() & ppuWrite() 中有详细展示
-
-NES 使用 2 位像素存储字符。这些不是按顺序存储的，而是存储在单个位平面中。例如：
+ 	图块由 8x8 像素组成。在 NES 上，像素是 2 位，它给出了特定调色板的 4 种不同颜色的索引。有 8 种调色板可供选择。每个调色板中的颜色“0”实际上被认为是透明的，因为内存中的那些位置“反映”了正在使用的全局背景颜色。这个机制在 ppuRead() & ppuWrite() 中有详细展示
+	NES 使用 2 位像素存储字符。这些不是按顺序存储的，而是存储在单个位平面中。例如：
 	*/
 	// Loop through all 16x16 tiles
 	for (uint16_t nTileY = 0; nTileY < 16; nTileY++)
@@ -266,10 +264,7 @@ uint8_t olc2C02::cpuRead(uint16_t addr, bool rdonly)
 
 	if (rdonly)
 	{
-		// Reading from PPU registers can affect their contents
-		// so this read only option is used for examining the
-		// state of the PPU without changing its state. This is
-		// really only used in debug mode.
+		// 仅读取ppu寄存器的内容(不改变值)
 		switch (addr)
 		{
 		case 0x0000: // Control
@@ -295,10 +290,7 @@ uint8_t olc2C02::cpuRead(uint16_t addr, bool rdonly)
 	}
 	else
 	{
-		// These are the live PPU registers that repsond
-		// to being read from in various ways. Note that not
-		// all the registers are capable of being read from
-		// so they just return 0x00
+		// 读取寄存器中的值，也可能会改变一些状态值
 		switch (addr)
 		{
 			// Control - Not readable
@@ -309,13 +301,10 @@ uint8_t olc2C02::cpuRead(uint16_t addr, bool rdonly)
 		
 			// Status
 		case 0x0002:
-			// Reading from the status register has the effect of resetting
-			// different parts of the circuit. Only the top three bits
-			// contain status information, however it is possible that
-			// some "noise" gets picked up on the bottom 5 bits which 
-			// represent the last PPU bus transaction. Some games "may"
-			// use this noise as valid data (even though they probably
-			// shouldn't)
+			// 只有后三位存有信息
+			// https://wiki.nesdev.com/w/index.php?title=PPU_programmer_reference#Status_.28.242002.29_.3C_read
+			// 0xE0 = 0b11100000   0x1F = 0b00011111
+			// ppu_data_buffer 之前写入 PPU 寄存器的最低有效位
 			data = (status.reg & 0xE0) | (ppu_data_buffer & 0x1F);
 
 			// Clear the vertical blanking flag
@@ -330,6 +319,8 @@ uint8_t olc2C02::cpuRead(uint16_t addr, bool rdonly)
 
 			// OAM Data
 		case 0x0004: break;
+			// https://wiki.nesdev.com/w/index.php?title=PPU_programmer_reference#OAM_data_.28.242004.29_.3C.3E_read.2Fwrite
+			// 这个读取几乎不用
 			data = pOAM[oam_addr];
 
 			// Scroll - Not Readable
@@ -339,16 +330,17 @@ uint8_t olc2C02::cpuRead(uint16_t addr, bool rdonly)
 		case 0x0006: break;
 
 			// PPU Data
-		case 0x0007: 
-			// Reads from the NameTable ram get delayed one cycle, 
-			// so output buffer which contains the data from the 
-			// previous read request
-			data = ppu_data_buffer;
-			// then update the buffer for next time
-			ppu_data_buffer = ppuRead(vram_addr.reg);
-			// However, if the address was in the palette range, the
-			// data is not delayed, so it returns immediately
-			if (vram_addr.reg >= 0x3F00) data = ppu_data_buffer;
+		case 0x0007:
+			// https://wiki.nesdev.com/w/index.php?title=PPU_programmer_reference#Data_.28.242007.29_.3C.3E_read.2Fwrite
+			// CPU 读取并获取内部缓冲区的内容后
+			// PPU 会立即使用当前 VRAM 地址处的字节更新内部缓冲区
+			// ppu_data_buffer
+			data = ppu_data_buffer;  //???????
+			// 更新缓冲区
+			ppu_data_buffer = ppuRead(vram_addr.reg); //
+			// 从 $3F00-$3FFF 读取调色板数据的工作方式不同。
+			// 调色板数据立即放置在数据总线上，因此不需要启动读取
+			if (vram_addr.reg >= 0x3F00) data = ppu_data_buffer;  //????????
 			// All reads from PPU data automatically increment the nametable
 			// address depending upon the mode set in the control register.
 			// If set to vertical mode, the increment is 32, so it skips
@@ -368,6 +360,7 @@ void olc2C02::cpuWrite(uint16_t addr, uint8_t data)
 	{
 	case 0x0000: // Control
 		control.reg = data;
+		// 临时存储要在不同时间“转移”到“指针”中的信息
 		tram_addr.nametable_x = control.nametable_x;
 		tram_addr.nametable_y = control.nametable_y;
 		break;
@@ -383,6 +376,9 @@ void olc2C02::cpuWrite(uint16_t addr, uint8_t data)
 		pOAM[oam_addr] = data;
 		break;
 	case 0x0005: // Scroll
+		// 滚动功能实现寄存器
+		// 通过address_latch 判断是水平滚动还是垂直滚动
+		// 这个scroll执行两次，先执行x 后执行 y 
 		if (address_latch == 0)
 		{
 			// First write to scroll register contains X offset in pixel space
@@ -401,13 +397,17 @@ void olc2C02::cpuWrite(uint16_t addr, uint8_t data)
 		}
 		break;
 	case 0x0006: // PPU Address
+	    // ppu地址是一个16字节地址，所以分两次传输
+		// 第一次传输高8字节
+		// 第二次传输底8字节
 		if (address_latch == 0)
 		{
 			// PPU address bus can be accessed by CPU via the ADDR and DATA
 			// registers. The fisrt write to this register latches the high byte
 			// of the address, the second is the low byte. Note the writes
 			// are stored in the tram register...
-			tram_addr.reg = (uint16_t)((data & 0x3F) << 8) | (tram_addr.reg & 0x00FF);
+			//tram_addr.reg = (uint16_t)((data & 0x3F) << 8) | (tram_addr.reg & 0x00FF);
+			tram_addr.reg = (uint16_t)((data & 0x3F) << 8); // fix something 
 			address_latch = 1;
 		}
 		else
@@ -772,6 +772,19 @@ void olc2C02::clock()
 		{
 			// Effectively start of new frame, so clear vertical blank flag
 			status.vertical_blank = 0;
+
+			// Clear sprite overflow flag
+			status.sprite_overflow = 0;
+
+			// Clear the sprite zero hit flag
+			status.sprite_zero_hit = 0;
+
+			// Clear Shifters
+			for (int i = 0; i < 8; i++)
+			{
+				sprite_shifter_pattern_lo[i] = 0;
+				sprite_shifter_pattern_hi[i] = 0;
+			}
 		}
 
 
