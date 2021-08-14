@@ -1265,7 +1265,7 @@ void olc2C02::clock()
 		// a sprite we can abort
 
 		bSpriteZeroBeingRendered = false;
-
+		// 寻找0号精灵
 		for (uint8_t i = 0; i < sprite_count; i++)
 		{
 			// Scanline cycle has "collided" with sprite, shifters taking over
@@ -1355,7 +1355,7 @@ void olc2C02::clock()
 		}
 
 		// Sprite Zero Hit detection
-		// bSpriteZeroHitPossible ： 0号精灵在最上方 ！ 
+		// bSpriteZeroHitPossible ： 0号精灵在最上方 ！ ????
 		// 
 		if (bSpriteZeroHitPossible && bSpriteZeroBeingRendered)
 		{
