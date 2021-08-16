@@ -201,9 +201,9 @@ private:
 
 	sObjectAttributeEntry spriteScanline[8];
 	uint8_t sprite_count;
-	uint8_t sprite_shifter_pattern_lo[8];
-	uint8_t sprite_shifter_pattern_hi[8];
-
+	uint8_t sprite_shifter_pattern_lo[8];    // 下一行将要绘制的精灵像素的低8个字节 信息
+	uint8_t sprite_shifter_pattern_hi[8];	 // 下一行将要绘制的精灵像素的高8个字节 信息
+											 //  这两个字节相加的结果组成一个8x8bit的像素图片
 	// Sprite Zero Collision Flags
 	bool bSpriteZeroHitPossible = false;
 	bool bSpriteZeroBeingRendered = false;

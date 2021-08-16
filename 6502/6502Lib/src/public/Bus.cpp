@@ -97,6 +97,8 @@ void Bus::cpuWrite(uint16_t addr, uint8_t data)
 		// which is the equivalent of addr % 8.
 		ppu.cpuWrite(addr & 0x0007, data);
 	}
+	// 0x4016 - 0x4017 是OAM地址，和PPU无关，当BUS收到来自这个地址的值时
+	// 直接开启DMA，开始传输OAM值
 	else if (addr == 0x4014)
 	{
 		// A write to this address initiates a DMA transfer
@@ -128,6 +130,7 @@ uint8_t Bus::cpuRead(uint16_t addr, bool bReadOnly)
 		// PPU Address range, mirrored every 8
 		data = ppu.cpuRead(addr & 0x0007, bReadOnly);
 	}
+
 	else if (addr >= 0x4016 && addr <= 0x4017)
 	{
 		data = (controller_state[addr & 0x0001] & 0x80) > 0;

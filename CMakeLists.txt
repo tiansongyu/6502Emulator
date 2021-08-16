@@ -12,4 +12,4 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 add_subdirectory(6502/6502Lib)
 add_subdirectory(6502/6502Emulator)
 
-file(COPY ./nestest.nes DESTINATION ./6502/6502Emulator/)
+file(COPY ./smb.nes ./nestest.nes DESTINATION ./6502/6502Emulator/)

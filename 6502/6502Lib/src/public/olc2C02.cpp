@@ -1029,12 +1029,11 @@ void olc2C02::clock()
 		// New set of sprites. Sprite zero may not exist in the new set, so clear this
 		// flag.
 		bSpriteZeroHitPossible = false;
-
+		// 在每一行中的257列的周期中，将下一行需要绘制的精灵进行预写入内存中
 		while (nOAMEntry < 64 && sprite_count < 9)
 		{
 			// Note the conversion to signed numbers here
 			int16_t diff = ((int16_t)scanline - (int16_t)OAM[nOAMEntry].y);
-			// zerohitpossible的条件之一就是  ： 0号精灵，必须在最上方！！！
 			// If the difference is positive then the scanline is at least at the
 			// same height as the sprite, so check if it resides in the sprite vertically
 			// depending on the current "sprite height mode"
@@ -1078,7 +1077,8 @@ void olc2C02::clock()
 	{
 		// Now we're at the very end of the scanline, I'm going to prepare the
 		// sprite shifters with the 8 or less selected sprites.
-
+		// 此时已经准备好了需要绘制的下一行的精灵信息，但是没有将精灵信息与模式表中的像素进行匹配
+		// 接下来要将精灵信息转换为模式表中的像素信息
 		for (uint8_t i = 0; i < sprite_count; i++)
 		{
 			// We need to extract the 8-bit row patterns of the sprite with the
@@ -1096,13 +1096,22 @@ void olc2C02::clock()
 			if (!control.sprite_size)
 			{
 				// 8x8 Sprite Mode - The control register determines the pattern table
+				// 是否垂直翻转精灵
 				if (!(spriteScanline[i].attribute & 0x80))
 				{
 					// Sprite is NOT flipped vertically, i.e. normal
+					// 这个地址直接就是PPU地址，没什么其他含义，不是一个结构体
+					// 0x0000 - 0x1fff
+					// sprite_pattern_addr_lo 中存储的值就是上方的值 每个瓦片 16 个字节，
 					sprite_pattern_addr_lo =
+						// 用来判断是在 0x0000 还是 0x1000 
 						(control.pattern_sprite << 12)		// Which Pattern Table? 0KB or 4KB offset
+						// 每个瓦片是16个字节， <<4是为了乘以16 
 						| (spriteScanline[i].id << 4)		// Which Cell? Tile ID * 16 (16 bytes per tile)
-						| (scanline - spriteScanline[i].y); // Which Row in cell? (0->7)
+						// 获得该精灵像素点在8x1bit中的 y 像素位置
+						// 乘以16之后，已经获得了哪一个瓦片title，但是还不是知道是现在哪一列
+						// 加上 y 之后，可以获得需要获取的点，在瓦片的哪一排上 
+						| (scanline - spriteScanline[i].y); // Which Row in cell? (0->7) 
 				}
 				else
 				{
@@ -1110,6 +1119,7 @@ void olc2C02::clock()
 					sprite_pattern_addr_lo =
 						(control.pattern_sprite << 12)			  // Which Pattern Table? 0KB or 4KB offset
 						| (spriteScanline[i].id << 4)			  // Which Cell? Tile ID * 16 (16 bytes per tile)
+						// 翻转精灵
 						| (7 - (scanline - spriteScanline[i].y)); // Which Row in cell? (7->0)
 				}
 			}
@@ -1119,25 +1129,34 @@ void olc2C02::clock()
 				if (!(spriteScanline[i].attribute & 0x80))
 				{
 					// Sprite is NOT flipped vertically, i.e. normal
+					// 8x16的像素块分为上下两块
+					// 判断为上面的块
 					if (scanline - spriteScanline[i].y < 8)
 					{
 						// Reading Top half Tile
 						sprite_pattern_addr_lo =
-							((spriteScanline[i].id & 0x01) << 12)		 // Which Pattern Table? 0KB or 4KB offset
+							((spriteScanline[i].id & 0x01) << 12) // Which Pattern Table? 0KB or 4KB offset
+							// 因为8x16像素title一个是2个字节，所以下面的是奇数，上面的是偶数
 							| ((spriteScanline[i].id & 0xFE) << 4)		 // Which Cell? Tile ID * 16 (16 bytes per tile)
+							// 因为8 x 16是连续的，所有需要使用&0x07来获取正确的像素点
 							| ((scanline - spriteScanline[i].y) & 0x07); // Which Row in cell? (0->7)
 					}
+					// 判断为下面的块 scanline - spriteScanline[i].y的值是大于8的，所以必须使用&0x07
 					else
 					{
 						// Reading Bottom Half Tile
 						sprite_pattern_addr_lo =
-							((spriteScanline[i].id & 0x01) << 12)		 // Which Pattern Table? 0KB or 4KB offset
+							((spriteScanline[i].id & 0x01) << 12) // Which Pattern Table? 0KB or 4KB offset
+							// 因为8x16像素title一个是2个字节，所以下面的是奇数，上面的是偶数
 							| (((spriteScanline[i].id & 0xFE) + 1) << 4) // Which Cell? Tile ID * 16 (16 bytes per tile)
+							// 如果不加&0x07会获取到错误的像素点
 							| ((scanline - spriteScanline[i].y) & 0x07); // Which Row in cell? (0->7)
 					}
 				}
 				else
 				{
+					// 出现了垂直翻转 55555 好复杂啊啊啊啊啊啊啊啊啊啊   啊啊啊啊
+					// 上下两块是颠倒的
 					// Sprite is flipped vertically, i.e. upside down
 					if (scanline - spriteScanline[i].y < 8)
 					{
@@ -1194,6 +1213,8 @@ void olc2C02::clock()
 
 			// Finally! We can load the pattern into our sprite shift registers
 			// ready for rendering on the next scanline
+			// 这里获得了每个精灵在某一行中的所有像素点，一共最多有 8 个，存储的信息是需要绘制的像素点信息，每个都是 8 bit 相加得到最后的像素点
+			// 绘制情况见下面代码
 			sprite_shifter_pattern_lo[i] = sprite_pattern_bits_lo;
 			sprite_shifter_pattern_hi[i] = sprite_pattern_bits_hi;
 		}
@@ -1219,8 +1240,9 @@ void olc2C02::clock()
 				nmi = true;
 		}
 	}
+	// 此时已经获得了所有的前景(精灵)和背景的像素信息，此时需要做合成了
+	// 其中，背景像素块的信息中颜色信息，每8个bit需要改变一次
 	// Composition - We now have background & foreground pixel information for this cycle
-
 	// Background =============================================================
 	uint8_t bg_pixel = 0x00;   // The 2-bit pixel to be rendered
 	uint8_t bg_palette = 0x00; // The 3-bit index of the palette the pixel indexes
@@ -1283,7 +1305,7 @@ void olc2C02::clock()
 				// that foreground palettes are the latter 4 in the
 				// palette memory.
 				fg_palette = (spriteScanline[i].attribute & 0x03) + 0x04;
-				fg_priority = (spriteScanline[i].attribute & 0x20) == 0; // 前景色 后景色
+				fg_priority = (spriteScanline[i].attribute & 0x20) == 0; // 判断该精灵是在背景的前面还是背景的后面
 
 				// If pixel is not transparent, we render it, and dont
 				// bother checking the rest because the earlier sprites
