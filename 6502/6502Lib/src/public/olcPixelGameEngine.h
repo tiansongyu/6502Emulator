@@ -723,7 +723,7 @@ namespace olc
 		Sprite();
 		Sprite(const std::string& sImageFile, olc::ResourcePack* pack = nullptr);
 		Sprite(int32_t w, int32_t h);
-		Sprite(const olc::Sprite&) = delete;
+		//Sprite(const olc::Sprite&) = delete;
 		~Sprite();
 
 	public:

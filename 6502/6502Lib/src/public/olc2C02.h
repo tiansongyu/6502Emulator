@@ -75,10 +75,9 @@ private:
 
 private:
 	olc::Pixel  palScreen[0x40];
-	olc::Sprite sprScreen;
-	olc::Sprite sprNameTable[2];
-
-	olc::Sprite sprPatternTable[2];
+	olc::Sprite sprScreen          =   olc::Sprite(256, 240);
+	olc::Sprite sprNameTable[2]    = { olc::Sprite(256, 240), olc::Sprite(256, 240) };
+	olc::Sprite sprPatternTable[2] = { olc::Sprite(128, 128), olc::Sprite(128, 128) };
 
 public:
 	// Debugging Utilities

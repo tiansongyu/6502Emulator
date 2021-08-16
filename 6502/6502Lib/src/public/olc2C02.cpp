@@ -125,14 +125,6 @@ olc2C02::olc2C02()
 	palScreen[0x3D] = olc::Pixel(160, 162, 160);
 	palScreen[0x3E] = olc::Pixel(0, 0, 0);
 	palScreen[0x3F] = olc::Pixel(0, 0, 0);
-
-	sprNameTable[0] = olc::Sprite(256, 240);
-	sprNameTable[1] = olc::Sprite(256, 240);
-
-	sprPatternTable[0] = olc::Sprite(128, 128);
-	sprPatternTable[1] = olc::Sprite(128, 128);
-
-	sprScreen = olc::Sprite(256, 240);
 }
 
 olc2C02::~olc2C02()
