@@ -28,7 +28,7 @@ if (${APPLE})
 # FIND CARBON
 #########################################################
 FIND_LIBRARY(CARBON_LIBRARY Carbon)
-link_libraries( ${CARBON_LIBRARY})
+target_link_libraries(6502Emulator ${CARBON_LIBRARY})
 
 #########################################################
 # FIND PNG
@@ -40,7 +40,7 @@ add_definitions(${PNG_DEFINITIONS})
 if(NOT PNG_FOUND)
     message(ERROR " PNG not found!")
 endif(NOT PNG_FOUND)
-link_libraries( ${PNG_LIBRARIES})
+target_link_libraries(6502Emulator ${PNG_LIBRARIES})
 
 #########################################################
 # FIND GLUT
@@ -52,7 +52,7 @@ add_definitions(${GLUT_DEFINITIONS})
 if(NOT GLUT_FOUND)
     message(ERROR " GLUT not found!")
 endif(NOT GLUT_FOUND)
-link_libraries( ${GLUT_LIBRARIES})
+target_link_libraries(6502Emulator ${GLUT_LIBRARIES})
 
 #########################################################
 # FIND OPENGL
@@ -64,8 +64,9 @@ add_definitions(${OpenGL_DEFINITIONS})
 if(NOT OPENGL_FOUND)
     message(ERROR " OPENGL not found!")
 endif(NOT OPENGL_FOUND)
-link_libraries( ${OPENGL_LIBRARIES})
-
+target_link_libraries(6502Emulator ${OPENGL_LIBRARIES})
 else()
-target_LINK_LIBRARIES(6502Emulator -lasound -lX11 -lGL -lpthread -lpng -lstdc++fs -std=c++17)
+target_LINK_LIBRARIES(6502Emulator -lasound -lX11 -lGL -lpthread -lpng -lstdc++fs)
 endif()
+
+add_definitions(-std=c++17)
