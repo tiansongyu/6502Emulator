@@ -294,9 +294,10 @@ namespace olc
 
 		if (pack != nullptr)
 		{
-			olc::ResourcePack::sEntry entry = pack->GetStreamBuffer(sWavFile);
-			std::istream is(&entry);
-			return ReadWave(is);
+			//olc::ResourcePack::sEntry entry = pack->GetStreamBuffer(sWavFile);
+			//std::istream is(&entry);
+			//return ReadWave(is);
+			std::cout << "hello" << std::endl;
 		}
 		else
 		{

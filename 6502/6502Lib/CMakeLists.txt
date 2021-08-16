@@ -24,6 +24,8 @@ set  (M6502_SOURCES
 	"src/public/olc6502.cpp"
  	"src/public/olcPGEX_Sound.h"
 	"src/public/olcPixelGameEngine.h"
+	"src/public/olc2A03.cpp"
+	"src/public/olc2A03.h"
 	)
 		
 source_group("src" FILES ${M6502_SOURCES})
