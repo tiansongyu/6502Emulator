@@ -161,9 +161,6 @@ olc::Sprite &olc2C02::GetSpriteTitle(uint8_t x, uint8_t y, uint8_t title, uint8_
 		uint8_t tile_lsb = ppuRead(bank * 0x1000 + nOffset + row + 0x0000);
 		uint8_t tile_msb = ppuRead(bank * 0x1000 + nOffset + row + 0x0008);
 
-		//uint8_t tile_lsb = ppuRead(bank * 0x1000 + 0xCF * 16 + row + 0x0000);
-		//uint8_t tile_msb = ppuRead(bank * 0x1000 + 0xCF * 16 + row + 0x0008);
-
 		// Now we have a single row of the two bit planes for the character
 		// we need to iterate through the 8-bit words, combining them to give
 		// us the final pixel index
