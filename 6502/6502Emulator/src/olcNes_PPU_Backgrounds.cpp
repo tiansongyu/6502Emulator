@@ -247,8 +247,10 @@ private:
 			std::string s = hex(i, 2) + ": (" + std::to_string(nes.ppu.pOAM[i * 4 + 3]) + ", " + std::to_string(nes.ppu.pOAM[i * 4 + 0]) + ") " + "ID: " + hex(nes.ppu.pOAM[i * 4 + 1], 2) +
 							+" AT: " + hex(nes.ppu.pOAM[i * 4 + 2], 2);
 			DrawString(516, 72 + i * 10, s);
-		} 
-
+			//DrawString(516 + 231, 72 + i * 10, "wo");
+			DrawSprite(516 + 231, 72 + i * 10, &nes.ppu.GetSpriteTitle(516 + 231, 72 + i * 10, nes.ppu.pOAM[i * 4 + 1], nes.ppu.pOAM[i * 4 + 2], nSelectedPalette,i));
+		}
+ 
 		// Draw Palettes & Pattern Tables ==============================================
 		const int nSwatchSize = 6;
 		for (int p = 0; p < 8; p++) // For each palette

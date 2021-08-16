@@ -125,6 +125,11 @@ olc2C02::olc2C02()
 	palScreen[0x3D] = olc::Pixel(160, 162, 160);
 	palScreen[0x3E] = olc::Pixel(0, 0, 0);
 	palScreen[0x3F] = olc::Pixel(0, 0, 0);
+
+	for (int i = 0; i < 26;i++)
+	{
+		sprSpriteTitle[i] = olc::Sprite(8, 8);
+	}
 }
 
 olc2C02::~olc2C02()
@@ -137,7 +142,55 @@ olc::Sprite& olc2C02::GetScreen()
 	return sprScreen;
 }
 
+olc::Sprite &olc2C02::GetSpriteTitle(uint8_t x, uint8_t y, uint8_t title, uint8_t attr, uint8_t palette,int i)
+{
+	// Convert the 2D tile coordinate into a 1D offset into the pattern
+	// table memory.
+	uint16_t bank = title & 0x1;
+	uint16_t nOffset = (uint16_t)title * 16;
 
+	// Now loop through 8 rows of 8 pixels
+	for (uint16_t row = 0; row < 8; row++)
+	{
+		// For each row, we need to read both bit planes of the character
+		// in order to extract the least significant and most significant
+		// bits of the 2 bit pixel value. in the CHR ROM, each character
+		// is stored as 64 bits of lsb, followed by 64 bits of msb. This
+		// conveniently means that two corresponding rows are always 8
+		// bytes apart in memory.
+		uint8_t tile_lsb = ppuRead(bank * 0x1000 + nOffset + row + 0x0000);
+		uint8_t tile_msb = ppuRead(bank * 0x1000 + nOffset + row + 0x0008);
+
+		//uint8_t tile_lsb = ppuRead(bank * 0x1000 + 0xCF * 16 + row + 0x0000);
+		//uint8_t tile_msb = ppuRead(bank * 0x1000 + 0xCF * 16 + row + 0x0008);
+
+		// Now we have a single row of the two bit planes for the character
+		// we need to iterate through the 8-bit words, combining them to give
+		// us the final pixel index
+		for (uint16_t col = 0; col < 8; col++)
+		{
+			// We can get the index value by simply adding the bits together
+			// but we're only interested in the lsb of the row words because...
+			uint8_t pixel = ((tile_lsb & 0x01) << 1) + (tile_msb & 0x01);
+
+			// ...we will shift the row words 1 bit right for each column of
+			// the character.
+			tile_lsb >>= 1;
+			tile_msb >>= 1;
+
+			// Now we know the location and NES pixel value for a specific location
+			// in the pattern table, we can translate that to a screen colour, and an
+			// (x,y) location in the sprite
+			sprSpriteTitle[i].SetPixel(
+				(7 - col), // Because we are using the lsb of the row word first
+								   // we are effectively reading the row from right
+								   // to left, so we need to draw the row "backwards"
+				row,
+				GetColourFromPaletteRam(palette, pixel));
+		}
+	}
+	return sprSpriteTitle[i];
+}
 
 olc::Sprite& olc2C02::GetPatternTable(uint8_t i, uint8_t palette)
 {

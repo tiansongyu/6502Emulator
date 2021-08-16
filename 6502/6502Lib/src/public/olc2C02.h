@@ -78,12 +78,14 @@ private:
 	olc::Sprite sprScreen          =   olc::Sprite(256, 240);
 	olc::Sprite sprNameTable[2]    = { olc::Sprite(256, 240), olc::Sprite(256, 240) };
 	olc::Sprite sprPatternTable[2] = { olc::Sprite(128, 128), olc::Sprite(128, 128) };
+	olc::Sprite sprSpriteTitle[26] ;
 
 public:
 	// Debugging Utilities
 	olc::Sprite& GetScreen(); //屏幕
 	olc::Sprite& GetNameTable(uint8_t i);
 	olc::Sprite& GetPatternTable(uint8_t i, uint8_t palette);
+	olc::Sprite &GetSpriteTitle(uint8_t x, uint8_t y, uint8_t title, uint8_t attr, uint8_t palette,int i);
 
 	olc::Pixel& GetColourFromPaletteRam(uint8_t palette, uint8_t pixel);
 
