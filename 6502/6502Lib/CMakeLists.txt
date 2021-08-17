@@ -35,4 +35,4 @@ add_library( M6502Lib ${M6502_SOURCES} )
 target_include_directories ( M6502Lib PUBLIC "${PROJECT_SOURCE_DIR}/src/public")
 target_include_directories ( M6502Lib PRIVATE "${PROJECT_SOURCE_DIR}/src/private")
 
-add_definitions(-std=c++17)
+add_definitions(-std=c++14)

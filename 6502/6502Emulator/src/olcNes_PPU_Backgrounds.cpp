@@ -186,7 +186,6 @@ private:
 
 	static float SoundOut(int nChannel, float fGlobalTime, float fTimeStep)
 	{
-		std::cout << "daf" << std::endl;
 		if (nChannel == 0)
 		{
 			while (!pInstance->nes.clock())
@@ -240,7 +239,7 @@ private:
 
 	bool OnUserUpdate(float fElapsedTime) override
 	{
-		EmulatorUpdateWithoutAudio(fElapsedTime);
+		EmulatorUpdateWithAudio(fElapsedTime);
 		return true;
 	}
 
@@ -292,6 +291,7 @@ private:
 				+ "ID: " + hex(nes.ppu.pOAM[i * 4 + 1], 2) +
 				+" AT: " + hex(nes.ppu.pOAM[i * 4 + 2], 2);
 			DrawString(516, 72 + i * 10, s);
+			DrawSprite(516 + 231, 72 + i * 10, &nes.ppu.GetSpriteTitle(516 + 231, 72 + i * 10, nes.ppu.pOAM[i * 4 + 1], nes.ppu.pOAM[i * 4 + 2], nSelectedPalette,i));
 		}*/
 
 		// Draw AUDIO Channels
