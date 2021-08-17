@@ -287,7 +287,7 @@ private:
 
             return changed;
         }
-    };
+    }; 
 
     double dGlobalTime = 0.0;
 
