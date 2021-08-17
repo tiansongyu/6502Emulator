@@ -209,7 +209,7 @@ private:
 		nes.insertCartridge(cart);
 
 		// Extract dissassembly
-		//mapAsm = nes.cpu.disassemble(0x0000, 0xFFFF);
+		// mapAsm = nes.cpu.disassemble(0x0000, 0xFFFF);
 
 		for (int i = 0; i < 4; i++)
 		{

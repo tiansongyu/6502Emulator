@@ -68,7 +68,7 @@ void olc2A03::cpuWrite(uint16_t addr, uint8_t data)
         {
         case 0x00:
             pulse1_seq.new_sequence = 0b01000000;
-            pulse1_osc.dutycycle = 0.125;
+            pulse1_osc.dutycycle = 0.125;           // 占空比体积
             break;
         case 0x01:
             pulse1_seq.new_sequence = 0b01100000;
@@ -85,7 +85,7 @@ void olc2A03::cpuWrite(uint16_t addr, uint8_t data)
         }
         pulse1_seq.sequence = pulse1_seq.new_sequence;
         pulse1_halt = (data & 0x20);
-        pulse1_env.volume = (data & 0x0F);
+        pulse1_env.volume = (data & 0x0F);          // 音量
         pulse1_env.disable = (data & 0x10);
         break;
 
