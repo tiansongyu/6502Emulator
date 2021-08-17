@@ -24,6 +24,8 @@ set  (M6502_SOURCES
 	"src/public/olc6502.cpp"
  	"src/public/olcPGEX_Sound.h"
 	"src/public/olcPixelGameEngine.h"
+	"src/public/olc2A03.cpp"
+	"src/public/olc2A03.h"
 	)
 		
 source_group("src" FILES ${M6502_SOURCES})
@@ -33,4 +35,4 @@ add_library( M6502Lib ${M6502_SOURCES} )
 target_include_directories ( M6502Lib PUBLIC "${PROJECT_SOURCE_DIR}/src/public")
 target_include_directories ( M6502Lib PRIVATE "${PROJECT_SOURCE_DIR}/src/private")
 
-add_definitions(-std=c++17)
+add_definitions(-std=c++14)

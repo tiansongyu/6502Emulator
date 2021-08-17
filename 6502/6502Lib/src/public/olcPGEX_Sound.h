@@ -294,9 +294,10 @@ namespace olc
 
 		if (pack != nullptr)
 		{
-			olc::ResourcePack::sEntry entry = pack->GetStreamBuffer(sWavFile);
-			std::istream is(&entry);
-			return ReadWave(is);
+			//olc::ResourcePack::sEntry entry = pack->GetStreamBuffer(sWavFile);
+			//std::istream is(&entry);
+			//return ReadWave(is);
+			std::cout << "hello" << std::endl;
 		}
 		else
 		{
@@ -593,9 +594,9 @@ namespace olc
 	{
 		// Initialise Sound Engine
 		m_bAudioThreadActive = false;
-		m_nSampleRate = nSampleRate;
-		m_nChannels = nChannels;
-		m_nBlockSamples = nBlockSamples;
+		m_nSampleRate = nSampleRate;  		// 周期
+		m_nChannels = nChannels;			// 声道
+		m_nBlockSamples = nBlockSamples;	// 一个块的大小
 		m_pBlockMemory = nullptr;
 
 		// Open PCM stream
@@ -605,38 +606,38 @@ namespace olc
 
 
 		// Prepare the parameter structure and set default parameters
-		snd_pcm_hw_params_t* params;
-		snd_pcm_hw_params_alloca(&params);
-		snd_pcm_hw_params_any(m_pPCM, params);
+		snd_pcm_hw_params_t* params;				// PCM指针
+		snd_pcm_hw_params_alloca(&params);			// 分配PCM指针内存
+		snd_pcm_hw_params_any(m_pPCM, params);		// 绑定句柄和PCM指针
 
 		// Set other parameters
-		snd_pcm_hw_params_set_format(m_pPCM, params, SND_PCM_FORMAT_S16_LE);
-		snd_pcm_hw_params_set_rate(m_pPCM, params, m_nSampleRate, 0);
-		snd_pcm_hw_params_set_channels(m_pPCM, params, m_nChannels);
-		snd_pcm_hw_params_set_period_size(m_pPCM, params, m_nBlockSamples, 0);
-		snd_pcm_hw_params_set_periods(m_pPCM, params, nBlocks, 0);
+		snd_pcm_hw_params_set_format(m_pPCM, params, SND_PCM_FORMAT_S16_LE); 		// 设定PCM数据格式 每个数据是16bit
+		snd_pcm_hw_params_set_rate(m_pPCM, params, m_nSampleRate, 0);				// 采样率
+		snd_pcm_hw_params_set_channels(m_pPCM, params, m_nChannels);				// 声道，这里是1 
+		snd_pcm_hw_params_set_period_size(m_pPCM, params, m_nBlockSamples, 0);		// 周期的大小，这里为512
+		snd_pcm_hw_params_set_periods(m_pPCM, params, nBlocks, 0);					// 周期数量 这里为8
 
 		// Save these parameters
-		rc = snd_pcm_hw_params(m_pPCM, params);
+		rc = snd_pcm_hw_params(m_pPCM, params);										// 保存参数
 		if (rc < 0)
 			return DestroyAudio();
 
-		listActiveSamples.clear();
+		listActiveSamples.clear(); 													// 关闭正在播放的设备？？？
 
 		// Allocate Wave|Block Memory
-		m_pBlockMemory = new short[m_nBlockSamples];
+		m_pBlockMemory = new short[m_nBlockSamples];								//一个周期的大小为512 ，每个是16bit(2个字节)
 		if (m_pBlockMemory == nullptr)
 			return DestroyAudio();
-		std::fill(m_pBlockMemory, m_pBlockMemory + m_nBlockSamples, 0);
+		std::fill(m_pBlockMemory, m_pBlockMemory + m_nBlockSamples, 0);				// 初始化播放字节
 
 		// Unsure if really needed, helped prevent underrun on my setup
-		snd_pcm_start(m_pPCM);
+		snd_pcm_start(m_pPCM);														// 准备数据完成，开始播放m_pPCM
 		for (unsigned int i = 0; i < nBlocks; i++)
-			rc = snd_pcm_writei(m_pPCM, m_pBlockMemory, 512);
+			rc = snd_pcm_writei(m_pPCM, m_pBlockMemory, 512);						// 循环播放 8 个块 ，每个块为512个大小，当然，每个数据是16bit
 
-		snd_pcm_start(m_pPCM);
-		m_bAudioThreadActive = true;
-		m_AudioThread = std::thread(&SOUND::AudioThread);
+		snd_pcm_start(m_pPCM);									 					// 准备数据完成，开始播放m_pPCM
+		m_bAudioThreadActive = true;												// 打开播放进程标志
+		m_AudioThread = std::thread(&SOUND::AudioThread);							// 初始化音频播放进程
 
 		return true;
 	}
@@ -699,7 +700,7 @@ namespace olc
 				int rc = snd_pcm_writei(m_pPCM, pBlockPos, nLeft);
 				if (rc > 0)
 				{
-					pBlockPos += rc * m_nChannels;
+					pBlockPos += rc * m_nChannels; // 消耗了多少 short 的音频， 一直播放
 					nLeft -= rc;
 				}
 				if (rc == -EAGAIN) continue;
