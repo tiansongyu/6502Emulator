@@ -68,7 +68,7 @@ void olc2A03::cpuWrite(uint16_t addr, uint8_t data)
         {
         case 0x00:
             pulse1_seq.new_sequence = 0b01000000;
-            pulse1_osc.dutycycle = 0.125;           // 占空比体积
+            pulse1_osc.dutycycle = 0.125;               // 占空比体积
             break;
         case 0x01:
             pulse1_seq.new_sequence = 0b01100000;
@@ -83,30 +83,30 @@ void olc2A03::cpuWrite(uint16_t addr, uint8_t data)
             pulse1_osc.dutycycle = 0.750;
             break;
         }
-        pulse1_seq.sequence = pulse1_seq.new_sequence;
-        pulse1_halt = (data & 0x20);
-        pulse1_env.volume = (data & 0x0F);          // 音量
-        pulse1_env.disable = (data & 0x10);
+        pulse1_seq.sequence = pulse1_seq.new_sequence;  // 更新占空比体积
+        pulse1_halt = (data & 0x20);                    // envelope loop / length counter halt
+        pulse1_env.volume = (data & 0x0F);              // 音量
+        pulse1_env.disable = (data & 0x10);             // constant volume
         break;
 
     case 0x4001:
-        pulse1_sweep.enabled = data & 0x80;
-        pulse1_sweep.period = (data & 0x70) >> 4;
-        pulse1_sweep.down = data & 0x08;
-        pulse1_sweep.shift = data & 0x07;
-        pulse1_sweep.reload = true;
+        pulse1_sweep.enabled = data & 0x80;             // Enabled flag
+        pulse1_sweep.period = (data & 0x70) >> 4;       // The divider's period is P + 1 half-frames
+        pulse1_sweep.down = data & 0x08;                // 启用标志 Enabled flag
+        pulse1_sweep.shift = data & 0x07;               // 移位计数器 Shift count (number of bits)
+        pulse1_sweep.reload = true;                     // ?
         break;
 
     case 0x4002:
-        pulse1_seq.reload = (pulse1_seq.reload & 0xFF00) | data;
+        pulse1_seq.reload = (pulse1_seq.reload & 0xFF00) | data; // Pulse 1 timer Low 8 bits
         break;
 
     case 0x4003:
-        pulse1_seq.reload = (uint16_t)((data & 0x07)) << 8 | (pulse1_seq.reload & 0x00FF);
-        pulse1_seq.timer = pulse1_seq.reload;
-        pulse1_seq.sequence = pulse1_seq.new_sequence;
-        pulse1_lc.counter = length_table[(data & 0xF8) >> 3];
-        pulse1_env.start = true;
+        pulse1_seq.reload = (uint16_t)((data & 0x07)) << 8 | (pulse1_seq.reload & 0x00FF); // timer High 3 bits
+        pulse1_seq.timer = pulse1_seq.reload;                                              // seq被赋值
+        pulse1_seq.sequence = pulse1_seq.new_sequence;                                     // 更新占空比体积
+        pulse1_lc.counter = length_table[(data & 0xF8) >> 3];                              // Pulse 2 length counter load
+        pulse1_env.start = true;                                                           // ?
         break;
 
     case 0x4004:
@@ -160,13 +160,14 @@ void olc2A03::cpuWrite(uint16_t addr, uint8_t data)
         break;
 
     case 0x400C:
-        noise_env.volume = (data & 0x0F);
-        noise_env.disable = (data & 0x10);
-        noise_halt = (data & 0x20);
+        noise_env.volume = (data & 0x0F);       // , volume/envelope
+        noise_env.disable = (data & 0x10);      // , constant volume
+        noise_halt = (data & 0x20);             // Envelope loop / length counter halt
         break;
 
     case 0x400E:
-        switch (data & 0x0F)
+        // Loop noise ???
+        switch (data & 0x0F) //  noise period (P)
         {
         case 0x00:
             noise_seq.reload = 0;
@@ -220,16 +221,17 @@ void olc2A03::cpuWrite(uint16_t addr, uint8_t data)
         break;
 
     case 0x4015: // APU STATUS
-        pulse1_enable = data & 0x01;
-        pulse2_enable = data & 0x02;
-        noise_enable = data & 0x04;
+        pulse1_enable = data & 0x01;        // 脉冲通道1启用判断
+        pulse2_enable = data & 0x02;        // 脉冲通道2启用判断
+        noise_enable = data & 0x04;         // 噪声 启用判断
+                                            // 还有DMC和三角启用判断，这里没有使用
         break;
 
     case 0x400F:
         pulse1_env.start = true;
         pulse2_env.start = true;
         noise_env.start = true;
-        noise_lc.counter = length_table[(data & 0xF8) >> 3];
+        noise_lc.counter = length_table[(data & 0xF8) >> 3]; // 长度计数器负载 (L) 	Length counter load
         break;
     }
 }

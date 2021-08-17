@@ -191,7 +191,7 @@ private:
 			while (!pInstance->nes.clock())
 			{
 			};
-			return static_cast<float>(pInstance->nes.dAudioSample);
+			return static_cast<float>(pInstance->nes.dAudioSample); // dAudioSample是最后的播放数据
 		}
 		else
 			return 0.0f;
@@ -255,7 +255,7 @@ private:
 		{
 			fAccumulatedTime -= (1.0f / 60.0f);
 			audio[0].pop_front();
-			audio[0].push_back(nes.apu.pulse1_visual);
+			audio[0].push_back(nes.apu.pulse1_visual);	// 可视化音频
 			audio[1].pop_front();
 			audio[1].push_back(nes.apu.pulse2_visual);
 			audio[2].pop_front();

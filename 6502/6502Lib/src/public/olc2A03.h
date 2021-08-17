@@ -198,7 +198,7 @@ private:
         uint16_t decay_count = 0;
     };
 
-    struct oscpulse
+    struct oscpulse     // 脉冲
     {
         double frequency = 0;
         double dutycycle = 0;
