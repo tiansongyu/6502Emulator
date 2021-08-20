@@ -1,59 +1,3 @@
-/*
-	olc::NES - Picture Processing Unit (PPU) 2C02
-	"Thanks Dad for believing computers were gonna be a big deal..." - javidx9
-
-	License (OLC-3)
-	~~~~~~~~~~~~~~~
-
-	Copyright 2018-2019 OneLoneCoder.com
-
-	Redistribution and use in source and binary forms, with or without
-	modification, are permitted provided that the following conditions
-	are met:
-
-	1. Redistributions or derivations of source code must retain the above
-	copyright notice, this list of conditions and the following disclaimer.
-
-	2. Redistributions or derivative works in binary form must reproduce
-	the above copyright notice. This list of conditions and the following
-	disclaimer must be reproduced in the documentation and/or other
-	materials provided with the distribution.
-
-	3. Neither the name of the copyright holder nor the names of its
-	contributors may be used to endorse or promote products derived
-	from this software without specific prior written permission.
-
-	THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-	"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-	LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-	A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-	HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-	SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-	LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-	DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-	THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-	(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-	OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-
-	Relevant Video: https://youtu.be/-THeUXqR3zY
-
-	Links
-	~~~~~
-	YouTube:	https://www.youtube.com/javidx9
-				https://www.youtube.com/javidx9extra
-	Discord:	https://discord.gg/WhwHUMV
-	Twitter:	https://www.twitter.com/javidx9
-	Twitch:		https://www.twitch.tv/javidx9
-	GitHub:		https://www.github.com/onelonecoder
-	Patreon:	https://www.patreon.com/javidx9
-	Homepage:	https://www.onelonecoder.com
-
-	Author
-	~~~~~~
-	David Barr, aka javidx9, �OneLoneCoder 2019
-*/
-
 #pragma once
 #include <cstdint>
 #include <memory>
@@ -68,31 +12,35 @@ public:
 	olc2C02();
 	~olc2C02();
 
-private:		
-	uint8_t     tblName[2][1024];
-	uint8_t     tblPattern[2][4096];
-	uint8_t		tblPalette[32];
+private:
+	uint8_t tblName[2][1024];	 // 名称表
+	uint8_t tblPattern[2][4096]; // 模式表
+	uint8_t tblPalette[32];		 // 调色板
 
 private:
-	olc::Pixel  palScreen[0x40];
-	olc::Sprite sprScreen          =   olc::Sprite(256, 240);
-	olc::Sprite sprNameTable[2]    = { olc::Sprite(256, 240), olc::Sprite(256, 240) };
-	olc::Sprite sprPatternTable[2] = { olc::Sprite(128, 128), olc::Sprite(128, 128) };
-	olc::Sprite sprSpriteTitle[26] ;
+	olc::Pixel palScreen[0x40];														 // 颜色
+	olc::Sprite sprScreen = olc::Sprite(256, 240);									 // 显示器
+	olc::Sprite sprNameTable[2] = {olc::Sprite(256, 240), olc::Sprite(256, 240)};	 // 读取需要显示的名称表
+	olc::Sprite sprPatternTable[2] = {olc::Sprite(128, 128), olc::Sprite(128, 128)}; // 需要显示的模式表
+	olc::Sprite sprSpriteTitle[26];													 // 0-26个OAM中的精灵
 
 public:
-	// Debugging Utilities
-	olc::Sprite& GetScreen(); //屏幕
-	olc::Sprite& GetNameTable(uint8_t i);
-	olc::Sprite& GetPatternTable(uint8_t i, uint8_t palette);
-	olc::Sprite &GetSpriteTitle(uint8_t x, uint8_t y, uint8_t title, uint8_t attr, uint8_t palette,int i);
+	// 调试函数(打印各种信息)
+	olc::Sprite &GetScreen();								  // 屏幕
+	olc::Sprite &GetNameTable(uint8_t i);					  // 获取名称表
+	olc::Sprite &GetPatternTable(uint8_t i, uint8_t palette); // 获取模式表
+	olc::Sprite &GetSpriteTitle(uint8_t x,					  // 打印部分精灵OAM信息
+								uint8_t y,
+								uint8_t title,
+								uint8_t attr,
+								uint8_t palette,
+								int i);
 
-	olc::Pixel& GetColourFromPaletteRam(uint8_t palette, uint8_t pixel);
+	olc::Pixel &GetColourFromPaletteRam(uint8_t palette, uint8_t pixel);	// 获取调色后的pixel
 
-	bool frame_complete = false;
+	bool frame_complete = false;							  // 用来判断帧的绘制是否完成
 
 private:
-
 	union
 	{
 		struct
@@ -104,8 +52,7 @@ private:
 		};
 
 		uint8_t reg;
-	} status;
-
+	} status; // 状态寄存器
 
 	union
 	{
@@ -122,7 +69,7 @@ private:
 		};
 
 		uint8_t reg;
-	} mask;
+	} mask;		//掩码寄存器
 
 	union PPUCTRL
 	{
@@ -139,7 +86,7 @@ private:
 		};
 
 		uint8_t reg;
-	} control;
+	} control;		//控制寄存器
 
 	union loopy_register
 	{
@@ -147,92 +94,93 @@ private:
 		struct
 		{
 
-			uint16_t coarse_x : 5; // 0 - 31 nametable的 x 轴坐标
-			uint16_t coarse_y : 5; // 0 - 31 nametable的 y 轴坐标
+			uint16_t coarse_x : 5;	  // 0 - 31 nametable的 x 轴坐标
+			uint16_t coarse_y : 5;	  // 0 - 31 nametable的 y 轴坐标
 			uint16_t nametable_x : 1; //
 			uint16_t nametable_y : 1;
-			uint16_t fine_y : 3;  //0- 8 很可能是用来记录此 pixel 绘制的y 坐标，  
+			uint16_t fine_y : 3; //0- 8 用来记录此 pixel 绘制的y 坐标，
 			uint16_t unused : 1;
 		};
 
 		uint16_t reg = 0x0000;
-	};
-	
-	
+	}; // ppu中的绘制寄存器
+	// 将活动“指针”地址插入nametable以提取背景磁贴信息
 	loopy_register vram_addr; // Active "pointer" address into nametable to extract background tile info
+	// 在不同时间将信息临时存储到“指针”中
 	loopy_register tram_addr; // Temporary store of information to be "transferred" into "pointer" at various times
 
-	// Pixel offset horizontally
+	// 像素水平偏移
 	uint8_t fine_x = 0x00;
 
-	// Internal communications
+	// ppu 内部寄存器
 	uint8_t address_latch = 0x00;
 	uint8_t ppu_data_buffer = 0x00;
 
-	// Pixel "dot" position information
-	int16_t scanline = 0;
-	int16_t cycle = 0;
+	// 像素“点”位置信息
+	int16_t scanline = 0; // 用来记录扫描的行数
+	int16_t cycle = 0;	  // 记录扫描点的列数 
 
-	// Background rendering
-	uint8_t bg_next_tile_id     = 0x00;
+	// 背景像素渲染信息
+	uint8_t bg_next_tile_id = 0x00;
 	uint8_t bg_next_tile_attrib = 0x00;
-	uint8_t bg_next_tile_lsb    = 0x00;
-	uint8_t bg_next_tile_msb    = 0x00;
+	uint8_t bg_next_tile_lsb = 0x00;
+	uint8_t bg_next_tile_msb = 0x00;
 	uint16_t bg_shifter_pattern_lo = 0x0000;
 	uint16_t bg_shifter_pattern_hi = 0x0000;
-	uint16_t bg_shifter_attrib_lo  = 0x0000;
-	uint16_t bg_shifter_attrib_hi  = 0x0000;
+	uint16_t bg_shifter_attrib_lo = 0x0000;
+	uint16_t bg_shifter_attrib_hi = 0x0000;
 
-	// Foreground "Sprite" rendering ================================
-	// The OAM is an additional memory internal to the PPU. It is
-	// not connected via the any bus. It stores the locations of
-	// 64off 8x8 (or 8x16) tiles to be drawn on the next frame.
+	// 前景"精灵"渲染信息
+	// OAM是PPU内部的附加内存。
+	// 未通过任何总线连接。它
+	// 存储在下一帧上绘制64个8x8（或8x16）瓷砖。
 	struct sObjectAttributeEntry
 	{
-		uint8_t y;		   // Y position of sprite
-		uint8_t id;		   // ID of tile from pattern memory
-		uint8_t attribute; // Flags define how sprite should be rendered
-		uint8_t x;		   // X position of sprite
+		uint8_t y;		   // 精灵在名称表的Y轴坐标 Y  1- 256
+		uint8_t id;		   // 精灵在模式表中的ID号，一共两张表，
+		uint8_t attribute; // 存放该精灵的title属性
+		uint8_t x;		   // 精灵在名称表的Y轴坐标 X 1-240
 	} OAM[64];
 
-	// A register to store the address when the CPU manually communicates
-	// with OAM via PPU registers. This is not commonly used because it
-	// is very slow, and instead a 256-Byte DMA transfer is used. See
-	// the Bus header for a description of this.
+	//当CPU手动通信时存储地址的寄存器
+	//通过PPU寄存器使用OAM。不常用，因为它
+	//非常慢，使用256字节的DMA传输。
 	uint8_t oam_addr = 0x00;
 
-	sObjectAttributeEntry spriteScanline[8];
-	uint8_t sprite_count;
-	uint8_t sprite_shifter_pattern_lo[8];    // 下一行将要绘制的精灵像素的低8个字节 信息
-	uint8_t sprite_shifter_pattern_hi[8];	 // 下一行将要绘制的精灵像素的高8个字节 信息
-											 //  这两个字节相加的结果组成一个8x8bit的像素图片
-	// Sprite Zero Collision Flags
+	sObjectAttributeEntry spriteScanline[8];    // 在一行中，存放的最多8个精灵
+	uint8_t sprite_count;						// 在一行中的精灵数量
+	uint8_t sprite_shifter_pattern_lo[8];		// 下一行将要绘制的精灵像素的低8个字节 信息
+	uint8_t sprite_shifter_pattern_hi[8]; 		// 下一行将要绘制的精灵像素的高8个字节 信息
+										  		//  这两个字节相加的结果组成一个8x8bit的像素图片
+	// 0号精灵命中标志
 	bool bSpriteZeroHitPossible = false;
 	bool bSpriteZeroBeingRendered = false;
 
-	// The OAM is conveniently package above to work with, but the DMA
-	// mechanism will need access to it for writing one byute at a time
-public:
-	uint8_t *pOAM = (uint8_t *)OAM;
 
 public:
-	// Communications with Main Bus
+	// 上面的OAM可以方便地打包使用，但是DMA 
+	// 机制需要访问它，以便一次编写一个byte
+	// 将OAM强转为字节指针，方便DMA直接传输
+	uint8_t *pOAM = (uint8_t *)OAM; 
+
+public:
+	// PPU与主线CPU进行通信函数
 	uint8_t cpuRead(uint16_t addr, bool rdonly = false);
-	void    cpuWrite(uint16_t addr, uint8_t  data);
+	void cpuWrite(uint16_t addr, uint8_t data);
 
-	// Communications with PPU Bus
+	// 与PPU内部总线进行通信函数
+	// 其中包含一些镜像地址需要转换
 	uint8_t ppuRead(uint16_t addr, bool rdonly = false);
-	void    ppuWrite(uint16_t addr, uint8_t data);
+	void ppuWrite(uint16_t addr, uint8_t data);
 
 private:
-	// The Cartridge or "GamePak"
+	// 卡带
 	std::shared_ptr<Cartridge> cart;
 
 public:
-	// Interface
-	void ConnectCartridge(const std::shared_ptr<Cartridge>& cartridge);
+	// 外部接口
+	void ConnectCartridge(const std::shared_ptr<Cartridge> &cartridge);
 	void clock();
 	void reset();
 	bool nmi = false;
 };
-

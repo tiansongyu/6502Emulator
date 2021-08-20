@@ -284,7 +284,7 @@ private:
 		//DrawCode(516, 72, 26);
 
 		// Draw OAM Contents (first 26 out of 64) ======================================
-		/*for (int i = 0; i < 26; i++)
+		for (int i = 0; i < 26; i++)
 		{
 			std::string s = hex(i, 2) + ": (" + std::to_string(nes.ppu.pOAM[i * 4 + 3])
 				+ ", " + std::to_string(nes.ppu.pOAM[i * 4 + 0]) + ") "
@@ -292,13 +292,13 @@ private:
 				+" AT: " + hex(nes.ppu.pOAM[i * 4 + 2], 2);
 			DrawString(516, 72 + i * 10, s);
 			DrawSprite(516 + 231, 72 + i * 10, &nes.ppu.GetSpriteTitle(516 + 231, 72 + i * 10, nes.ppu.pOAM[i * 4 + 1], nes.ppu.pOAM[i * 4 + 2], nSelectedPalette,i));
-		}*/
+		}
 
 		// Draw AUDIO Channels
-		DrawAudio(0, 520, 72);
-		DrawAudio(1, 644, 72);
-		DrawAudio(2, 520, 196);
-		DrawAudio(3, 644, 196);
+		//DrawAudio(0, 520, 72);
+		//DrawAudio(1, 644, 72);
+		//DrawAudio(2, 520, 196);
+		//DrawAudio(3, 644, 196);
 
 		// Draw Palettes & Pattern Tables ==============================================
 		const int nSwatchSize = 6;
