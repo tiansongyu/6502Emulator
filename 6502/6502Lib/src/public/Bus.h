@@ -29,6 +29,7 @@ public: // 总线
 
 public:
 	// 设置声音发声频率
+	// sample_rate是声音采样率，这个采样率决定一个声音数据的发生周期
 	void SetSampleFrequency(uint32_t sample_rate);
 	double dAudioSample = 0.0;
 
