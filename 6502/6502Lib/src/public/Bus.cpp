@@ -1,64 +1,8 @@
-/*
-	olc::NES - System Bus
-	"Thanks Dad for believing computers were gonna be a big deal..." - javidx9
-
-	License (OLC-3)
-	~~~~~~~~~~~~~~~
-
-	Copyright 2018-2019 OneLoneCoder.com
-
-	Redistribution and use in source and binary forms, with or without
-	modification, are permitted provided that the following conditions
-	are met:
-
-	1. Redistributions or derivations of source code must retain the above
-	copyright notice, this list of conditions and the following disclaimer.
-
-	2. Redistributions or derivative works in binary form must reproduce
-	the above copyright notice. This list of conditions and the following
-	disclaimer must be reproduced in the documentation and/or other
-	materials provided with the distribution.
-
-	3. Neither the name of the copyright holder nor the names of its
-	contributors may be used to endorse or promote products derived
-	from this software without specific prior written permission.
-
-	THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-	"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-	LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-	A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-	HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-	SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-	LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-	DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-	THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-	(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-	OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-
-	Relevant Video: https://youtu.be/xdzOvpYPmGE
-
-	Links
-	~~~~~
-	YouTube:	https://www.youtube.com/javidx9
-				https://www.youtube.com/javidx9extra
-	Discord:	https://discord.gg/WhwHUMV
-	Twitter:	https://www.twitter.com/javidx9
-	Twitch:		https://www.twitch.tv/javidx9
-	GitHub:		https://www.github.com/onelonecoder
-	Patreon:	https://www.patreon.com/javidx9
-	Homepage:	https://www.onelonecoder.com
-
-	Author
-	~~~~~~
-	David Barr, aka javidx9, �OneLoneCoder 2019
-*/
-
 #include "Bus.h"
 
 Bus::Bus()
 {
-	// Connect CPU to communication bus
+	// 在nes最初启动时，连接cpu到bus
 	cpu.ConnectBus(this);
 }
 
@@ -69,51 +13,51 @@ Bus::~Bus()
 void Bus::SetSampleFrequency(uint32_t sample_rate)
 {
 	dAudioTimePerSystemSample = 1.0 / (double)sample_rate;
-	dAudioTimePerNESClock = 1.0 / 5369318.0; // PPU Clock Frequency
+	dAudioTimePerNESClock = 1.0 / 5369318.0; //   1 / ppu的时钟频率  = ppu的时钟周期
 }
 
 void Bus::cpuWrite(uint16_t addr, uint8_t data)
 {
 	if (cart->cpuWrite(addr, data))
 	{
-		// The cartridge "sees all" and has the facility to veto
-		// the propagation of the bus transaction if it requires.
-		// This allows the cartridge to map any address to some
-		// other data, including the facility to divert transactions
-		// with other physical devices. The NES does not do this
-		// but I figured it might be quite a flexible way of adding
-		// "custom" hardware to the NES in the future!
+		// cartridge进行首次判断
+		// cartridge可以根據需要將內容映射到其他任何地址
+		// 通过这种方式，可以扩展硬件外设，比如枪。
 	}
 	else if (addr >= 0x0000 && addr <= 0x1FFF)
 	{
-		// System RAM Address Range. The range covers 8KB, though
-		// there is only 2KB available. That 2KB is "mirrored"
-		// through this address range. Using bitwise AND to mask
-		// the bottom 11 bits is the same as addr % 2048.
+		// 系统内存地址
+		// 只有一共8kb，但是只有2kb可以用
+		// 其他地址是2kb的镜像，使用&0x07ff运算，只使用2kb
 		cpuRam[addr & 0x07FF] = data;
 	}
 	else if (addr >= 0x2000 && addr <= 0x3FFF)
 	{
-		// PPU Address range. The PPU only has 8 primary registers
-		// and these are repeated throughout this range. We can
-		// use bitwise AND operation to mask the bottom 3 bits,
-		// which is the equivalent of addr % 8.
+		// PPU地址
+		// ppu只有8个寄存器，在0x2000 - 0x3fff这个范围内，都是这8个寄存器的重复镜像数据
+		// 所以直接使用&0x0007获取正确地址即可
 		ppu.cpuWrite(addr & 0x0007, data);
 	}
-	else if ((addr >= 0x4000 && addr <= 0x4013) || addr == 0x4015 || addr == 0x4017) //  NES APU
+	else if ((addr >= 0x4000 && addr <= 0x4013) || addr == 0x4015 || addr == 0x4017) 
 	{
+		// APU地址
+		// apu的几个寄存器地址 0x4000 - 0x4013 0x4015 0x4017
 		apu.cpuWrite(addr, data);
 	}
 	else if (addr == 0x4014)
 	{
-		// A write to this address initiates a DMA transfer
+		// 0x4014地址是DMA传送开始标志
+		// 当此地址被写入数据时，说明发生DMA传送
+		// CPU周期将停止，将OAM寄存器中的数据传送到PPU中，64个精灵，直到传送结束
 		dma_page = data;
 		dma_addr = 0x00;
 		dma_transfer = true;
 	}
 	else if (addr >= 0x4016 && addr <= 0x4017)
 	{
-		// "Lock In" controller state at this time
+		// 控制寄存器地址
+		// 0x4016 - 0x4017是控制寄存器地址，cpu通过读取此地址中的数据
+		// 获取控制命令
 		controller_state[addr & 0x0001] = controller[addr & 0x0001];
 	}
 }
@@ -123,26 +67,26 @@ uint8_t Bus::cpuRead(uint16_t addr, bool bReadOnly)
 	uint8_t data = 0x00;
 	if (cart->cpuRead(addr, data))
 	{
-		// Cartridge Address Range
+		// Cartridge 地址
 	}
 	else if (addr >= 0x0000 && addr <= 0x1FFF)
 	{
-		// System RAM Address Range, mirrored every 2048
+		// 系统内存地址RAM, 每2kb都是镜像  2kb = 0x07FF
 		data = cpuRam[addr & 0x07FF];
 	}
 	else if (addr >= 0x2000 && addr <= 0x3FFF)
 	{
-		// PPU Address range, mirrored every 8
+		// PPU地址 每8个字节都是镜像数据
 		data = ppu.cpuRead(addr & 0x0007, bReadOnly);
 	}
 	else if (addr == 0x4015)
 	{
-		// APU Read Status
+		// APU读寄存器
 		data = apu.cpuRead(addr);
 	}
 	else if (addr >= 0x4016 && addr <= 0x4017)
 	{
-		// Read out the MSB of the controller status word
+		// 读取控制命令数据
 		data = (controller_state[addr & 0x0001] & 0x80) > 0;
 		controller_state[addr & 0x0001] <<= 1;
 	}
@@ -152,7 +96,8 @@ uint8_t Bus::cpuRead(uint16_t addr, bool bReadOnly)
 
 void Bus::insertCartridge(const std::shared_ptr<Cartridge> &cartridge)
 {
-	// Connects cartridge to both Main Bus and CPU Bus
+	// 插入卡带，
+	// 将卡带连接到bus和ppu
 	this->cart = cartridge;
 	ppu.ConnectCartridge(cartridge);
 }
@@ -172,58 +117,59 @@ void Bus::reset()
 
 bool Bus::clock()
 {
-	// Clocking. The heart and soul of an emulator. The running
-	// frequency is controlled by whatever calls this function.
-	// So here we "divide" the clock as necessary and call
-	// the peripheral devices clock() function at the correct
-	// times.
-
-	// The fastest clock frequency the digital system cares
-	// about is equivalent to the PPU clock. So the PPU is clocked
-	// each time this function is called...
+	// 时钟， 模拟器的核心
+	// 整个模拟器的运行"节奏"
+	// 其中，ppu时钟通常用来决定整个模拟器速度
 	ppu.clock();
 
-	// ...also clock the APU
+	// APU时钟
 	apu.clock();
 
-	// The CPU runs 3 times slower than the PPU so we only call its
-	// clock() function every 3 times this function is called. We
-	// have a global counter to keep track of this.
+	// CPU的时钟周期比PPU和APU的慢3倍，也就是说，PPU和APU每执行3次，CPU执行一次
+	// 这是NES模拟器中规定的
+	// 使用nSystemClockCounter来记录ppu的时钟周期. 除3取余即可得到cpu时钟
 	if (nSystemClockCounter % 3 == 0)
 	{
-		// Is the system performing a DMA transfer form CPU memory to
-		// OAM memory on PPU?...
+		// 判断是否发生DMA传送(将OAM数据传送到PPU中)
 		if (dma_transfer)
 		{
-			// ...Yes! We need to wait until the next even CPU clock cycle
-			// before it starts...
+			// TODO 可能存在cpu的周期bug
+			// 这里虽然在cpu的周期中，但实际cpu不进行clock，
+			// 此时DMA占用cpu周期
+			// 通常占用513或514个周期
+			// （等待写入完成时为 1 个等待状态周期，如果在奇数 CPU 周期中为 + 1，则为 256 个交替读 / 写周期。）
+			// dma_dummy的默认是true
 			if (dma_dummy)
 			{
-				// ...So hang around in here each clock until 1 or 2 cycles
-				// have elapsed...
+				// 执行周期必须是偶数，需要等待一个cpu周期
 				if (nSystemClockCounter % 2 == 1)
 				{
-					// ...and finally allow DMA to start
+					// DMA开始传送
 					dma_dummy = false;
 				}
 			}
 			else
 			{
-				// DMA can take place!
 				if (nSystemClockCounter % 2 == 0)
 				{
-					// On even clock cycles, read from CPU bus
+					// 偶数周期从cpu中读取数据，
+					// dma_page存储着 0x(dma_page)xx数据 
+					// xx通常从0开始 ，0xFF结束，
+					// 64个精灵，每个精灵4个字节，所以是256个字节，也就是0xFF大小
+					// dma_page是地址的高位，dma_addr是地址的低位
+					// dma_data即为从cpu中读取的数据
 					dma_data = cpuRead(dma_page << 8 | dma_addr);
 				}
 				else
 				{
-					// On odd clock cycles, write to PPU OAM
+					// 奇数周期，将数据写到PPU中
 					ppu.pOAM[dma_addr] = dma_data;
-					// Increment the lo byte of the address
+					// 需要增加dma的地址偏移
 					dma_addr++;
-					// If this wraps around, we know that 256
-					// bytes have been written, so end the DMA
-					// transfer, and proceed as normal
+					// dma_addr是一个字节的数据
+					// 当dma_addr大于0xFF时，会产生溢出
+					// dma_addr = 0 说明此时DMA传送停止
+					// 将标志寄存器更改
 					if (dma_addr == 0x00)
 					{
 						dma_transfer = false;
@@ -234,35 +180,35 @@ bool Bus::clock()
 		}
 		else
 		{
-			// No DMA happening, the CPU is in control of its
-			// own destiny. Go forth my friend and calculate
-			// awesomeness for many generations to come...
+			// 没有发生DMA传送时，CPU时钟正常进行。
 			cpu.clock();
 		}
 	}
 
-	// Synchronising with Audio
+	// 音频同步
 	bool bAudioSampleReady = false;
+	// dAudioTimePerNESClock = 1.0 / 5369318.0; //
 	dAudioTime += dAudioTimePerNESClock;
 	if (dAudioTime >= dAudioTimePerSystemSample)
 	{
+		// dAudioTimePerSystemSample = 1.0 / (double)sample_rate;
+		// 当运行的时间大于一次采样周期的时候，进行一次发声。。。。这个速度是极快的
 		dAudioTime -= dAudioTimePerSystemSample;
+		// 获取需要发出的声音信息
 		dAudioSample = apu.GetOutputSample();
 		bAudioSampleReady = true;
 	}
-
-	// The PPU is capable of emitting an interrupt to indicate the
-	// vertical blanking period has been entered. If it has, we need
-	// to send that irq to the CPU.
 	if (ppu.nmi)
 	{
+		// PPU的中断通常发生在vertical blanking period，垂直消隐期间
+		// 也就是scanline大于251?? 的时候，属于在屏幕的下方，
+		// 此时cpu需要进行下一帧的名称表的准备
+		// 不可能在绘制的时间进行准备，只能等到绘制结束，否则会产生很多问题
+		// 唯一的机会就是在垂直消隐期间进行，也是nes设计巧妙之处
 		ppu.nmi = false;
 		cpu.nmi();
 	}
-
-
-
 	nSystemClockCounter++;
-
+	// 如果准备好声音数据，开始发声。。
 	return bAudioSampleReady;
 }

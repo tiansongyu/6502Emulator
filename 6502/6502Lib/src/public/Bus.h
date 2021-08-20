@@ -1,60 +1,3 @@
-/*
-	olc::NES - System Bus
-	"Thanks Dad for believing computers were gonna be a big deal..." - javidx9
-
-	License (OLC-3)
-	~~~~~~~~~~~~~~~
-
-	Copyright 2018-2019 OneLoneCoder.com
-
-	Redistribution and use in source and binary forms, with or without
-	modification, are permitted provided that the following conditions
-	are met:
-
-	1. Redistributions or derivations of source code must retain the above
-	copyright notice, this list of conditions and the following disclaimer.
-
-	2. Redistributions or derivative works in binary form must reproduce
-	the above copyright notice. This list of conditions and the following
-	disclaimer must be reproduced in the documentation and/or other
-	materials provided with the distribution.
-
-	3. Neither the name of the copyright holder nor the names of its
-	contributors may be used to endorse or promote products derived
-	from this software without specific prior written permission.
-
-	THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-	"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-	LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-	A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-	HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-	SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-	LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-	DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-	THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-	(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-	OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-
-	Relevant Video: https://youtu.be/xdzOvpYPmGE
-
-	Links
-	~~~~~
-	YouTube:	https://www.youtube.com/javidx9
-				https://www.youtube.com/javidx9extra
-	Discord:	https://discord.gg/WhwHUMV
-	Twitter:	https://www.twitter.com/javidx9
-	Twitch:		https://www.twitch.tv/javidx9
-	GitHub:		https://www.github.com/onelonecoder
-	Patreon:	https://www.patreon.com/javidx9
-	Homepage:	https://www.onelonecoder.com
-
-	Author
-	~~~~~~
-	David Barr, aka javidx9, �OneLoneCoder 2019
-*/
-
-
 #pragma once
 #include <cstdint>
 #include <array>
@@ -70,23 +13,22 @@ public:
 	Bus();
 	~Bus();
 
-public: // Devices on Main Bus
+public: // 总线
 
-	// The 6502 derived processor
+	// 6502 CPU
 	olc6502 cpu;	
-	// The 2C02 Picture Processing Unit
+	// 2C02 PPU图形处理器。。。显卡。。。
 	olc2C02 ppu;
-	// The Cartridge or "GamePak"
-	// The "2A03" Audio Processing Unit
+	// 2A03 APU 声卡。。。
 	olc2A03 apu;
 	std::shared_ptr<Cartridge> cart;
-	// 2KB of RAM
+	// CPU中2KB的内存RAM
 	uint8_t cpuRam[2048];
-	// Controllers
+	// 控制器数据暂存位置
 	uint8_t controller[2];
 
-	// Synchronisation with system Audio
 public:
+	// 设置声音发声频率
 	void SetSampleFrequency(uint32_t sample_rate);
 	double dAudioSample = 0.0;
 
@@ -96,44 +38,42 @@ private:
 	double dAudioTimePerNESClock = 0.0;
 	double dAudioTimePerSystemSample = 0.0f;
 
-public: // Main Bus Read & Write
+public: 
+	// 总线中负责cpu的读写
 	void    cpuWrite(uint16_t addr, uint8_t data);
 	uint8_t cpuRead(uint16_t addr, bool bReadOnly = false);
 
 private:
-	// A count of how many clocks have passed
+	// ppu apu 经过的总共周期
 	uint32_t nSystemClockCounter = 0;
-	// Internal cache of controller state
+	// 控制寄存器
 	uint8_t controller_state[2];
 
 private:
-	// A simple form of Direct Memory Access is used to swiftly
-	// transfer data from CPU bus memory into the OAM memory. It would
-	// take too long to sensibly do this manually using a CPU loop, so
-	// the program prepares a page of memory with the sprite info required
-	// for the next frame and initiates a DMA transfer. This suspends the
-	// CPU momentarily while the PPU gets sent data at PPU clock speeds.
-	// Note here, that dma_page and dma_addr form a 16-bit address in
-	// the CPU bus address space
+	// 游戏精灵的传送使用DMA机制，精灵一共有64个，每个精灵大小为4个字节
+	// DMA传送开始时，CPU停止clock，改为DMA传送或者读取一次数据，每个周期还是只能进行读或者写一次操作
+	// dma_page和dma_addr组成一个16位的CPU地址，
+	// 通过DMA机制，将CPU中的数据，一个字节一个字节的送到PPU中
+	// 由于开始时需要在CPU的偶数周期进行第一次读，所以需要513或者514个周期
 	uint8_t dma_page = 0x00;
 	uint8_t dma_addr = 0x00;
 	uint8_t dma_data = 0x00;
 
-	// DMA transfers need to be timed accurately. In principle it takes
-	// 512 cycles to read and write the 256 bytes of the OAM memory, a
-	// read followed by a write. However, the CPU needs to be on an "even"
-	// clock cycle, so a dummy cycle of idleness may be required
+	// DMA传输需要精确传送。原则上需要 
+	// 512个周期来读取和写入256字节的OAM内存，一个 
+	// 先读后写。但是，CPU需要处于“偶数”状态 
+	// 时钟周期，因此可能需要一个虚拟的空闲周期
 	bool dma_dummy = true;
 
-	// Finally a flag to indicate that a DMA transfer is happening
+	// DMA传送发生标志
 	bool dma_transfer = false;
 
-public: // System Interface
-	// Connects a cartridge object to the internal buses
+public: // 系统接口
+	// 将卡带智能指针对象连接到内部总线
 	void insertCartridge(const std::shared_ptr<Cartridge>& cartridge);
-	// Resets the system
+	// 重置系统
 	void reset();
-	// Clocks the system - a single whole systme tick
+	// 系统clock
 	bool clock();
 };
 
