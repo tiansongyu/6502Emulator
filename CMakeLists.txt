@@ -13,5 +13,3 @@ add_subdirectory(6502/6502Lib)
 add_subdirectory(6502/6502Emulator)
 
 file(COPY ./smb.nes ./nestest.nes DESTINATION ./6502/6502Emulator/)
-
-add_definitions(-std=c++14)
