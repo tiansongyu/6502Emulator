@@ -4,6 +4,7 @@ project( 6502Emulator )
 
 set( CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DM6502_DEBUG" )	#so we can add the DEBUG preprocessor define and other flags to stay in debug mode - see https://cmake.org/Wiki/CMake_Useful_Variables#Compilers_and_Tools
 set( CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -DM6502_DEBUG" )
+set(CMAKE_CXX_STANDARD 17)
 
 if(MSVC)
 	add_compile_options(/MP)				#Use multiple processors when building
@@ -69,4 +70,3 @@ else()
 target_LINK_LIBRARIES(6502Emulator -lasound -lX11 -lGL -lpthread -lpng -lstdc++fs -std=c++17)
 endif()
 
-add_definitions(-std=c++14)
