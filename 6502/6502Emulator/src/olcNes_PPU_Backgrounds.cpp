@@ -200,7 +200,7 @@ private:
 	bool OnUserCreate() override
 	{
 		// Load the cartridge
-		cart = std::make_shared<Cartridge>("Dragon Power (USA).nes");
+		cart = std::make_shared<Cartridge>("Castlevania2.nes");
 
 		if (!cart->ImageValid())
 			return false;

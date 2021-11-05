@@ -20,6 +20,8 @@ set  (M6502_SOURCES
 	"src/public/Mapper.cpp"
 	"src/public/Mapper_000.h"
 	"src/public/Mapper_000.cpp"
+	"src/public/Mapper_001.h"
+	"src/public/Mapper_001.cpp"
 	"src/public/Mapper_002.h"
 	"src/public/Mapper_002.cpp"
 	"src/public/Mapper_003.h"
