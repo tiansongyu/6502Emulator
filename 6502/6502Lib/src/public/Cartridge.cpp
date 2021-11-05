@@ -76,7 +76,7 @@ Cartridge::Cartridge(const std::string &sFileName)
 			break;
 			case   2: pMapper = std::make_shared<Mapper_002>(nPRGBanks, nCHRBanks); break;
 			case   3: pMapper = std::make_shared<Mapper_003>(nPRGBanks, nCHRBanks); break;
-			//case  66: pMapper = std::make_shared<Mapper_066>(nPRGBanks, nCHRBanks); break;
+			case  66: pMapper = std::make_shared<Mapper_066>(nPRGBanks, nCHRBanks); break;
 			default:
 				std::cout << "can not find the correct mapper" << std::endl;
 				break;

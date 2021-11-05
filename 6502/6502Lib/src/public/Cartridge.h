@@ -9,7 +9,7 @@
 //待添加不同种类的mapper
 #include "Mapper_002.h"
 #include "Mapper_003.h"
-//#include "Mapper_066.h"
+#include "Mapper_066.h"
 
 class Cartridge
 {
