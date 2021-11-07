@@ -75,7 +75,7 @@ private:
 	// The NES
 	Bus nes;
 	std::shared_ptr<Cartridge> cart;
-	bool bEmulationRun = false;
+	bool bEmulationRun = true;
 	float fResidualTime = 0.0f;
 
 	uint8_t nSelectedPalette = 0x00;
@@ -200,7 +200,7 @@ private:
 	bool OnUserCreate() override
 	{
 		// Load the cartridge
-		cart = std::make_shared<Cartridge>("Castlevania2.nes");
+		cart = std::make_shared<Cartridge>("Castlevania.nes");
 
 		if (!cart->ImageValid())
 			return false;
@@ -239,7 +239,7 @@ private:
 
 	bool OnUserUpdate(float fElapsedTime) override
 	{
-		EmulatorUpdateWithAudio(fElapsedTime);
+		EmulatorUpdateWithoutAudio(fElapsedTime);
 		return true;
 	}
 
@@ -398,14 +398,14 @@ private:
 		//DrawCode(516, 72, 26);
 
 		// Draw OAM Contents (first 26 out of 64) ======================================
-		/*for (int i = 0; i < 26; i++)
+		for (int i = 0; i < 26; i++)
 		{
 			std::string s = hex(i, 2) + ": (" + std::to_string(nes.ppu.pOAM[i * 4 + 3])
 				+ ", " + std::to_string(nes.ppu.pOAM[i * 4 + 0]) + ") "
 				+ "ID: " + hex(nes.ppu.pOAM[i * 4 + 1], 2) +
 				+" AT: " + hex(nes.ppu.pOAM[i * 4 + 2], 2);
 			DrawString(516, 72 + i * 10, s);
-		}*/
+		}
 
 		// Draw Palettes & Pattern Tables ==============================================
 		const int nSwatchSize = 6;
