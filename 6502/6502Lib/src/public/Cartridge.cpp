@@ -33,7 +33,7 @@ Cartridge::Cartridge(const std::string &sFileName)
 
 		// 读取这个iNES文件所使用的mapperid号
 		nMapperID = ((header.mapper2 >> 4) << 4) | (header.mapper1 >> 4);
-		mirror = (header.mapper1 & 0x01) ? VERTICAL : HORIZONTAL;
+		hw_mirror = (header.mapper1 & 0x01) ? VERTICAL : HORIZONTAL;
 
 		// 这里默认是iNES文件格式，后续再添加iNES0.7 iNES2.0 // TODO
 		uint8_t nFileType = 1;
@@ -75,7 +75,7 @@ Cartridge::Cartridge(const std::string &sFileName)
 			pMapper = std::make_shared<Mapper_000>(nPRGBanks, nCHRBanks);
 			break;
 		case 1:
-			pMapper = std::make_shared<Mapper_002>(nPRGBanks, nCHRBanks);
+			pMapper = std::make_shared<Mapper_001>(nPRGBanks, nCHRBanks);
 			break;
 		case 2:
 			pMapper = std::make_shared<Mapper_002>(nPRGBanks, nCHRBanks);
@@ -109,7 +109,7 @@ bool Cartridge::cpuRead(uint16_t addr, uint8_t &data)
 {
 	// cpu读取卡带中的内容
 	uint32_t mapped_addr = 0;
-	if (pMapper->cpuMapRead(addr, mapped_addr))
+	if (pMapper->cpuMapRead(addr, mapped_addr, data))
 	{
 		data = vPRGMemory[mapped_addr];
 		return true;
@@ -159,4 +159,21 @@ void Cartridge::reset()
 	// 卡带重置，会重置mapper
 	if (pMapper != nullptr)
 		pMapper->reset();
+}
+
+MIRROR Cartridge::Mirror()
+{
+	MIRROR m = pMapper->mirror();
+	if (m == MIRROR::HARDWARE)
+	{
+		// Mirror configuration was defined
+		// in hardware via soldering
+		return hw_mirror;
+	}
+	else
+	{
+		// Mirror configuration can be
+		// dynamically set via mapper
+		return m;
+	}
 }

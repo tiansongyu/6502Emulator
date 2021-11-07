@@ -15,7 +15,7 @@ void Mapper_003::reset()
 	regLo = 0x00;
 }
 
-bool Mapper_003::cpuMapRead(uint16_t addr, uint32_t &mapped_addr)
+bool Mapper_003::cpuMapRead(uint16_t addr, uint32_t &mapped_addr, uint8_t &data)
 {
 	// 存在ROM为16KB和32KB两种情况
 	if (addr >= 0x8000 && addr <= 0xFFFF)

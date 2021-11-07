@@ -399,7 +399,7 @@ uint8_t olc2C02::ppuRead(uint16_t addr, bool rdonly)
 	{
 		addr &= 0x0FFF;
 
-		if (cart->mirror == Cartridge::MIRROR::VERTICAL)
+		if (cart->Mirror() == MIRROR::VERTICAL)
 		{
 			// Vertical
 			if (addr >= 0x0000 && addr <= 0x03FF)
@@ -411,7 +411,7 @@ uint8_t olc2C02::ppuRead(uint16_t addr, bool rdonly)
 			if (addr >= 0x0C00 && addr <= 0x0FFF)
 				data = tblName[1][addr & 0x03FF];
 		}
-		else if (cart->mirror == Cartridge::MIRROR::HORIZONTAL)
+		else if (cart->Mirror() == MIRROR::HORIZONTAL)
 		{
 			// Horizontal
 			if (addr >= 0x0000 && addr <= 0x03FF)
@@ -455,7 +455,7 @@ void olc2C02::ppuWrite(uint16_t addr, uint8_t data)
 	else if (addr >= 0x2000 && addr <= 0x3EFF)
 	{
 		addr &= 0x0FFF;
-		if (cart->mirror == Cartridge::MIRROR::VERTICAL)
+		if (cart->Mirror() ==MIRROR::VERTICAL)
 		{
 			// Vertical
 			if (addr >= 0x0000 && addr <= 0x03FF)
@@ -467,7 +467,7 @@ void olc2C02::ppuWrite(uint16_t addr, uint8_t data)
 			if (addr >= 0x0C00 && addr <= 0x0FFF)
 				tblName[1][addr & 0x03FF] = data;
 		}
-		else if (cart->mirror == Cartridge::MIRROR::HORIZONTAL)
+		else if (cart->Mirror() == MIRROR::HORIZONTAL)
 		{
 			// Horizontal
 			if (addr >= 0x0000 && addr <= 0x03FF)

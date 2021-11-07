@@ -5,7 +5,6 @@
 #include "olcPixelGameEngine.h"
 
 #include "Cartridge.h"
-
 class olc2C02
 {
 public:

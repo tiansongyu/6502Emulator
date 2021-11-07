@@ -7,6 +7,7 @@
 
 #include "Mapper_000.h"
 //待添加不同种类的mapper
+#include "Mapper_001.h"
 #include "Mapper_002.h"
 #include "Mapper_003.h"
 #include "Mapper_066.h"
@@ -20,17 +21,9 @@ public:
 
 public:
 	bool ImageValid();
-
-	enum MIRROR
-	{
-		HORIZONTAL,
-		VERTICAL,
-		ONESCREEN_LO,
-		ONESCREEN_HI,
-	} mirror = HORIZONTAL;
-
 private:
 	bool bImageValid = false;
+	MIRROR hw_mirror = HORIZONTAL;
 
 	uint8_t nMapperID = 0;
 	uint8_t nPRGBanks = 0;
@@ -52,5 +45,6 @@ public:
 
 	// 重置卡带
 	void reset();
-};
 
+	MIRROR Mirror();
+};

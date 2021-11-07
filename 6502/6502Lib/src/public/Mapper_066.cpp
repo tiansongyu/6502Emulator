@@ -16,7 +16,7 @@ void Mapper_066::reset()
 	regLo = 0x00;
 }
 
-bool Mapper_066::cpuMapRead(uint16_t addr, uint32_t &mapped_addr)
+bool Mapper_066::cpuMapRead(uint16_t addr, uint32_t &mapped_addr, uint8_t &data)
 {
 	// CPU $8000-$FFFF: 32 KB switchable PRG ROM bank
 	// PPU $0000-$1FFF: 8 KB switchable CHR ROM bank
