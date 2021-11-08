@@ -455,7 +455,7 @@ void olc2C02::ppuWrite(uint16_t addr, uint8_t data)
 	else if (addr >= 0x2000 && addr <= 0x3EFF)
 	{
 		addr &= 0x0FFF;
-		if (cart->Mirror() ==MIRROR::VERTICAL)
+		if (cart->Mirror() == MIRROR::VERTICAL)
 		{
 			// Vertical
 			if (addr >= 0x0000 && addr <= 0x03FF)
@@ -520,6 +520,7 @@ void olc2C02::reset()
 	control.reg = 0x00;
 	vram_addr.reg = 0x0000;
 	tram_addr.reg = 0x0000;
+	odd_frame = false;
 }
 
 void olc2C02::clock()
@@ -623,10 +624,10 @@ void olc2C02::clock()
 				// y offset is the specific "scanline"
 
 				//如果我们已经超过了一排的高度，我们需要
-				//增加行数，可能会换行到相邻行中 
-				//垂直名称表。不过，别忘了下面两排 
-				//不包含平铺信息。使用粗略的y偏移 
-				//确定我们想要的名称表的哪一行，以及 
+				//增加行数，可能会换行到相邻行中
+				//垂直名称表。不过，别忘了下面两排
+				//不包含平铺信息。使用粗略的y偏移
+				//确定我们想要的名称表的哪一行，以及
 				//y偏移是特定的“扫描线”
 
 				// find_y是title内的像素y坐标扫描线
@@ -661,7 +662,7 @@ void olc2C02::clock()
 	// Transfer the temporarily stored horizontal nametable access information
 	// into the "pointer". Note that fine x scrolling is not part of the "pointer"
 	// addressing mechanism
-	// 传输临时存储的水平nametable访问信息 
+	// 传输临时存储的水平nametable访问信息
 	// 进入“指针”。请注意，精细x滚动不是“指针”的一部分
 	// 寻址机制
 	auto TransferAddressX = [&]()
@@ -678,8 +679,8 @@ void olc2C02::clock()
 	// Transfer the temporarily stored vertical nametable access information
 	// into the "pointer". Note that fine y scrolling is part of the "pointer"
 	// addressing mechanism
-	// 传输临时存储的垂直名称表访问信息 
-	// 进入“指针”。请注意，精细的y形滚动是“指针”的一部分 
+	// 传输临时存储的垂直名称表访问信息
+	// 进入“指针”。请注意，精细的y形滚动是“指针”的一部分
 	// 寻址机制
 	auto TransferAddressY = [&]()
 	{
@@ -696,7 +697,7 @@ void olc2C02::clock()
 	// Prime the "in-effect" background tile shifters ready for outputting next
 	// 8 pixels in scanline.
 
-	//为“有效”背景平铺移位器加上底漆，以便下一步输出 
+	//为“有效”背景平铺移位器加上底漆，以便下一步输出
 	//扫描线为8像素。
 	auto LoadBackgroundShifters = [&]()
 	{
@@ -708,12 +709,12 @@ void olc2C02::clock()
 		// plays a part in this too, whcih is seen later, so in fact we can choose
 		// any one of the top 8 bits.
 
-		// 每次PPU更新我们计算一个像素。这些移位器沿方向移位1位 
-		// 向像素合成器提供所需的二进制信息。它的 
-		// 16位宽，因为前8位是当前正在绘制的8个像素 
-		// 底部的8位是接下来要绘制的8个像素。当然这意味着 
-		// 所需位始终是移位器的MSB。但是，“精细x”滚动 
-		// 这也起了一定作用，后面会看到，所以事实上我们可以选择 
+		// 每次PPU更新我们计算一个像素。这些移位器沿方向移位1位
+		// 向像素合成器提供所需的二进制信息。它的
+		// 16位宽，因为前8位是当前正在绘制的8个像素
+		// 底部的8位是接下来要绘制的8个像素。当然这意味着
+		// 所需位始终是移位器的MSB。但是，“精细x”滚动
+		// 这也起了一定作用，后面会看到，所以事实上我们可以选择
 		// 前8位中的任意一位。
 
 		bg_shifter_pattern_lo = (bg_shifter_pattern_lo & 0xFF00) | bg_next_tile_lsb;
@@ -734,9 +735,9 @@ void olc2C02::clock()
 	// by 1 pixel. This means relatively, the state of the shifter is in sync
 	// with the pixels being drawn for that 8 pixel section of the scanline.
 
-	//每个周期，存储模式和属性信息的移位器移位 
-	//它们的内容是1位的。这是因为每一个周期，输出都在进行 
-	//1像素。这意味着换档杆的状态相对而言是同步的 
+	//每个周期，存储模式和属性信息的移位器移位
+	//它们的内容是1位的。这是因为每一个周期，输出都在进行
+	//1像素。这意味着换档杆的状态相对而言是同步的
 	//为扫描线的8像素部分绘制像素。
 
 	auto UpdateShifters = [&]()
@@ -776,7 +777,7 @@ void olc2C02::clock()
 	{
 		// 这里的scanline 指的是行数 ，渲染的行数为 0 - 239
 		// cycle 指的是 Pixel 列数
-		if (scanline == 0 && cycle == 0)
+		if (scanline == 0 && cycle == 0 && odd_frame && (mask.render_background || mask.render_sprites))
 		{
 			// "Odd Frame" cycle skip
 			// 第一cycle时， 直接跳过
@@ -820,12 +821,12 @@ void olc2C02::clock()
 			// Fortunately, for background rendering, we go through a fairly
 			// repeatable sequence of events, every 2 clock cycles.
 
-			//在这些周期中，我们收集和处理可见数据 
-			//“换档杆”已在上一节结束时预加载 
-			//带有此扫描线起点数据的扫描线。一旦我们 
-			//离开可见区域，我们进入休眠状态，直到移位器被移除 
-			//为下一条扫描线预加载。 
-			//幸运的是，对于背景渲染，我们经历了一个相当复杂的过程 
+			//在这些周期中，我们收集和处理可见数据
+			//“换档杆”已在上一节结束时预加载
+			//带有此扫描线起点数据的扫描线。一旦我们
+			//离开可见区域，我们进入休眠状态，直到移位器被移除
+			//为下一条扫描线预加载。
+			//幸运的是，对于背景渲染，我们经历了一个相当复杂的过程
 			//可重复的事件序列，每2个时钟周期。
 
 			switch ((cycle - 1) % 8)
@@ -1500,6 +1501,13 @@ void olc2C02::clock()
 
 	// Advance renderer - it never stops, it's relentless
 	cycle++;
+
+	if (mask.render_background || mask.render_sprites)
+		if (cycle == 260 && scanline < 240)
+		{
+			cart->GetMapper()->scanline();
+		}
+
 	if (cycle >= 341)
 	{
 		cycle = 0;
@@ -1508,6 +1516,7 @@ void olc2C02::clock()
 		{
 			scanline = -1;
 			frame_complete = true;
+			odd_frame = !odd_frame;
 		}
 	}
 }
