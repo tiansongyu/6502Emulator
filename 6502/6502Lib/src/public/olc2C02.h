@@ -154,13 +154,13 @@ private:
 	// 0号精灵命中标志
 	bool bSpriteZeroHitPossible = false;
 	bool bSpriteZeroBeingRendered = false;
-
+	bool odd_frame = false;
 
 public:
-	// 上面的OAM可以方便地打包使用，但是DMA 
+	// 上面的OAM可以方便地打包使用，但是DMA
 	// 机制需要访问它，以便一次编写一个byte
 	// 将OAM强转为字节指针，方便DMA直接传输
-	uint8_t *pOAM = (uint8_t *)OAM; 
+	uint8_t *pOAM = (uint8_t *)OAM;
 
 public:
 	// PPU与主线CPU进行通信函数

@@ -38,6 +38,8 @@ Cartridge::Cartridge(const std::string &sFileName)
 
 		// 这里默认是iNES文件格式，后续再添加iNES0.7 iNES2.0 // TODO
 		uint8_t nFileType = 1;
+		if ((header.mapper2 & 0x0C) == 0x08)
+			nFileType = 2;
 
 		if (nFileType == 0)
 		{
@@ -66,7 +68,13 @@ Cartridge::Cartridge(const std::string &sFileName)
 
 		if (nFileType == 2)
 		{
-			// TODO iNES2.0
+			nPRGBanks = ((header.prg_ram_size & 0x07) << 8) | header.prg_rom_chunks;
+			vPRGMemory.resize(nPRGBanks * 16384);
+			ifs.read((char *)vPRGMemory.data(), vPRGMemory.size());
+
+			nCHRBanks = ((header.prg_ram_size & 0x38) << 8) | header.chr_rom_chunks;
+			vCHRMemory.resize(nCHRBanks * 8192);
+			ifs.read((char *)vCHRMemory.data(), vCHRMemory.size());
 		}
 
 		// 选择对应的映射器
@@ -108,14 +116,23 @@ bool Cartridge::ImageValid()
 {
 	return bImageValid;
 }
-
 bool Cartridge::cpuRead(uint16_t addr, uint8_t &data)
 {
-	// cpu读取卡带中的内容
 	uint32_t mapped_addr = 0;
+	// cpu读取卡带中的内容
+
 	if (pMapper->cpuMapRead(addr, mapped_addr, data))
 	{
-		data = vPRGMemory[mapped_addr];
+		if (mapped_addr == 0xFFFFFFFF)
+		{
+			// Mapper has actually set the data value, for example cartridge based RAM
+			return true;
+		}
+		else
+		{
+			// Mapper has produced an offset into cartridge bank memory
+			data = vPRGMemory[mapped_addr];
+		}
 		return true;
 	}
 	else
@@ -127,7 +144,16 @@ bool Cartridge::cpuWrite(uint16_t addr, uint8_t data)
 	uint32_t mapped_addr = 0;
 	if (pMapper->cpuMapWrite(addr, mapped_addr, data))
 	{
-		vPRGMemory[mapped_addr] = data;
+		if (mapped_addr == 0xFFFFFFFF)
+		{
+			// Mapper has actually set the data value, for example cartridge based RAM
+			return true;
+		}
+		else
+		{
+			// Mapper has produced an offset into cartridge bank memory
+			vPRGMemory[mapped_addr] = data;
+		}
 		return true;
 	}
 	else
@@ -161,6 +187,7 @@ bool Cartridge::ppuWrite(uint16_t addr, uint8_t data)
 void Cartridge::reset()
 {
 	// 卡带重置，会重置mapper
+
 	if (pMapper != nullptr)
 		pMapper->reset();
 }

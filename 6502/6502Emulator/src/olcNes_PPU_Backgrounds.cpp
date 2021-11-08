@@ -200,7 +200,7 @@ private:
 	bool OnUserCreate() override
 	{
 		// Load the cartridge
-		cart = std::make_shared<Cartridge>("./rom/mmc3_irq_tests/5.MMC3_rev_A.nes");
+		cart = std::make_shared<Cartridge>("./rom/Super Mario Bros. 3 (USA).nes");
 
 		if (!cart->ImageValid())
 			return false;
@@ -297,7 +297,7 @@ private:
 			std::string s = hex(i, 2) + ": (" + std::to_string(nes.ppu.pOAM[i * 4 + 3]) + ", " + std::to_string(nes.ppu.pOAM[i * 4 + 0]) + ") " + "ID: " + hex(nes.ppu.pOAM[i * 4 + 1], 2) +
 							+" AT: " + hex(nes.ppu.pOAM[i * 4 + 2], 2);
 			DrawString(516, 72 + i * 10, s);
-			DrawSprite(516 + 231, 72 + i * 10, &nes.ppu.GetSpriteTitle(516 + 231, 72 + i * 10, nes.ppu.pOAM[i * 4 + 1], nes.ppu.pOAM[i * 4 + 2], nSelectedPalette, i));
+			// DrawSprite(516 + 231, 72 + i * 10, &nes.ppu.GetSpriteTitle(516 + 231, 72 + i * 10, nes.ppu.pOAM[i * 4 + 1], nes.ppu.pOAM[i * 4 + 2], nSelectedPalette, i));
 		}
 
 		// Draw AUDIO Channels
