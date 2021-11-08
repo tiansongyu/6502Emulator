@@ -1,15 +1,15 @@
-#include "Mapper_001.h"
+#include "Mapper_004.h"
 
-Mapper_001::Mapper_001(uint8_t prgBanks, uint8_t chrBanks) : Mapper(prgBanks, chrBanks)
+Mapper_004::Mapper_004(uint8_t prgBanks, uint8_t chrBanks) : Mapper(prgBanks, chrBanks)
 {
 	vRAMStatic.resize(32 * 1024);
 }
 
-Mapper_001::~Mapper_001()
+Mapper_004::~Mapper_004()
 {
 }
 
-bool Mapper_001::cpuMapRead(uint16_t addr, uint32_t &mapped_addr, uint8_t &data)
+bool Mapper_004::cpuMapRead(uint16_t addr, uint32_t &mapped_addr, uint8_t &data)
 {
 	if (addr >= 0x6000 && addr <= 0x7FFF)
 	{
@@ -52,7 +52,7 @@ bool Mapper_001::cpuMapRead(uint16_t addr, uint32_t &mapped_addr, uint8_t &data)
 	return false;
 }
 
-bool Mapper_001::cpuMapWrite(uint16_t addr, uint32_t &mapped_addr, uint8_t data)
+bool Mapper_004::cpuMapWrite(uint16_t addr, uint32_t &mapped_addr, uint8_t data)
 {
 	if (addr >= 0x6000 && addr <= 0x7FFF)
 	{
@@ -214,7 +214,7 @@ bool Mapper_001::cpuMapWrite(uint16_t addr, uint32_t &mapped_addr, uint8_t data)
 	return false;
 }
 
-bool Mapper_001::ppuMapRead(uint16_t addr, uint32_t &mapped_addr)
+bool Mapper_004::ppuMapRead(uint16_t addr, uint32_t &mapped_addr)
 {
 	if (addr < 0x2000)
 	{
@@ -252,7 +252,7 @@ bool Mapper_001::ppuMapRead(uint16_t addr, uint32_t &mapped_addr)
 	return false;
 }
 
-bool Mapper_001::ppuMapWrite(uint16_t addr, uint32_t &mapped_addr)
+bool Mapper_004::ppuMapWrite(uint16_t addr, uint32_t &mapped_addr)
 {
 	if (addr < 0x2000)
 	{
@@ -268,7 +268,7 @@ bool Mapper_001::ppuMapWrite(uint16_t addr, uint32_t &mapped_addr)
 		return false;
 }
 
-void Mapper_001::reset()
+void Mapper_004::reset()
 {
 	nControlRegister = 0x1C;
 	nLoadRegister = 0x00;
@@ -283,8 +283,22 @@ void Mapper_001::reset()
 	nPRGBankSelect16Hi = nPRGBanks - 1;
 }
 
-MIRROR Mapper_001::mirror()
+MIRROR Mapper_004::mirror()
 {
 
 	return mirrormode;
+}
+
+bool Mapper_004::irqState()
+{
+
+}
+void Mapper_004::irqClear()
+{
+
+}
+
+// Scanline Counting
+void Mapper_004::scanline()
+{
 }

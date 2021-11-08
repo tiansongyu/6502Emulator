@@ -200,7 +200,7 @@ private:
 	bool OnUserCreate() override
 	{
 		// Load the cartridge
-		cart = std::make_shared<Cartridge>("./rom/Castlevania2.nes");
+		cart = std::make_shared<Cartridge>("./rom/mmc3_irq_tests/1.Clocking.nes");
 
 		if (!cart->ImageValid())
 			return false;

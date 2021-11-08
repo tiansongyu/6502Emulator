@@ -26,6 +26,8 @@ set  (M6502_SOURCES
 	"src/public/Mapper_002.cpp"
 	"src/public/Mapper_003.h"
 	"src/public/Mapper_003.cpp"
+	"src/public/Mapper_004.h"
+	"src/public/Mapper_004.cpp"
 	"src/public/Mapper_066.h"
 	"src/public/Mapper_066.cpp"
 	"src/public/olc2C02.h"
