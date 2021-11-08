@@ -200,7 +200,7 @@ private:
 	bool OnUserCreate() override
 	{
 		// Load the cartridge
-		cart = std::make_shared<Cartridge>("./rom/mmc3_irq_tests/1.Clocking.nes");
+		cart = std::make_shared<Cartridge>("./rom/Teenage Mutant Hero Turtles - Tournament Fighters (Europe).nes");
 
 		if (!cart->ImageValid())
 			return false;

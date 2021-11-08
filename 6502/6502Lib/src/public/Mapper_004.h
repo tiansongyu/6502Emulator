@@ -25,17 +25,16 @@ public:
 	void scanline();
 
 private:
-	uint8_t nCHRBankSelect4Lo = 0x00;
-	uint8_t nCHRBankSelect4Hi = 0x00;
-	uint8_t nCHRBankSelect8 = 0x00;
+	uint8_t nBankSelectRegister = 0x00;
+	uint8_t nBankData = 0x00;
+	uint8_t nImage = 0x00;
+	uint8_t nPrgRamProtect = 0x00;
+	uint8_t nIrqLock = 0x00;
+	uint8_t nIrqReload = 0x00;
+	uint8_t nIrqBan = 0x00;
+	uint8_t nIrqUse = 0x00;
 
-	uint8_t nPRGBankSelect16Lo = 0x00;
-	uint8_t nPRGBankSelect16Hi = 0x00;
-	uint8_t nPRGBankSelect32 = 0x00;
-
-	uint8_t nLoadRegister = 0x00;
-	uint8_t nLoadRegisterCount = 0x00;
-	uint8_t nControlRegister = 0x00;
+	uint32_t pRegister[8];
 
 	// No local equipment required
 
