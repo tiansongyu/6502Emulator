@@ -200,7 +200,7 @@ private:
 	bool OnUserCreate() override
 	{
 		// Load the cartridge
-		cart = std::make_shared<Cartridge>("./rom/Double Dragon II - The Revenge (USA) (Rev A).nes");
+		cart = std::make_shared<Cartridge>("./rom/Castlevania2.nes");
 
 		if (!cart->ImageValid())
 			return false;

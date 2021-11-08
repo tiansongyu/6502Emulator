@@ -77,8 +77,8 @@ bool Mapper_001::cpuMapWrite(uint16_t addr, uint32_t &mapped_addr, uint8_t data)
 
 		// 当 CPU 在连续周期写入串行端口时，MMC1 将忽略除第一个之外的所有写入。当 6502 执行读 -
 		// 修改 - 写(RMW) 指令时会发生这种情况，例如 DEC 和 ROR，通过写回旧值然后在下一个周期写入新值。至少Bill &Ted's Excellence Adventure通过在包含 $FF 的 ROM 位置执行 INC 来重置 MMC1；MMC1 看到写回的 $FF 并忽略在下一个周期写入的 $00。[1] 这样做的原因是 MMC1 具有显式逻辑来忽略另一个写周期之后的任何写周期。写入的位置无关紧要，例如，即使在写入 $7fff 之后的一个周期内写入 $8000 也会被 MMC1 忽略，实际上，6502 处理器无法做到这一点。 if (data & 0x80) // 0b10000000
-		
-		// {
+		if (data & 0x80)
+		{
 			// MSB is set, so reset serial loading
 			// 7 位 0
 			// ---- ----
@@ -96,6 +96,32 @@ bool Mapper_001::cpuMapWrite(uint16_t addr, uint32_t &mapped_addr, uint8_t data)
 			// Load data in serially into load register
 			// It arrives LSB first, so implant this at
 			// bit 5. After 5 writes, the register is ready
+
+			// ;
+			// ;
+			// Sets the switchable PRG ROM bank to the value of A.;
+			// ;
+			// A MMC1_SR MMC1_PB
+			// 	setPRGBank:;
+			// 000edcba 10000 Start with an empty shift register(SR).The 1 is used
+			// 	sta $E000;
+			// 000edcba->a1000 to detect when the SR has become full.lsr a;
+			// > 0000edcb a1000
+			// 		sta $E000;
+			// 0000edcb->ba100
+			// 	lsr a;
+			// > 00000edc ba100
+			// 		sta $E000;
+			// 00000edc->cba10
+			// 	lsr a;
+			// > 000000ed cba10
+			// 		sta $E000;
+			// 000000ed->dcba1 Once a 1 is shifted into the last position, the SR is full.lsr a;
+			// > 0000000e dcba1
+			// 		sta $E000;
+			// 0000000e dcba1->edcba A write with the SR full copies D0 and the SR to a bank register;
+			// 10000($E000 - $FFFF means PRG bank number) and then clears the SR.rts
+			
 			nLoadRegister >>= 1;
 			nLoadRegister |= (data & 0x01) << 4;
 			nLoadRegisterCount++;
@@ -165,12 +191,12 @@ bool Mapper_001::cpuMapWrite(uint16_t addr, uint32_t &mapped_addr, uint8_t data)
 						// Fix 16KB PRG Bank at CPU 0x8000 to First Bank
 						nPRGBankSelect16Lo = 0;
 						// Set 16KB PRG Bank at CPU 0xC000
-						nPRGBankSelect16Hi = nLoadRegister & 0x0F;
+						nPRGBankSelect16Hi = nLoadRegister & 0x0F; // ?????
 					}
 					else if (nPRGMode == 3)
 					{
 						// Set 16KB PRG Bank at CPU 0x8000
-						nPRGBankSelect16Lo = nLoadRegister & 0x0F;
+						nPRGBankSelect16Lo = nLoadRegister & 0x0F;  // ?????
 						// Fix 16KB PRG Bank at CPU 0xC000 to Last Bank
 						nPRGBankSelect16Hi = nPRGBanks - 1;
 					}
