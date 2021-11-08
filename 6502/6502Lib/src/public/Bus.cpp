@@ -209,6 +209,14 @@ bool Bus::clock()
 		ppu.nmi = false;
 		cpu.nmi();
 	}
+
+	// Check if cartridge is requesting IRQ
+	if (cart->GetMapper()->irqState())
+	{
+		cart->GetMapper()->irqClear();
+		cpu.irq();
+	}
+	
 	nSystemClockCounter++;
 	// 如果准备好声音数据，开始发声。。
 	return bAudioSampleReady;

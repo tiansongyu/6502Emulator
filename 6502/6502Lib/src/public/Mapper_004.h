@@ -35,6 +35,12 @@ private:
 	uint8_t nIrqUse = 0x00;
 
 	uint32_t pRegister[8];
+	uint32_t pCHRBank[8];
+	uint32_t pPRGBank[4];
+
+
+	bool bIRQEnable = false;
+	bool bIRQActive = false;
 
 	// No local equipment required
 

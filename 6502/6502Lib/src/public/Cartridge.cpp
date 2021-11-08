@@ -181,3 +181,8 @@ MIRROR Cartridge::Mirror()
 		return m;
 	}
 }
+
+std::shared_ptr<Mapper> Cartridge::GetMapper()
+{
+	return pMapper;
+}

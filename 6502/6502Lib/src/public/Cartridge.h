@@ -22,6 +22,8 @@ public:
 
 public:
 	bool ImageValid();
+	std::shared_ptr<Mapper> GetMapper();
+
 private:
 	bool bImageValid = false;
 	MIRROR hw_mirror = HORIZONTAL;

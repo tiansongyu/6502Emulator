@@ -23,51 +23,27 @@ bool Mapper_004::cpuMapRead(uint16_t addr, uint32_t &mapped_addr, uint8_t &data)
 		// Signal mapper has handled request
 		return true;
 	}
-	else
+	if (addr >= 0x8000 && addr <= 0x9FFF)
 	{
-		// return true;
-		if (nBankSelectRegister & 0b0100000)
-		{
-			if (data >= 0x8000 && data <= 0x9FFF) // -2
-			{
-				mapped_addr = (nPRGBanks - 2) * 0x2000 + (addr & 0x1FFF);
-			}
-			else if (data >= 0xA000 && data <= 0xBFFF) // R7
-			{
-				uint8_t R7 = (nBankData & 0b11111100) >> 2;
-				mapped_addr = R7 * 0x2000 + (addr & 0x1FFF);
-			}
-			else if (data >= 0xC000 && data <= 0xDFFF) // R6
-			{
-				uint8_t R6 = (nBankData & 0b11111100) >> 2;
-				mapped_addr = R6 * 0x2000 + (addr & 0x1FFF);
-			}
-			else if (data >= 0xE000 && data <= 0xFFFF) // -1
-			{
-				mapped_addr = (nPRGBanks - 1) * 0x2000 + (addr & 0x1FFF);
-			}
-		}
-		else
-		{
-			if (data >= 0x8000 && data <= 0x9FFF) // R6
-			{
-				uint8_t R6 = (nBankData & 0b11111100) >> 2;
-				mapped_addr = R6 * 0x2000 + (addr & 0x1FFF);
-			}
-			else if (data >= 0xA000 && data <= 0xBFFF) // R7
-			{
-				uint8_t R7 = (nBankData & 0b11111100) >> 2;
-				mapped_addr = R7 * 0x2000 + (addr & 0x1FFF);
-			}
-			else if (data >= 0xC000 && data <= 0xDFFF) // -2
-			{
-				mapped_addr = (nPRGBanks - 2) * 0x2000 + (addr & 0x1FFF);
-			}
-			else if (data >= 0xE000 && data <= 0xFFFF) // -1
-			{
-				mapped_addr = (nPRGBanks - 1) * 0x2000 + (addr & 0x1FFF);
-			}
-		}
+		mapped_addr = pPRGBank[0] + (addr & 0x1FFF);
+		return true;
+	}
+
+	if (addr >= 0xA000 && addr <= 0xBFFF)
+	{
+		mapped_addr = pPRGBank[1] + (addr & 0x1FFF);
+		return true;
+	}
+
+	if (addr >= 0xC000 && addr <= 0xDFFF)
+	{
+		mapped_addr = pPRGBank[2] + (addr & 0x1FFF);
+		return true;
+	}
+
+	if (addr >= 0xE000 && addr <= 0xFFFF)
+	{
+		mapped_addr = pPRGBank[3] + (addr & 0x1FFF);
 		return true;
 	}
 	return false;
@@ -86,17 +62,20 @@ bool Mapper_004::cpuMapWrite(uint16_t addr, uint32_t &mapped_addr, uint8_t data)
 		// Signal mapper has handled request
 		return true;
 	}
-
 	if (addr >= 0x8000 && addr <= 0x9FFF)
 	{
-		if (addr % 2 == 0) // nBankSelectRegister
+		// Bank Select
+		if (!(addr & 0x0001))
 		{
+			// nTargetRegister = data & 0x07;
+			// bPRGBankMode = (data & 0x40);
+			// bCHRInversion = (data & 0x80);
 			nBankSelectRegister = data;
 		}
-		else // nBankData
+		else
 		{
 			// Update target register
-			pRegister[nBankSelectRegister & 0x07 ] = data;
+			pRegister[nBankSelectRegister & 0x07] = data;
 
 			// Update Pointer Table
 			if (nBankSelectRegister & 0x80)
@@ -136,43 +115,55 @@ bool Mapper_004::cpuMapWrite(uint16_t addr, uint32_t &mapped_addr, uint8_t data)
 			pPRGBank[1] = (pRegister[7] & 0x3F) * 0x2000;
 			pPRGBank[3] = (nPRGBanks * 2 - 1) * 0x2000;
 		}
-		return true;
+
+		return false;
 	}
-	else if (addr >= 0xA000 && addr <= 0xBFFF)
+
+	if (addr >= 0xA000 && addr <= 0xBFFF)
 	{
-		if (addr % 2 == 0) // nImageRegister
+		if (!(addr & 0x0001))
 		{
-			nImage = data & 0b01;
+			// Mirroring
+			// 这个寄存器有什么TM的用？？？？？？？
+			// 这不是直接赋值了吗，有个屁用
+			if (data & 0x01)
+				mirrormode = MIRROR::HORIZONTAL;
+			else
+				mirrormode = MIRROR::VERTICAL;
 		}
-		else // nPrgRamProtect
+		else
 		{
-			nPrgRamProtect = data & 0b11110000;
+			// PRG Ram Protect
+			// TODO:
 		}
-		return true;
+		return false;
 	}
-	else if (addr >= 0xC000 && addr <= 0xDFFF)
+
+	if (addr >= 0xC000 && addr <= 0xDFFF)
 	{
-		if (addr % 2 == 0) // nIrqLock
-		{
-			nIrqLock = data;
-		}
-		else // nIrqReload
+		if (!(addr & 0x0001))
 		{
 			nIrqReload = data;
 		}
-		return true;
+		else
+		{
+			nIrqLock = 0x0000;
+		}
+		return false;
 	}
-	else if (addr >= 0xE000 && addr <= 0xFFFF)
+
+	if (addr >= 0xE000 && addr <= 0xFFFF)
 	{
-		if (addr % 2 == 0) // nIrqBan
+		if (!(addr & 0x0001))
 		{
-			nIrqBan = data;
+			bIRQEnable = false;
+			bIRQActive = false;
 		}
-		else // nIrqUse
+		else
 		{
-			nIrqUse = data;
+			bIRQEnable = true;
 		}
-		return true;
+		return false;
 	}
 
 	return false;
@@ -180,99 +171,52 @@ bool Mapper_004::cpuMapWrite(uint16_t addr, uint32_t &mapped_addr, uint8_t data)
 
 bool Mapper_004::ppuMapRead(uint16_t addr, uint32_t &mapped_addr)
 {
-	if (addr < 0x2000)
+	if (addr >= 0x0000 && addr <= 0x03FF)
 	{
-		if (nCHRBanks == 0)
-		{
-			mapped_addr = addr;
-			return true;
-		}
-		else
-		{
-			if (nBankSelectRegister & 0b10000000)
-			{
-				if (addr >= 0x0000 && addr <= 0x03FF) // r2
-				{
-					uint8_t R2 = nBankData;
-					mapped_addr = R2 * 0x0400 + (addr & 0x03FF);
-					return true;
-				}
-				else if (addr >= 0x0400 && addr <= 0x07FF) //r3
-				{
-					uint8_t R3 = nBankData;
-					mapped_addr = R3 * 0x0400 + (addr & 0x03FF);
-					return true;
-				}
-				else if (addr >= 0x0800 && addr <= 0x0BFF) // r4
-				{
-					uint8_t R4 = nBankData;
-					mapped_addr = R4 * 0x0400 + (addr & 0x03FF);
-					return true;
-				}
-				else if (addr >= 0x0C00 && addr <= 0x0FFF) //r5
-				{
-					uint8_t R5 = nBankData;
-					mapped_addr = R5 * 0x0400 + (addr & 0x03FF);
-					return true;
-				}
-				else if (addr >= 0x1000 && addr <= 0x17FF) //r0
-				{
-					uint8_t R0 = (nBankData & 0b01111110);
-					// uint8_t R0 = (nBankData & 0b01111111);
-					mapped_addr = R0 * 0x0400 + (addr & 0x07FF);
-					return true;
-				}
-				else if (addr >= 0x1800 && addr <= 0x1FFF) //r1
-				{
-					uint8_t R1 = (nBankData & 0b01111110);
-					// uint8_t R0 = (nBankData & 0b01111111);
-					mapped_addr = R1 * 0x0400 + (addr & 0x07FF);
-					return true;
-				}
-			}
-			else
-			{
-				if (addr >= 0x0000 && addr <= 0x07FF) // r0
-				{
+		mapped_addr = pCHRBank[0] + (addr & 0x03FF);
+		return true;
+	}
 
-					uint8_t R0 = (nBankData & 0b01111110);
-					// uint8_t R0 = (nBankData & 0b01111111);
-					mapped_addr = R0 * 0x0400 + (addr & 0x07FF);
-					return true;
-				}
-				else if (addr >= 0x0800 && addr <= 0x0FFF) //r1
-				{
-					uint8_t R1 = (nBankData & 0b01111110);
-					// uint8_t R0 = (nBankData & 0b01111111);
-					mapped_addr = R1 * 0x0400 + (addr & 0x07FF);
-					return true;
-				}
-				else if (addr >= 0x1000 && addr <= 0x13FF) // r2
-				{
-					uint8_t R2 = nBankData;
-					mapped_addr = R2 * 0x0400 + (addr & 0x03FF);
-					return true;
-				}
-				else if (addr >= 0x1400 && addr <= 0x17FF) //r3
-				{
-					uint8_t R3 = nBankData;
-					mapped_addr = R3 * 0x0400 + (addr & 0x03FF);
-					return true;
-				}
-				else if (addr >= 0x1800 && addr <= 0x1BFF) //r4
-				{
-					uint8_t R4 = nBankData;
-					mapped_addr = R4 * 0x0400 + (addr & 0x03FF);
-					return true;
-				}
-				else if (addr >= 0x1C00 && addr <= 0x1FFF) //r5
-				{
-					uint8_t R5 = nBankData;
-					mapped_addr = R5 * 0x0400 + (addr & 0x03FF);
-					return true;
-				}
-			}
-		}
+	if (addr >= 0x0400 && addr <= 0x07FF)
+	{
+		mapped_addr = pCHRBank[1] + (addr & 0x03FF);
+		return true;
+	}
+
+	if (addr >= 0x0800 && addr <= 0x0BFF)
+	{
+		mapped_addr = pCHRBank[2] + (addr & 0x03FF);
+		return true;
+	}
+
+	if (addr >= 0x0C00 && addr <= 0x0FFF)
+	{
+		mapped_addr = pCHRBank[3] + (addr & 0x03FF);
+		return true;
+	}
+
+	if (addr >= 0x1000 && addr <= 0x13FF)
+	{
+		mapped_addr = pCHRBank[4] + (addr & 0x03FF);
+		return true;
+	}
+
+	if (addr >= 0x1400 && addr <= 0x17FF)
+	{
+		mapped_addr = pCHRBank[5] + (addr & 0x03FF);
+		return true;
+	}
+
+	if (addr >= 0x1800 && addr <= 0x1BFF)
+	{
+		mapped_addr = pCHRBank[6] + (addr & 0x03FF);
+		return true;
+	}
+
+	if (addr >= 0x1C00 && addr <= 0x1FFF)
+	{
+		mapped_addr = pCHRBank[7] + (addr & 0x03FF);
+		return true;
 	}
 
 	return false;
@@ -280,18 +224,7 @@ bool Mapper_004::ppuMapRead(uint16_t addr, uint32_t &mapped_addr)
 
 bool Mapper_004::ppuMapWrite(uint16_t addr, uint32_t &mapped_addr)
 {
-	if (addr < 0x2000)
-	{
-		if (nCHRBanks == 0)
-		{
-			mapped_addr = addr;
-			return true;
-		}
-
-		return true;
-	}
-	else
-		return false;
+	return false;
 }
 
 void Mapper_004::reset()
@@ -304,6 +237,22 @@ void Mapper_004::reset()
 	nIrqReload = 0x00;
 	nIrqBan = 0x00;
 	nIrqUse = 0x00;
+
+
+	mirrormode = MIRROR::HORIZONTAL;
+
+	for (int i = 0; i < 4; i++)
+		pPRGBank[i] = 0;
+	for (int i = 0; i < 8; i++)
+	{
+		pCHRBank[i] = 0;
+		pRegister[i] = 0;
+	}
+
+	pPRGBank[0] = 0 * 0x2000;
+	pPRGBank[1] = 1 * 0x2000;
+	pPRGBank[2] = (nPRGBanks * 2 - 2) * 0x2000;
+	pPRGBank[3] = (nPRGBanks * 2 - 1) * 0x2000;
 }
 
 MIRROR Mapper_004::mirror()
@@ -313,12 +262,25 @@ MIRROR Mapper_004::mirror()
 
 bool Mapper_004::irqState()
 {
-}
-void Mapper_004::irqClear()
-{
+	return bIRQActive;
 }
 
-// Scanline Counting
+void Mapper_004::irqClear()
+{
+	bIRQActive = false;
+}
+
 void Mapper_004::scanline()
 {
+	if (nIrqLock == 0)
+	{
+		nIrqLock = nIrqReload;
+	}
+	else
+		nIrqLock--;
+
+	if (nIrqLock == 0 && bIRQEnable)
+	{
+		bIRQActive = true;
+	}
 }
