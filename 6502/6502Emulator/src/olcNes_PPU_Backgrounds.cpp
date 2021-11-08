@@ -200,7 +200,7 @@ private:
 	bool OnUserCreate() override
 	{
 		// Load the cartridge
-		cart = std::make_shared<Cartridge>("Castlevania2.nes");
+		cart = std::make_shared<Cartridge>("./rom/Double Dragon II - The Revenge (USA) (Rev A).nes");
 
 		if (!cart->ImageValid())
 			return false;
@@ -239,7 +239,15 @@ private:
 
 	bool OnUserUpdate(float fElapsedTime) override
 	{
-		EmulatorUpdateWithoutAudio(fElapsedTime);
+#ifdef __APPLE__
+		{
+			EmulatorUpdateWithoutAudio(fElapsedTime);
+		}
+#else
+		{
+			EmulatorUpdateWithAudio(fElapsedTime);
+		}
+#endif()
 		return true;
 	}
 
@@ -255,7 +263,7 @@ private:
 		{
 			fAccumulatedTime -= (1.0f / 60.0f);
 			audio[0].pop_front();
-			audio[0].push_back(nes.apu.pulse1_visual);	// 可视化音频
+			audio[0].push_back(nes.apu.pulse1_visual); // 可视化音频
 			audio[1].pop_front();
 			audio[1].push_back(nes.apu.pulse2_visual);
 			audio[2].pop_front();
@@ -266,14 +274,14 @@ private:
 
 		// Handle input for controller in port #1
 		nes.controller[0] = 0x00;
-		nes.controller[0] |= GetKey(olc::Key::X).bHeld ? 0x80 : 0x00; // A Button
-		nes.controller[0] |= GetKey(olc::Key::Z).bHeld ? 0x40 : 0x00; // B Button
-		nes.controller[0] |= GetKey(olc::Key::A).bHeld ? 0x20 : 0x00; // Select
-		nes.controller[0] |= GetKey(olc::Key::S).bHeld ? 0x10 : 0x00; // Start
-		nes.controller[0] |= GetKey(olc::Key::UP).bHeld ? 0x08 : 0x00;
-		nes.controller[0] |= GetKey(olc::Key::DOWN).bHeld ? 0x04 : 0x00;
-		nes.controller[0] |= GetKey(olc::Key::LEFT).bHeld ? 0x02 : 0x00;
-		nes.controller[0] |= GetKey(olc::Key::RIGHT).bHeld ? 0x01 : 0x00;
+		nes.controller[0] |= GetKey(olc::Key::K).bHeld ? 0x80 : 0x00; // A Button
+		nes.controller[0] |= GetKey(olc::Key::J).bHeld ? 0x40 : 0x00; // B Button
+		nes.controller[0] |= GetKey(olc::Key::Y).bHeld ? 0x20 : 0x00; // Select
+		nes.controller[0] |= GetKey(olc::Key::T).bHeld ? 0x10 : 0x00; // Start
+		nes.controller[0] |= GetKey(olc::Key::W).bHeld ? 0x08 : 0x00;
+		nes.controller[0] |= GetKey(olc::Key::S).bHeld ? 0x04 : 0x00;
+		nes.controller[0] |= GetKey(olc::Key::A).bHeld ? 0x02 : 0x00;
+		nes.controller[0] |= GetKey(olc::Key::D).bHeld ? 0x01 : 0x00;
 
 		if (GetKey(olc::Key::R).bPressed)
 			nes.reset();
@@ -286,12 +294,10 @@ private:
 		// Draw OAM Contents (first 26 out of 64) ======================================
 		for (int i = 0; i < 26; i++)
 		{
-			std::string s = hex(i, 2) + ": (" + std::to_string(nes.ppu.pOAM[i * 4 + 3])
-				+ ", " + std::to_string(nes.ppu.pOAM[i * 4 + 0]) + ") "
-				+ "ID: " + hex(nes.ppu.pOAM[i * 4 + 1], 2) +
-				+" AT: " + hex(nes.ppu.pOAM[i * 4 + 2], 2);
+			std::string s = hex(i, 2) + ": (" + std::to_string(nes.ppu.pOAM[i * 4 + 3]) + ", " + std::to_string(nes.ppu.pOAM[i * 4 + 0]) + ") " + "ID: " + hex(nes.ppu.pOAM[i * 4 + 1], 2) +
+							+" AT: " + hex(nes.ppu.pOAM[i * 4 + 2], 2);
 			DrawString(516, 72 + i * 10, s);
-			DrawSprite(516 + 231, 72 + i * 10, &nes.ppu.GetSpriteTitle(516 + 231, 72 + i * 10, nes.ppu.pOAM[i * 4 + 1], nes.ppu.pOAM[i * 4 + 2], nSelectedPalette,i));
+			DrawSprite(516 + 231, 72 + i * 10, &nes.ppu.GetSpriteTitle(516 + 231, 72 + i * 10, nes.ppu.pOAM[i * 4 + 1], nes.ppu.pOAM[i * 4 + 2], nSelectedPalette, i));
 		}
 
 		// Draw AUDIO Channels
@@ -327,14 +333,14 @@ private:
 
 		// Handle input for controller in port #1
 		nes.controller[0] = 0x00;
-		nes.controller[0] |= GetKey(olc::Key::X).bHeld ? 0x80 : 0x00; // A Button
-		nes.controller[0] |= GetKey(olc::Key::Z).bHeld ? 0x40 : 0x00; // B Button
-		nes.controller[0] |= GetKey(olc::Key::A).bHeld ? 0x20 : 0x00; // Select
-		nes.controller[0] |= GetKey(olc::Key::S).bHeld ? 0x10 : 0x00; // Start
-		nes.controller[0] |= GetKey(olc::Key::UP).bHeld ? 0x08 : 0x00;
-		nes.controller[0] |= GetKey(olc::Key::DOWN).bHeld ? 0x04 : 0x00;
-		nes.controller[0] |= GetKey(olc::Key::LEFT).bHeld ? 0x02 : 0x00;
-		nes.controller[0] |= GetKey(olc::Key::RIGHT).bHeld ? 0x01 : 0x00;
+		nes.controller[0] |= GetKey(olc::Key::K).bHeld ? 0x80 : 0x00; // A Button
+		nes.controller[0] |= GetKey(olc::Key::J).bHeld ? 0x40 : 0x00; // B Button
+		nes.controller[0] |= GetKey(olc::Key::Y).bHeld ? 0x20 : 0x00; // Select
+		nes.controller[0] |= GetKey(olc::Key::T).bHeld ? 0x10 : 0x00; // Start
+		nes.controller[0] |= GetKey(olc::Key::W).bHeld ? 0x08 : 0x00;
+		nes.controller[0] |= GetKey(olc::Key::S).bHeld ? 0x04 : 0x00;
+		nes.controller[0] |= GetKey(olc::Key::A).bHeld ? 0x02 : 0x00;
+		nes.controller[0] |= GetKey(olc::Key::D).bHeld ? 0x01 : 0x00;
 
 		if (GetKey(olc::Key::SPACE).bPressed)
 			bEmulationRun = !bEmulationRun;
@@ -400,10 +406,8 @@ private:
 		// Draw OAM Contents (first 26 out of 64) ======================================
 		for (int i = 0; i < 26; i++)
 		{
-			std::string s = hex(i, 2) + ": (" + std::to_string(nes.ppu.pOAM[i * 4 + 3])
-				+ ", " + std::to_string(nes.ppu.pOAM[i * 4 + 0]) + ") "
-				+ "ID: " + hex(nes.ppu.pOAM[i * 4 + 1], 2) +
-				+" AT: " + hex(nes.ppu.pOAM[i * 4 + 2], 2);
+			std::string s = hex(i, 2) + ": (" + std::to_string(nes.ppu.pOAM[i * 4 + 3]) + ", " + std::to_string(nes.ppu.pOAM[i * 4 + 0]) + ") " + "ID: " + hex(nes.ppu.pOAM[i * 4 + 1], 2) +
+							+" AT: " + hex(nes.ppu.pOAM[i * 4 + 2], 2);
 			DrawString(516, 72 + i * 10, s);
 		}
 

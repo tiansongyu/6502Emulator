@@ -1,5 +1,6 @@
 #include "Cartridge.h"
 #include <iostream>
+#include <stdio.h>
 Cartridge::Cartridge(const std::string &sFileName)
 {
 	// iNES 格式文件头
@@ -89,8 +90,8 @@ Cartridge::Cartridge(const std::string &sFileName)
 		default:
 			std::cout << "can not find the correct mapper" << std::endl;
 			break;
-			}
-
+		}
+		printf("MapperID is %d \n", nMapperID);
 		bImageValid = true;
 		ifs.close();
 	}
