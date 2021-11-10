@@ -200,7 +200,7 @@ private:
 	bool OnUserCreate() override
 	{
 		// Load the cartridge
-		cart = std::make_shared<Cartridge>("./rom/Super Mario Bros. 3 (USA).nes");
+		cart = std::make_shared<Cartridge>("./rom/Metal Max (Japan).nes");
 
 		if (!cart->ImageValid())
 			return false;
@@ -283,7 +283,7 @@ private:
 		nes.controller[0] |= GetKey(olc::Key::A).bHeld ? 0x02 : 0x00;
 		nes.controller[0] |= GetKey(olc::Key::D).bHeld ? 0x01 : 0x00;
 
-		if (GetKey(olc::Key::R).bPressed)
+		if (GetKey(olc::Key::BACK).bPressed)
 			nes.reset();
 		if (GetKey(olc::Key::P).bPressed)
 			(++nSelectedPalette) &= 0x07;
@@ -344,7 +344,7 @@ private:
 
 		if (GetKey(olc::Key::SPACE).bPressed)
 			bEmulationRun = !bEmulationRun;
-		if (GetKey(olc::Key::R).bPressed)
+		if (GetKey(olc::Key::BACK).bPressed)
 			nes.reset();
 		if (GetKey(olc::Key::P).bPressed)
 			(++nSelectedPalette) &= 0x07;

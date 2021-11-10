@@ -65,6 +65,7 @@ bool Mapper_004::cpuMapWrite(uint16_t addr, uint32_t &mapped_addr, uint8_t data)
 	if (addr >= 0x8000 && addr <= 0x9FFF)
 	{
 		// Bank Select
+		// 判断为偶数时
 		if (!(addr & 0x0001))
 		{
 			// nTargetRegister = data & 0x07;
@@ -78,6 +79,9 @@ bool Mapper_004::cpuMapWrite(uint16_t addr, uint32_t &mapped_addr, uint8_t data)
 			pRegister[nBankSelectRegister & 0x07] = data;
 
 			// Update Pointer Table
+			// R0 and R1 ignore the bottom bit,
+			// as the value written still counts banks in 1KB units but odd numbered banks can't be selected.
+
 			if (nBankSelectRegister & 0x80)
 			{
 				pCHRBank[0] = pRegister[2] * 0x0400;
@@ -100,7 +104,9 @@ bool Mapper_004::cpuMapWrite(uint16_t addr, uint32_t &mapped_addr, uint8_t data)
 				pCHRBank[6] = pRegister[4] * 0x0400;
 				pCHRBank[7] = pRegister[5] * 0x0400;
 			}
-
+			// R6 and R7 will ignore the top two bits, as the MMC3 has only 6 PRG ROM address lines.
+			// Some romhacks rely on an 8-bit extension of R6/7 for oversized PRG-ROM,
+			// but this is deliberately not supported by many emulators. See iNES Mapper 004 below.
 			if (nBankSelectRegister & 0x40)
 			{
 				pPRGBank[2] = (pRegister[6] & 0x3F) * 0x2000;
@@ -143,11 +149,11 @@ bool Mapper_004::cpuMapWrite(uint16_t addr, uint32_t &mapped_addr, uint8_t data)
 	{
 		if (!(addr & 0x0001))
 		{
-			nIrqReload = data;
+			nIrqLatch = data;
 		}
 		else
 		{
-			nIrqLock = 0x0000;
+			nIrqCounter = 0x0000;
 		}
 		return false;
 	}
@@ -231,13 +237,9 @@ void Mapper_004::reset()
 {
 	nBankSelectRegister = 0x00;
 	nBankData = 0x00;
-	nImage = 0x00;
 	nPrgRamProtect = 0x00;
-	nIrqLock = 0x00;
-	nIrqReload = 0x00;
-	nIrqBan = 0x00;
-	nIrqUse = 0x00;
-
+	nIrqCounter = 0x00;
+	nIrqLatch = 0x00;
 
 	mirrormode = MIRROR::HORIZONTAL;
 
@@ -272,14 +274,14 @@ void Mapper_004::irqClear()
 
 void Mapper_004::scanline()
 {
-	if (nIrqLock == 0)
+	if (nIrqCounter == 0)
 	{
-		nIrqLock = nIrqReload;
+		nIrqCounter = nIrqLatch;
 	}
 	else
-		nIrqLock--;
+		nIrqCounter--;
 
-	if (nIrqLock == 0 && bIRQEnable)
+	if (nIrqCounter == 0 && bIRQEnable)
 	{
 		bIRQActive = true;
 	}

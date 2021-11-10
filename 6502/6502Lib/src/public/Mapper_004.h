@@ -27,13 +27,9 @@ public:
 private:
 	uint8_t nBankSelectRegister = 0x00;
 	uint8_t nBankData = 0x00;
-	uint8_t nImage = 0x00;
 	uint8_t nPrgRamProtect = 0x00;
-	uint8_t nIrqLock = 0x00;
-	uint8_t nIrqReload = 0x00;
-	uint8_t nIrqBan = 0x00;
-	uint8_t nIrqUse = 0x00;
-
+	uint8_t nIrqCounter = 0x00;
+	uint8_t nIrqLatch = 0x00;
 	uint32_t pRegister[8];
 	uint32_t pCHRBank[8];
 	uint32_t pPRGBank[4];
