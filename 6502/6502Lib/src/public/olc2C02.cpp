@@ -1,5 +1,4 @@
 #include "olc2C02.h"
-
 olc2C02::olc2C02()
 {
 	// 颜色

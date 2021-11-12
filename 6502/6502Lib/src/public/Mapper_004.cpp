@@ -1,4 +1,5 @@
 #include "Mapper_004.h"
+#include <stdio.h>
 
 Mapper_004::Mapper_004(uint8_t prgBanks, uint8_t chrBanks) : Mapper(prgBanks, chrBanks)
 {

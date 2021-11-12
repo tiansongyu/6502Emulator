@@ -1,96 +1,65 @@
-# 6052emulator 6502芯片模拟记录
+# NES 模拟器(Nintendo Entertainment System emulator)
 
-## 使用方法
-1. **安装vs2019、cmake v3.20+**
-2. **下载或clone本库源码**
-3. **执行make_VS2019.bat命令，会使用cmake自动生成vs2019工程，找到sln文件，进入工程(vs2019关闭警告作为错误选项)**（vs2017 vs2016 vs2015等皆可使用本源码，需要修改**make_VS2019.bat**中的`cmake -G "Visual Studio 16 2019" -A x64 ..\ -Dgtest_force_shared_crt=on` 指令,查询相关资料，修改为对应的vs版本工程）
+适用于Windows、UNIX、MAC平台的开源NES模拟器，为NES模拟器学习者提供与原NES机器高度相似的运行逻辑展示，源码并没有对运行速度进行优化，这也是为了保证高度还原NES运行机制的妥协。
 
+该项目旨在重现NES游戏机的运行机制，而不注重性能，如果想要学习性能强大的模拟器，可以参照以下模拟器源码,·[fceux](https://github.com/TASEmulators/fceux)、[jsnes(js)](https://github.com/bfirsh/jsnes)、[nes(go)](https://github.com/fogleman/nes)、[SimpleNES](https://github.com/amhndu/SimpleNES)等源码，这些模拟器皆具有较好的性能，但整体代码结构并不利于NES模拟器的学习，因为其中做了大量的性能优化，导致模拟器的运行机制与原机器大相径庭，所以本仓库源码更利于理解NES。
 
-### 工程划分
-本项目分四个工程:
-- 6502Emulator用UI界面的方式呈现6502寄存器的状态
-- gtest是谷歌的测试框架，属于Lib库
-- M6502Lib是6502CPU的指令实现
-- M6502Test是单元测试代码
+### 控制器按键
 
+| Nintendo              | Emulator    |
+| --------------------- | ----------- |
+| Up, Down, Left, Right | W A S D     |
+| Start                 | T           |
+| Select                | Y           |
+| A                     | K           |
+| B                     | J           |
+| Reset                 | R           |
 
-工程包括分个模块。一个是6502CPU实现模块，另外一个是使用[Google test](https://github.com/google/googletest/)工具进行单元测试，用来测试实现的指令。
-本工程只包括6502指令实现，可以进行执行所有逻辑、算数等指令(WIP),如果需要学习6502有关实现，可以查阅6502应用相关资料，进行应用实现。
+## 实现的模块
+- BUS
+- Cartridge(卡带)
+- Mapper(0\1\2\3\4\66)
+- 2A03(apu)
+- 2C02(ppu)
+- [6502(cpu)](https://github.com/tiansongyu/6502Emulator/blob/master/readme6502.md)
 
-## 参考资料 
- - **http://www.obelisk.me.uk/6502/**
- - **http://www.6502.org/**
- - **https://www.c64-wiki.com/wiki/Addressing_mode**
+## 编译环境配置
 
-1. 基本架构 描述了处理器的一些基本细节。
-2. 寄存器 遍历每个内部寄存器及其使用。
-3. 指令 提供了整个指令集的摘要。
-4. 寻址  描述了6502存储器的每种寻址模式。
-5. 算法 包含基本的6502编码示例。
-6. 参考 详细描述了完整的指令集。
+### linux环境
 
+安装cmake
 
+### windows
 
-
-
-## 基本架构
-
-6502微处理器是一个相对简单的8位CPU，只有几个内部寄存器能够通过其16位地址总线寻址最多64Kb的存储器。处理器是低位字节序的，并且地址优先存储在存储器中的最低有效字节之内。
-
-存储器的第一个256字节页面($0000-$00FF)被称为“零页面”，是许多特殊寻址模式的焦点，这些寻址模式导致指令更短(和更快)或允许间接访问存储器。内存的第二页($0100-$ 01FF)是为系统堆栈保留的，不能重定位。
-
-存储器映射中唯一保留的其他位置是存储器$FFFA至$FFFF的最后6个字节，必须使用不可屏蔽中断处理程序($FFFA/B)的地址，上电复位位置($FFFC/D)和BRK/中断请求处理程序($ FFFE/F)。
-
-6502对硬件设备没有任何特殊支持，因此必须将它们映射到内存区域，以便与硬件锁存器交换数据。
+安装vs2019(安装)
 
 
-## 寄存器
+## 编译
+``` bash 
+git clone git@github.com:tiansongyu/6502Emulator.git
+cd 6502Emulator
+mkdir build 
+cd build 
+cmake  -DCMAKE_BUILD_TYPE=Release ..
+cd 6502/6502Emulator
+make -j12 && ./6502/6502Emulator/6502Emulator
+```
 
-### 寄存器
-与同一时期的其他处理器相比，6502仅具有少量的寄存器。由于算法必须有效利用寄存器和存储器，因此编程尤其具有挑战性。
+## 参考文档资料
 
-### 程序计数器
-程序计数器是一个16位寄存器，它指向要执行的下一条指令。执行指令后，程序计数器的值会自动修改。
+* [NES Reference Guide (Wiki)](https://wiki.nesdev.org/w/index.php?title=NES_reference_guide)
+* [6502官网](http://www.6502.org/)
+* [6502 CPU Reference](http://www.obelisk.me.uk/6502/reference.html)
+* [6502 CPU Instruction](https://www.masswerk.at/6502/6502_instruction_set.html)
+* [6502 在线指令实现](https://www.masswerk.at/6502/assembler.html)
+* [NES Documentation (PDF)](http://nesdev.com/NESDoc.pdf)
 
-可以通过执行跳转，相对分支或对另一个存储器地址的子例程调用，或从子例程或中断返回来修改程序计数器的值。
 
-### 堆栈指针
-处理器支持位于$0100和$01FF之间的256字节堆栈。堆栈指针是一个8位寄存器，它保存堆栈中下一个空闲位置的低8位。堆栈的位置是固定的，不能移动。
+### 其他开发工具
+* [NES Mapper List](http://tuxnes.sourceforge.net/nesmapper.txt)
+* [NES文件下载](https://wowroms.com/en/roms/nintendo-entertainment-system/)
 
-将字节压入堆栈会导致堆栈指针递减。相反，拉字节会导致其递增。
+### 未实现功能
 
-CPU不会检测到堆栈是否因过多的推入或拉出操作而溢出，并且很可能导致程序崩溃。
-### 累加器
-8位累加器用于所有算术和逻辑运算(增量和减量除外)。累加器的内容可以存储或从内存或堆栈中检索。
-
-大多数复杂的操作将需要使用累加器进行算术运算，并且对它的使用进行有效的优化是时间关键型例程的关键功能。
-### 索引寄存器X
-8位索引寄存器最常用于保存计数器或偏移量以访问存储器。可以将X寄存器的值加载并保存在内存中，然后将其与保存在内存中或递增或递减的值进行比较。
-
-X寄存器具有一项特殊功能。它可用于获取堆栈指针的副本或更改其值。
-### 索引寄存器Y
-Y寄存器与X寄存器的相似之处在于，它可用于保持计数器或偏移量存储器访问，并支持同一组存储器负载，保存和比较操作以及递增和递减操作。它没有特殊功能。
-### 处理器状态
-在执行指令时，会设置或清除一组处理器标志，以记录操作结果。该标志和一些其他控制标志保存在特殊状态寄存器中。每个标志在寄存器中都有一个位。
-
-存在用于测试各个位的值，设置或清除其中一些以及将整个位压入或拉出堆栈的指令。
-
- - Carry Flag 携带标志
- 如果最后一次操作导致结果的第7位发生溢出或由于第0位引起下溢，则进位标志将置位。在算术，比较和逻辑移位期间会设置此条件。可以使用“设置进位标志”(SEC)指令进行显式设置，并通过“清除进位标志”(CLC)进行清除。
- - Zero Flag 零标志
-
- 如果最后一个操作的结果为零，则设置零标志。
- - Interrupt Disable 中断禁止
- 如果程序执行了“设置中断禁用”(SEI)指令，则将设置中断禁用标志。设置该标志后，处理器将不会响应来自设备的中断，直到通过“清除中断禁用”(CLI)指令将其清除为止。
- - Decimal Mode 十进制模式
- 当设置了十进制模式标志时，处理器将在加法和减法期间遵守二进制编码的十进制(BCD)算术规则。可以使用“设置十进制标志”(SED)显式设置该标志，并使用“清除十进制标志”(CLD)清除该标志。
- - Break Command 中断命令
- 当执行了BRK指令并且产生了一个中断来对其进行处理时，中断命令位置1 。
- - Overflow Flag 溢出标志
- 如果结果产生了无效的2的补码结果(例如，加到正数而最后得到负数：64 + 64 => -128)，则在算术运算期间将设置溢出标志。通过查看第6位和第7位之间以及第7位和进位标志之间的进位确定。
- - Negative Flag 负标志
-如果最后一个操作的结果的第7位设置为1，则设置负标志。
-
-###  已实现指令
-[点击这里进入trello看板](https://trello.com/b/ll6HPTJ0/)
-
+[6502 指令实现情况](https://trello.com/b/ll6HPTJ0/6502emulator)
+[NES模拟器功能实现情况](https://trello.com/b/hB8YJmU6/nes%E6%A8%A1%E6%8B%9F%E5%99%A8)
