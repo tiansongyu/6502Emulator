@@ -30,11 +30,10 @@
 安装cmake
 ``` bash 
 # ubuntu
-sudo apt install cmake -y
-# arch linux
-sudo pacman -S cmake 
-```
+# 安装opengl、alsa
+sudo apt install cmake mesa-common-dev libgl1-mesa-dev libglu1-mesa-dev alsa-base alsa-utils alsa-source libasound2-dev -y
 
+```
 ### windows
 
 安装vs2019
