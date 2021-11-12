@@ -29,7 +29,8 @@ private:
 	uint8_t nBankData = 0x00;
 	uint8_t nPrgRamProtect = 0x00;
 	uint8_t nIrqCounter = 0x00;
-	uint8_t nIrqLatch = 0x00;
+	// nIrqLatch指的是发生中断时，刷新界面的行数
+	uint8_t nIrqLatch = 0x00;  
 	uint32_t pRegister[8];
 	uint32_t pCHRBank[8];
 	uint32_t pPRGBank[4];
