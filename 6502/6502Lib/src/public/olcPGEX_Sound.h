@@ -112,6 +112,7 @@
 
 #include <queue>
 #endif
+#include <mutex>
 
 #pragma pack(push, 1)
 typedef struct
