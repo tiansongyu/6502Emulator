@@ -1,3 +1,5 @@
+// Copyright [2021] <tiansongyu>
+
 #include "Mapper_004.h"
 
 #include <stdio.h>
@@ -122,7 +124,7 @@ bool Mapper_004::cpuMapWrite(uint16_t addr, uint32_t &mapped_addr,
         mirrormode = MIRROR::VERTICAL;
     } else {
       // PRG Ram Protect
-      // TODO:
+      // TODO(tiansongyu)
     }
     return false;
   }
@@ -229,7 +231,6 @@ void Mapper_004::scanline() {
     nIrqCounter = nIrqLatch;
   } else
     nIrqCounter--;
-
   if (nIrqCounter == 0 && bIRQEnable) {
     bIRQActive = true;
   }

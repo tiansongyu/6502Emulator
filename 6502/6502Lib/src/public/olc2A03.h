@@ -179,8 +179,7 @@ class olc2A03 {
     uint16_t decay_count = 0;
   };
 
-  struct oscpulse  // 脉冲
-  {
+  struct oscpulse {  // 脉冲
     double frequency = 0;
     double dutycycle = 0;
     double amplitude = 1;
@@ -194,8 +193,8 @@ class olc2A03 {
 
       auto approxsin = [](float t) {
         float j = t * 0.15915;
-        j = j - (int)j;
-        return 20.785 * j * (j - 0.5) * (j - 1.0f);
+        j = j - static_cast<int>(j);
+        return 20.785f * j * (j - 0.5) * (j - 1.0f);
       };
 
       for (double n = 1; n < harmonics; n++) {
@@ -221,7 +220,7 @@ class olc2A03 {
     uint16_t change = 0;
     bool mute = false;
 
-    void track(uint16_t &target) {
+    void track(uint16_t target) {
       if (enabled) {
         change = target >> shift;
         mute = (target < 8) || (target > 0x7FF);

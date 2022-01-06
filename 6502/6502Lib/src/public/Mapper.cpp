@@ -1,3 +1,5 @@
+// Copyright [2020-2021] <tiansongyu>
+
 #include "Mapper.h"
 
 Mapper::Mapper(uint8_t prgBanks, uint8_t chrBanks) {

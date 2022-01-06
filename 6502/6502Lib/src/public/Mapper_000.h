@@ -1,4 +1,6 @@
-#pragma once
+// Copyright [2021] <tiansongyu>
+#ifndef _6502_6502LIB_SRC_PUBLIC_MAPPER_000_H_
+#define _6502_6502LIB_SRC_PUBLIC_MAPPER_000_H_
 #include "Mapper.h"
 
 class Mapper_000 : public Mapper {
@@ -16,3 +18,4 @@ class Mapper_000 : public Mapper {
 
   // No local equipment required
 };
+#endif  // _6502_6502LIB_SRC_PUBLIC_MAPPER_000_H_

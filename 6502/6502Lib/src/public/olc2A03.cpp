@@ -1,3 +1,5 @@
+// Copyright [2020-2021] <tiansongyu>
+
 #include "olc2A03.h"
 
 uint8_t olc2A03::length_table[] = {
@@ -118,8 +120,7 @@ void olc2A03::cpuWrite(uint16_t addr, uint8_t data) {
 
     case 0x400E:
       // Loop noise ???
-      switch (data & 0x0F)  //  noise period (P)
-      {
+      switch (data & 0x0F) {  //  noise period (P)
         case 0x00:
           noise_seq.reload = 0;
           break;
@@ -184,7 +185,7 @@ void olc2A03::cpuWrite(uint16_t addr, uint8_t data) {
       noise_env.start = true;
       noise_lc.counter =
           length_table[(data & 0xF8) >>
-                       3];  // 长度计数器负载 (L) 	Length counter load
+                       3];  // 长度计数器负载 (L)   Length counter load
       break;
   }
 }
@@ -193,9 +194,9 @@ uint8_t olc2A03::cpuRead(uint16_t addr) {
   uint8_t data = 0x00;
 
   if (addr == 0x4015) {
-    //	data |= (pulse1_lc.counter > 0) ? 0x01 : 0x00;
-    //	data |= (pulse2_lc.counter > 0) ? 0x02 : 0x00;
-    //	data |= (noise_lc.counter > 0) ? 0x04 : 0x00;
+    //  data |= (pulse1_lc.counter > 0) ? 0x01 : 0x00;
+    //  data |= (pulse2_lc.counter > 0) ? 0x02 : 0x00;
+    //  data |= (noise_lc.counter > 0) ? 0x04 : 0x00;
   }
 
   return data;
@@ -254,7 +255,7 @@ void olc2A03::clock() {
       pulse2_sweep.clock(pulse2_seq.reload, 1);
     }
 
-    //	if (bUseRawMode)
+    //  if (bUseRawMode)
     {
       // Update Pulse1 Channel ================================
       pulse1_seq.clock(pulse1_enable, [](uint32_t &s) {
@@ -262,13 +263,13 @@ void olc2A03::clock() {
         s = ((s & 0x0001) << 7) | ((s & 0x00FE) >> 1);
       });
 
-      //	pulse1_sample = (double)pulse1_seq.output;
+      //    pulse1_sample = (double)pulse1_seq.output;
     }
     // else
     {
       pulse1_osc.frequency =
-          1789773.0 / (16.0 * (double)(pulse1_seq.reload + 1));
-      pulse1_osc.amplitude = (double)(pulse1_env.output - 1) / 16.0;
+          1789773.0 / (16.0 * static_cast<double>(pulse1_seq.reload + 1));
+      pulse1_osc.amplitude = static_cast<double>(pulse1_env.output - 1) / 16.0f;
       pulse1_sample = pulse1_osc.sample(dGlobalTime);
 
       if (pulse1_lc.counter > 0 && pulse1_seq.timer >= 8 &&
@@ -286,13 +287,13 @@ void olc2A03::clock() {
         s = ((s & 0x0001) << 7) | ((s & 0x00FE) >> 1);
       });
 
-      //	pulse2_sample = (double)pulse2_seq.output;
+      //    pulse2_sample = (double)pulse2_seq.output;
     }
-    //	else
+    //  else
     {
       pulse2_osc.frequency =
-          1789773.0 / (16.0 * (double)(pulse2_seq.reload + 1));
-      pulse2_osc.amplitude = (double)(pulse2_env.output - 1) / 16.0;
+          1789773.0 / (16.0 * static_cast<double>(pulse2_seq.reload + 1));
+      pulse2_osc.amplitude = static_cast<double>(pulse2_env.output - 1) / 16.0;
       pulse2_sample = pulse2_osc.sample(dGlobalTime);
 
       if (pulse2_lc.counter > 0 && pulse2_seq.timer >= 8 &&
@@ -307,8 +308,8 @@ void olc2A03::clock() {
     });
 
     if (noise_lc.counter > 0 && noise_seq.timer >= 8) {
-      noise_output =
-          (double)noise_seq.output * ((double)(noise_env.output - 1) / 16.0);
+      noise_output = static_cast<double>(noise_seq.output) *
+                     (static_cast<double>(noise_env.output - 1) / 16.0);
     }
 
     if (!pulse1_enable) pulse1_output = 0;

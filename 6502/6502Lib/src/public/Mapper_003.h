@@ -1,3 +1,5 @@
+// Copyright [2021] <tiansongyu>
+
 #pragma once
 #include "Mapper.h"
 

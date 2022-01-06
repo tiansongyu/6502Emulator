@@ -1,3 +1,5 @@
+// Copyright [2020-2021] <tiansongyu>
+
 #include "Mapper_066.h"
 
 Mapper_066::Mapper_066(uint8_t prgBanks, uint8_t chrBanks)

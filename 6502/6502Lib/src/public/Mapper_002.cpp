@@ -1,3 +1,5 @@
+// Copyright [2021] <tiansongyu>
+
 #include "Mapper_002.h"
 
 Mapper_002::Mapper_002(uint8_t prgBanks, uint8_t chrBanks)

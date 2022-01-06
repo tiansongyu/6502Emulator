@@ -1,4 +1,4 @@
-// Copyright [2021] <tiansongyu>
+// Copyright [2020-2021] <tiansongyu>
 #include  "Bus.h"
 
 Bus::Bus() {

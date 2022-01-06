@@ -1,3 +1,5 @@
+// Copyright [2021] <tiansongyu>
+
 #include "Mapper_001.h"
 
 Mapper_001::Mapper_001(uint8_t prgBanks, uint8_t chrBanks)
@@ -99,24 +101,24 @@ bool Mapper_001::cpuMapWrite(uint16_t addr, uint32_t &mapped_addr,
       // Sets the switchable PRG ROM bank to the value of A.;
       // ;
       // A MMC1_SR MMC1_PB
-      // 	setPRGBank:;
+      //    setPRGBank:;
       // 000edcba 10000 Start with an empty shift register(SR).The 1 is used
-      // 	sta $E000;
+      //    sta $E000;
       // 000edcba->a1000 to detect when the SR has become full.lsr a;
       // > 0000edcb a1000
-      // 		sta $E000;
+      //        sta $E000;
       // 0000edcb->ba100
-      // 	lsr a;
+      //    lsr a;
       // > 00000edc ba100
-      // 		sta $E000;
+      //        sta $E000;
       // 00000edc->cba10
-      // 	lsr a;
+      //    lsr a;
       // > 000000ed cba10
-      // 		sta $E000;
+      //        sta $E000;
       // 000000ed->dcba1 Once a 1 is shifted into the last position, the SR is
-      // full.lsr a; > 0000000e dcba1 		sta $E000; 0000000e dcba1->edcba A write
-      // with the SR full copies D0 and the SR to a bank register; 10000($E000 -
-      // $FFFF means PRG bank number) and then clears the SR.rts
+      // full.lsr a; > 0000000e dcba1       sta $E000; 0000000e dcba1->edcba
+      // A write with the SR full copies D0 and the SR to a bank register;
+      // 10000($E000 - $FFFF means PRG bank number) and then clears the SR.rts
 
       nLoadRegister >>= 1;
       nLoadRegister |= (data & 0x01) << 4;
@@ -126,9 +128,8 @@ bool Mapper_001::cpuMapWrite(uint16_t addr, uint32_t &mapped_addr,
         // Get Mapper Target Register, by examining
         // bits 13 & 14 of the address
         uint8_t nTargetRegister = (addr >> 13) & 0x03;
-
-        if (nTargetRegister == 0)  // 0x8000 - 0x9FFF
-        {
+        // 0x8000 - 0x9FFF
+        if (nTargetRegister == 0) {
           // Set Control Register
           nControlRegister = nLoadRegister & 0x1F;
 
@@ -146,8 +147,7 @@ bool Mapper_001::cpuMapWrite(uint16_t addr, uint32_t &mapped_addr,
               mirrormode = HORIZONTAL;
               break;
           }
-        } else if (nTargetRegister == 1)  // 0xA000 - 0xBFFF
-        {
+        } else if (nTargetRegister == 1) {  // 0xA000 - 0xBFFF
           // Set CHR Bank Lo
           if (nControlRegister & 0b10000) {
             // 4K CHR Bank at PPU 0x0000
@@ -156,15 +156,13 @@ bool Mapper_001::cpuMapWrite(uint16_t addr, uint32_t &mapped_addr,
             // 8K CHR Bank at PPU 0x0000
             nCHRBankSelect8 = nLoadRegister & 0x1E;
           }
-        } else if (nTargetRegister == 2)  // 0xC000 - 0xDFFF
-        {
+        } else if (nTargetRegister == 2) {  // 0xC000 - 0xDFFF
           // Set CHR Bank Hi
           if (nControlRegister & 0b10000) {
             // 4K CHR Bank at PPU 0x1000
             nCHRBankSelect4Hi = nLoadRegister & 0x1F;
           }
-        } else if (nTargetRegister == 3)  // 0xE000 - 0xFFFF
-        {
+        } else if (nTargetRegister == 3) {  // 0xE000 - 0xFFFF
           // Configure PRG Banks
           uint8_t nPRGMode = (nControlRegister >> 2) & 0x03;
 

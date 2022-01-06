@@ -1,4 +1,3 @@
-#pragma region license_and_help
 /*
 	olcPixelGameEngine.h
 
@@ -196,9 +195,7 @@
 	~~~~~~
 	David Barr, aka javidx9, ㎡neLoneCoder 2018, 2019, 2020, 2021
 */
-#pragma endregion
 
-#pragma region version_history
 /*
 	2.01: Made renderer and platform static for multifile projects
 	2.02: Added Decal destructor, optimised Pixel constructor
@@ -283,9 +280,7 @@
     !! Apple Platforms will not see these updates immediately - Sorry, I dont have a mac to test... !!
 	!!   Volunteers willing to help appreciated, though PRs are manually integrated with credit     !!
 */
-#pragma endregion
 
-#pragma region hello_world_example
 // O------------------------------------------------------------------------------O
 // | Example "Hello World" Program (main.cpp)                                     |
 // O------------------------------------------------------------------------------O
@@ -330,12 +325,10 @@ int main()
 }
 
 */
-#pragma endregion
 
 #ifndef OLC_PGE_DEF
 #define OLC_PGE_DEF
 
-#pragma region std_includes
 // O------------------------------------------------------------------------------O
 // | STANDARD INCLUDES                                                            |
 // O------------------------------------------------------------------------------O
@@ -356,14 +349,12 @@ int main()
 #include <algorithm>
 #include <array>
 #include <cstring>
-#pragma endregion
 
 #define PGE_VER 216
 
 // O------------------------------------------------------------------------------O
 // | COMPILER CONFIGURATION ODDITIES                                              |
 // O------------------------------------------------------------------------------O
-#pragma region compiler_config
 #define USE_EXPERIMENTAL_FS
 #if defined(_WIN32)
 	#if _MSC_VER >= 1920 && _MSVC_LANG >= 201703L
@@ -494,12 +485,10 @@ int main()
 	#endif
 #endif
 #endif
-#pragma endregion
 
 // O------------------------------------------------------------------------------O
 // | olcPixelGameEngine INTERFACE DECLARATION                                     |
 // O------------------------------------------------------------------------------O
-#pragma region pge_declaration
 namespace olc
 {
 	class PixelGameEngine;
@@ -1158,7 +1147,6 @@ namespace olc
 	};
 }
 
-#pragma endregion
 
 #endif // OLC_PGE_DEF
 
@@ -1173,7 +1161,6 @@ namespace olc
 // | olcPixelGameEngine INTERFACE IMPLEMENTATION (CORE)                           |
 // | Note: The core implementation is platform independent                        |
 // O------------------------------------------------------------------------------O
-#pragma region pge_implementation
 namespace olc
 {
 	// O------------------------------------------------------------------------------O
@@ -3116,7 +3103,6 @@ namespace olc
 	olc::PixelGameEngine* olc::Renderer::ptrPGE = nullptr;
 	std::unique_ptr<ImageLoader> olc::Sprite::loader = nullptr;
 };
-#pragma endregion 
 
 // O------------------------------------------------------------------------------O
 // | olcPixelGameEngine Renderers - the draw-y bits                               |
@@ -3124,7 +3110,6 @@ namespace olc
 
 #if !defined(OLC_PGE_HEADLESS)
 
-#pragma region renderer_ogl10
 // O------------------------------------------------------------------------------O
 // | START RENDERER: OpenGL 1.0 (the original, the best...)                       |
 // O------------------------------------------------------------------------------O
@@ -3455,9 +3440,7 @@ namespace olc
 // O------------------------------------------------------------------------------O
 // | END RENDERER: OpenGL 1.0 (the original, the best...)                         |
 // O------------------------------------------------------------------------------O
-#pragma endregion
 
-#pragma region renderer_ogl33
 // O------------------------------------------------------------------------------O
 // | START RENDERER: OpenGL 3.3 (3.0 es) (sh-sh-sh-shaders....)                   |
 // O------------------------------------------------------------------------------O
@@ -3976,13 +3959,11 @@ namespace olc
 // O------------------------------------------------------------------------------O
 // | END RENDERER: OpenGL 3.3 (3.0 es) (sh-sh-sh-shaders....)                     |
 // O------------------------------------------------------------------------------O
-#pragma endregion
 
 // O------------------------------------------------------------------------------O
 // | olcPixelGameEngine Image loaders                                             |
 // O------------------------------------------------------------------------------O
 
-#pragma region image_gdi
 // O------------------------------------------------------------------------------O
 // | START IMAGE LOADER: GDI+, Windows Only, always exists, a little slow         |
 // O------------------------------------------------------------------------------O
@@ -4101,9 +4082,7 @@ namespace olc
 // O------------------------------------------------------------------------------O
 // | END IMAGE LOADER: GDI+                                                       |
 // O------------------------------------------------------------------------------O
-#pragma endregion
 
-#pragma region image_libpng
 // O------------------------------------------------------------------------------O
 // | START IMAGE LOADER: libpng, default on linux, requires -lpng  (libpng-dev)   |
 // O------------------------------------------------------------------------------O
@@ -4225,9 +4204,7 @@ namespace olc
 // O------------------------------------------------------------------------------O
 // | END IMAGE LOADER:                                                            |
 // O------------------------------------------------------------------------------O
-#pragma endregion
 
-#pragma region image_stb
 // O------------------------------------------------------------------------------O
 // | START IMAGE LOADER: stb_image.h, all systems, very fast                      |
 // O------------------------------------------------------------------------------O
@@ -4288,13 +4265,11 @@ namespace olc
 // O------------------------------------------------------------------------------O
 // | START IMAGE LOADER: stb_image.h                                              |
 // O------------------------------------------------------------------------------O
-#pragma endregion
 
 // O------------------------------------------------------------------------------O
 // | olcPixelGameEngine Platforms                                                 |
 // O------------------------------------------------------------------------------O
 
-#pragma region platform_windows
 // O------------------------------------------------------------------------------O
 // | START PLATFORM: MICROSOFT WINDOWS XP, VISTA, 7, 8, 10                        |
 // O------------------------------------------------------------------------------O
@@ -4504,9 +4479,7 @@ namespace olc
 // O------------------------------------------------------------------------------O
 // | END PLATFORM: MICROSOFT WINDOWS XP, VISTA, 7, 8, 10                          |
 // O------------------------------------------------------------------------------O
-#pragma endregion 
 
-#pragma region platform_linux
 // O------------------------------------------------------------------------------O
 // | START PLATFORM: LINUX                                                        |
 // O------------------------------------------------------------------------------O
@@ -4755,9 +4728,7 @@ namespace olc
 // O------------------------------------------------------------------------------O
 // | END PLATFORM: LINUX                                                          |
 // O------------------------------------------------------------------------------O
-#pragma endregion
 
-#pragma region platform_glut
 // O------------------------------------------------------------------------------O
 // | START PLATFORM: GLUT (used to make it simple for Apple)                      |
 // O------------------------------------------------------------------------------O
@@ -5055,10 +5026,7 @@ namespace olc {
 // O------------------------------------------------------------------------------O
 // | END PLATFORM: GLUT                                                           |
 // O------------------------------------------------------------------------------O
-#pragma endregion 
 
-
-#pragma region platform_emscripten
 // O------------------------------------------------------------------------------O
 // | START PLATFORM: Emscripten - Totally Game Changing...                        |
 // O------------------------------------------------------------------------------O
@@ -5178,7 +5146,6 @@ namespace olc
 			emscripten_set_blur_callback("#canvas", 0, 1, focus_callback);
 			emscripten_set_focus_callback("#canvas", 0, 1, focus_callback);
 			
-#pragma warning disable format
 			EM_ASM( window.onunload = Module._olc_OnPageUnload; );
 
 			// IMPORTANT! - Sorry About This...
@@ -5308,7 +5275,6 @@ namespace olc
 			window.addEventListener("resize", function(e) { Module._olc_ResizeCanvas(); });
 
 			}, vWindowSize.x, vWindowSize.y); // Fullscreen and Resize Observers
-#pragma warning restore format
 			return olc::rcode::OK;
 		}
 
@@ -5501,7 +5467,6 @@ extern "C"
 // O------------------------------------------------------------------------------O
 // | END PLATFORM: Emscripten                                                     |
 // O------------------------------------------------------------------------------O
-#pragma endregion
 
 
 #endif // Headless
@@ -5509,7 +5474,6 @@ extern "C"
 // O------------------------------------------------------------------------------O
 // | olcPixelGameEngine Auto-Configuration                                        |
 // O------------------------------------------------------------------------------O
-#pragma region pge_config
 namespace olc
 {
 	void PixelGameEngine::olc_ConfigureSystem()
@@ -5593,7 +5557,6 @@ namespace olc
 	}
 }
 
-#pragma endregion
 
 #endif // End OLC_PGE_APPLICATION
 

@@ -1,3 +1,9 @@
+// Copyright [2020-2021] <tiansongyu>
+#ifdef __GNUC__
+// 关闭 警告：由于数据类型范围限制，比较结果永远为真
+#pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+
 #include "olc2C02.h"
 olc2C02::olc2C02() {
   // 颜色
@@ -82,49 +88,49 @@ olc::Sprite &olc2C02::GetScreen() {
   return sprScreen;
 }
 
-olc::Sprite &olc2C02::GetSpriteTitle(uint8_t x, uint8_t y, uint8_t title,
-                                     uint8_t attr, uint8_t palette, int i) {
-  // 此函数用来获取右方单块的title
-  uint16_t bank = title & 0x1;
-  uint16_t nOffset = (uint16_t)title * 16;
+// olc::Sprite &olc2C02::GetSpriteTitle(uint8_t x, uint8_t y, uint8_t title,
+//                                      uint8_t attr, uint8_t palette, int i) {
+//   // 此函数用来获取右方单块的title
+//   x = x;
+//   uint16_t bank = title & 0x1;
+//   uint16_t nOffset = (uint16_t)title * 16;
 
-  // 每个title是8x8像素
-  for (uint16_t row = 0; row < 8; row++) {
-    // 每一个title由8个高字节和8个低字节部分组成
-    // 两个字节的和构成一个title
-    // 所以一个title一共占用16个字节
+//   // 每个title是8x8像素
+//   for (uint16_t row = 0; row < 8; row++) {
+//     // 每一个title由8个高字节和8个低字节部分组成
+//     // 两个字节的和构成一个title
+//     // 所以一个title一共占用16个字节
 
-    // 2-Bit Pixels       LSB Bit Plane     MSB Bit Plane
-    // 0 0 0 0 0 0 0 0	  0 0 0 0 0 0 0 0   0 0 0 0 0 0 0 0
-    // 0 1 1 0 0 1 1 0	  0 1 1 0 0 1 1 0   0 0 0 0 0 0 0 0
-    // 0 1 2 0 0 2 1 0	  0 1 1 0 0 1 1 0   0 0 1 0 0 1 0 0
-    // 0 0 0 0 0 0 0 0 =  0 0 0 0 0 0 0 0 + 0 0 0 0 0 0 0 0
-    // 0 1 1 0 0 1 1 0	  0 1 1 0 0 1 1 0   0 0 0 0 0 0 0 0
-    // 0 0 1 1 1 1 0 0	  0 0 1 1 1 1 0 0   0 0 0 0 0 0 0 0
-    // 0 0 0 2 2 0 0 0	  0 0 0 1 1 0 0 0   0 0 0 1 1 0 0 0
-    // 0 0 0 0 0 0 0 0	  0 0 0 0 0 0 0 0   0 0 0 0 0 0 0 0
+//     // 2-Bit Pixels       LSB Bit Plane     MSB Bit Plane
+//     // 0 0 0 0 0 0 0 0    0 0 0 0 0 0 0 0   0 0 0 0 0 0 0 0
+//     // 0 1 1 0 0 1 1 0    0 1 1 0 0 1 1 0   0 0 0 0 0 0 0 0
+//     // 0 1 2 0 0 2 1 0    0 1 1 0 0 1 1 0   0 0 1 0 0 1 0 0
+//     // 0 0 0 0 0 0 0 0 =  0 0 0 0 0 0 0 0 + 0 0 0 0 0 0 0 0
+//     // 0 1 1 0 0 1 1 0    0 1 1 0 0 1 1 0   0 0 0 0 0 0 0 0
+//     // 0 0 1 1 1 1 0 0    0 0 1 1 1 1 0 0   0 0 0 0 0 0 0 0
+//     // 0 0 0 2 2 0 0 0    0 0 0 1 1 0 0 0   0 0 0 1 1 0 0 0
+//     // 0 0 0 0 0 0 0 0    0 0 0 0 0 0 0 0   0 0 0 0 0 0 0 0
 
-    uint8_t tile_lsb = ppuRead(bank * 0x1000 + nOffset + row + 0x0000);
-    uint8_t tile_msb = ppuRead(bank * 0x1000 + nOffset + row + 0x0008);
+//     uint8_t tile_lsb = ppuRead(bank * 0x1000 + nOffset + row + 0x0000);
+//     uint8_t tile_msb = ppuRead(bank * 0x1000 + nOffset + row + 0x0008);
 
-    for (uint16_t col = 0; col < 8; col++) {
-      // 这里是将8x8像素放入精灵内存中
-      uint8_t pixel = ((tile_lsb & 0x01) << 1) + (tile_msb & 0x01);
+//     for (uint16_t col = 0; col < 8; col++) {
+//       // 这里是将8x8像素放入精灵内存中
+//       uint8_t pixel = ((tile_lsb & 0x01) << 1) + (tile_msb & 0x01);
 
-      // 通过>>=1移动一个字节来便利整个title
-      tile_lsb >>= 1;
-      tile_msb >>= 1;
+//       // 通过>>=1移动一个字节来便利整个title
+//       tile_lsb >>= 1;
+//       tile_msb >>= 1;
 
-      // 现在已经获取到了整个title的像素点信息
-      // 需要将该信息转换为调色板中的信息
-      sprSpriteTitle[i].SetPixel(
-          (7 -
-           col),  // 读取title信息时，从右面开始读取，对应调色板中的信息也要调换位置
-          row, GetColourFromPaletteRam(palette, pixel));
-    }
-  }
-  return sprSpriteTitle[i];
-}
+//       // 现在已经获取到了整个title的像素点信息
+//       // 需要将该信息转换为调色板中的信息
+//       sprSpriteTitle[i].SetPixel((7 - col),  // 读取title信息时，从右面开始读取
+//                                              // 对应调色板中的信息也要调换位置
+//                                  row, GetColourFromPaletteRam(palette, pixel));
+//     }
+//   }
+//   return sprSpriteTitle[i];
+// }
 
 olc::Sprite &olc2C02::GetPatternTable(uint8_t i, uint8_t palette) {
   /*此函数使用指定的调色板将给定模式表的 CHR ROM 绘制到 olc::Sprite 中。模式表由
@@ -357,6 +363,7 @@ void olc2C02::cpuWrite(uint16_t addr, uint8_t data) {
 }
 
 uint8_t olc2C02::ppuRead(uint16_t addr, bool rdonly) {
+  rdonly = rdonly;
   uint8_t data = 0x00;
   addr &= 0x3FFF;
 
@@ -539,11 +546,11 @@ void olc2C02::clock() {
         // to identify which row of the nametable we want, and the fine
         // y offset is the specific "scanline"
 
-        //如果我们已经超过了一排的高度，我们需要
-        //增加行数，可能会换行到相邻行中
-        //垂直名称表。不过，别忘了下面两排
-        //不包含平铺信息。使用粗略的y偏移
-        //确定我们想要的名称表的哪一行，以及
+        // 如果我们已经超过了一排的高度，我们需要
+        // 增加行数，可能会换行到相邻行中
+        // 垂直名称表。不过，别忘了下面两排
+        // 不包含平铺信息。使用粗略的y偏移
+        // 确定我们想要的名称表的哪一行，以及
         // y偏移是特定的“扫描线”
 
         // find_y是title内的像素y坐标扫描线
@@ -604,8 +611,8 @@ void olc2C02::clock() {
   // Prime the "in-effect" background tile shifters ready for outputting next
   // 8 pixels in scanline.
 
-  //为“有效”背景平铺移位器加上底漆，以便下一步输出
-  //扫描线为8像素。
+  // 为“有效”背景平铺移位器加上底漆，以便下一步输出
+  // 扫描线为8像素。
   auto LoadBackgroundShifters = [&]() {
     // Each PPU update we calculate one pixel. These shifters shift 1 bit along
     // feeding the pixel compositor with the binary information it needs. Its
@@ -643,10 +650,10 @@ void olc2C02::clock() {
   // by 1 pixel. This means relatively, the state of the shifter is in sync
   // with the pixels being drawn for that 8 pixel section of the scanline.
 
-  //每个周期，存储模式和属性信息的移位器移位
-  //它们的内容是1位的。这是因为每一个周期，输出都在进行
+  // 每个周期，存储模式和属性信息的移位器移位
+  // 它们的内容是1位的。这是因为每一个周期，输出都在进行
   // 1像素。这意味着换档杆的状态相对而言是同步的
-  //为扫描线的8像素部分绘制像素。
+  // 为扫描线的8像素部分绘制像素。
 
   auto UpdateShifters = [&]() {
     if (mask.render_background) {
@@ -717,13 +724,13 @@ void olc2C02::clock() {
       // Fortunately, for background rendering, we go through a fairly
       // repeatable sequence of events, every 2 clock cycles.
 
-      //在这些周期中，我们收集和处理可见数据
-      //“换档杆”已在上一节结束时预加载
-      //带有此扫描线起点数据的扫描线。一旦我们
-      //离开可见区域，我们进入休眠状态，直到移位器被移除
-      //为下一条扫描线预加载。
-      //幸运的是，对于背景渲染，我们经历了一个相当复杂的过程
-      //可重复的事件序列，每2个时钟周期。
+      // 在这些周期中，我们收集和处理可见数据
+      // “换档杆”已在上一节结束时预加载
+      // 带有此扫描线起点数据的扫描线。一旦我们
+      // 离开可见区域，我们进入休眠状态，直到移位器被移除
+      // 为下一条扫描线预加载。
+      // 幸运的是，对于背景渲染，我们经历了一个相当复杂的过程
+      // 可重复的事件序列，每2个时钟周期。
 
       switch ((cycle - 1) % 8) {
         case 0:
@@ -864,11 +871,11 @@ void olc2C02::clock() {
           // 在4x4属性区域中。
           // 属性字节是这样组合的：BR（76）BL（54）TR（32）TL（10）
           //
-          // +----+----+			    +----+----+
-          // | TL | TR |			    | ID | ID |
+          // +----+----+                +----+----+
+          // | TL | TR |                | ID | ID |
           // +----+----+ where TL =   +----+----+
-          // | BL | BR |			    | ID | ID |
-          // +----+----+			    +----+----+
+          // | BL | BR |                | ID | ID |
+          // +----+----+                +----+----+
           //
           // Since we know we can access a tile directly from the 12 bit
           // address, we can analyse the bottom bits of the coarse coordinates
@@ -960,7 +967,7 @@ void olc2C02::clock() {
       IncrementScrollY();
     }
 
-    //...and reset the x position
+    // ...and reset the x position
     if (cycle == 257) {
       // 非渲染时间 准备下一次的坐标
       LoadBackgroundShifters();
@@ -1131,10 +1138,9 @@ void olc2C02::clock() {
                 // 因为8 x 16是连续的，所有需要使用&0x07来获取正确的像素点
                 | ((scanline - spriteScanline[i].y) &
                    0x07);  // Which Row in cell? (0->7)
-          }
-          // 判断为下面的块 scanline -
-          // spriteScanline[i].y的值是大于8的，所以必须使用&0x07
-          else {
+          } else {
+            // 判断为下面的块 scanline -
+            // spriteScanline[i].y的值是大于8的，所以必须使用&0x07
             // Reading Bottom Half Tile
             sprite_pattern_addr_lo =
                 ((spriteScanline[i].id & 0x01)
@@ -1157,8 +1163,8 @@ void olc2C02::clock() {
                  << 12)  // Which Pattern Table? 0KB or 4KB offset
                 | (((spriteScanline[i].id & 0xFE) + 1)
                    << 4)  // Which Cell? Tile ID * 16 (16 bytes per tile)
-                | (7 - (scanline - spriteScanline[i].y) &
-                   0x07);  // Which Row in cell? (0->7)
+                | (7 - ((scanline - spriteScanline[i].y) &
+                   0x07 ));  // Which Row in cell? (0->7)
           } else {
             // Reading Bottom Half Tile
             sprite_pattern_addr_lo =
@@ -1166,8 +1172,8 @@ void olc2C02::clock() {
                  << 12)  // Which Pattern Table? 0KB or 4KB offset
                 | ((spriteScanline[i].id & 0xFE)
                    << 4)  // Which Cell? Tile ID * 16 (16 bytes per tile)
-                | (7 - (scanline - spriteScanline[i].y) &
-                   0x07);  // Which Row in cell? (0->7)
+                | (7 - ((scanline - spriteScanline[i].y) &
+                   0x07));  // Which Row in cell? (0->7)
           }
         }
       }
@@ -1301,8 +1307,7 @@ void olc2C02::clock() {
         // bother checking the rest because the earlier sprites
         // in the list are higher priority
         if (fg_pixel != 0) {
-          if (i == 0)  // Is this sprite zero?
-          {
+          if (i == 0) {  // Is this sprite zero?
             // 既是最上方的精灵，又是最上方的第一个精灵，所以是bSpriteZeroBeingRendered
             // = true;
             bSpriteZeroBeingRendered = true;
@@ -1389,11 +1394,9 @@ void olc2C02::clock() {
   // Advance renderer - it never stops, it's relentless
   cycle++;
 
-  if (mask.render_background || mask.render_sprites)
-    if (cycle == 260 && scanline < 240) {
-      cart->GetMapper()->scanline();
-    }
-
+  if ((mask.render_background || mask.render_sprites) &&
+      (cycle == 260 && scanline < 240))
+    cart->GetMapper()->scanline();
   if (cycle >= 341) {
     cycle = 0;
     scanline++;
