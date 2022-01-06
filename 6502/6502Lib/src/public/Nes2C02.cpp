@@ -1,11 +1,11 @@
-// Copyright [2020-2021] <tiansongyu>
+// Copyright [2020-2022] <tiansongyu>
 #ifdef __GNUC__
 // 关闭 警告：由于数据类型范围限制，比较结果永远为真
 #pragma GCC diagnostic ignored "-Wtype-limits"
 #endif
 
-#include "olc2C02.h"
-olc2C02::olc2C02()
+#include "Nes2C02.h"
+Nes2C02::Nes2C02()
 {
     // 颜色
     palScreen[0x00] = olc::Pixel(84, 84, 84);
@@ -83,17 +83,17 @@ olc2C02::olc2C02()
     }
 }
 
-olc2C02::~olc2C02()
+Nes2C02::~Nes2C02()
 {
 }
 
-olc::Sprite &olc2C02::GetScreen()
+olc::Sprite &Nes2C02::GetScreen()
 {
     // 返回当前需要绘制的屏幕中的像素 256 x 240
     return sprScreen;
 }
 
-// olc::Sprite &olc2C02::GetSpriteTitle(uint8_t x, uint8_t y, uint8_t title,
+// olc::Sprite &Nes2C02::GetSpriteTitle(uint8_t x, uint8_t y, uint8_t title,
 //                                      uint8_t attr, uint8_t palette, int i) {
 //   // 此函数用来获取右方单块的title
 //   x = x;
@@ -137,7 +137,7 @@ olc::Sprite &olc2C02::GetScreen()
 //   return sprSpriteTitle[i];
 // }
 
-olc::Sprite &olc2C02::GetPatternTable(uint8_t i, uint8_t palette)
+olc::Sprite &Nes2C02::GetPatternTable(uint8_t i, uint8_t palette)
 {
     /*此函数使用指定的调色板将给定模式表的 CHR ROM 绘制到 olc::Sprite 中。模式表由
     16x16
@@ -178,7 +178,7 @@ olc::Sprite &olc2C02::GetPatternTable(uint8_t i, uint8_t palette)
     return sprPatternTable[i];
 }
 
-olc::Pixel &olc2C02::GetColourFromPaletteRam(uint8_t palette, uint8_t pixel)
+olc::Pixel &Nes2C02::GetColourFromPaletteRam(uint8_t palette, uint8_t pixel)
 {
     // 输入调色板中制定位置信息，返回颜色
     // "0x3F00"       - 内存中调色板的偏移
@@ -191,13 +191,13 @@ olc::Pixel &olc2C02::GetColourFromPaletteRam(uint8_t palette, uint8_t pixel)
     // 当然，这里也可以直接读取系统中的颜色
 }
 
-olc::Sprite &olc2C02::GetNameTable(uint8_t i)
+olc::Sprite &Nes2C02::GetNameTable(uint8_t i)
 {
     // 获取名称表
     return sprNameTable[i];
 }
 
-uint8_t olc2C02::cpuRead(uint16_t addr, bool rdonly)
+uint8_t Nes2C02::cpuRead(uint16_t addr, bool rdonly)
 {
     uint8_t data = 0x00;
 
@@ -299,7 +299,7 @@ uint8_t olc2C02::cpuRead(uint16_t addr, bool rdonly)
     return data;
 }
 
-void olc2C02::cpuWrite(uint16_t addr, uint8_t data)
+void Nes2C02::cpuWrite(uint16_t addr, uint8_t data)
 {
     switch (addr)
     {
@@ -389,7 +389,7 @@ void olc2C02::cpuWrite(uint16_t addr, uint8_t data)
     }
 }
 
-uint8_t olc2C02::ppuRead(uint16_t addr, bool rdonly)
+uint8_t Nes2C02::ppuRead(uint16_t addr, bool rdonly)
 {
     rdonly = rdonly;
     uint8_t data = 0x00;
@@ -450,7 +450,7 @@ uint8_t olc2C02::ppuRead(uint16_t addr, bool rdonly)
     return data;
 }
 
-void olc2C02::ppuWrite(uint16_t addr, uint8_t data)
+void Nes2C02::ppuWrite(uint16_t addr, uint8_t data)
 {
     addr &= 0x3FFF;
 
@@ -504,12 +504,12 @@ void olc2C02::ppuWrite(uint16_t addr, uint8_t data)
     }
 }
 
-void olc2C02::ConnectCartridge(const std::shared_ptr<Cartridge> &cartridge)
+void Nes2C02::ConnectCartridge(const std::shared_ptr<Cartridge> &cartridge)
 {
     this->cart = cartridge;
 }
 
-void olc2C02::reset()
+void Nes2C02::reset()
 {
     fine_x = 0x00;
     address_latch = 0x00;
@@ -532,7 +532,7 @@ void olc2C02::reset()
     odd_frame = false;
 }
 
-void olc2C02::clock()
+void Nes2C02::clock()
 {
     // 这里做了大部分内容
     // ppu相当于一个状态机

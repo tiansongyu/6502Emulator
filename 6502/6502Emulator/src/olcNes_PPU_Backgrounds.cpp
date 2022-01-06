@@ -1,5 +1,21 @@
-// Copyright [2021] <tiansongyu>
-
+// Copyright (C) 2020-2022 tiansongyu
+//
+// This file is part of 6502Emulator.
+//
+// 6502Emulator is free GameEngine: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// 6502Emulator is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with 6502Emulator.  If not, see <http://www.gnu.org/licenses/>.
+//
+// 6502Emulator is actively maintained and developed!
 #include <deque>
 #include <iostream>
 #include <sstream>
@@ -64,14 +80,14 @@ class Demo_olcNES : public olc::PixelGameEngine
     {
         std::string status = "STATUS: ";
         DrawString(x, y, "STATUS:", olc::WHITE);
-        DrawString(x + 64, y, "N", nes.cpu.status & olc6502::N ? olc::GREEN : olc::RED);
-        DrawString(x + 80, y, "V", nes.cpu.status & olc6502::V ? olc::GREEN : olc::RED);
-        DrawString(x + 96, y, "-", nes.cpu.status & olc6502::U ? olc::GREEN : olc::RED);
-        DrawString(x + 112, y, "B", nes.cpu.status & olc6502::B ? olc::GREEN : olc::RED);
-        DrawString(x + 128, y, "D", nes.cpu.status & olc6502::D ? olc::GREEN : olc::RED);
-        DrawString(x + 144, y, "I", nes.cpu.status & olc6502::I ? olc::GREEN : olc::RED);
-        DrawString(x + 160, y, "Z", nes.cpu.status & olc6502::Z ? olc::GREEN : olc::RED);
-        DrawString(x + 178, y, "C", nes.cpu.status & olc6502::C ? olc::GREEN : olc::RED);
+        DrawString(x + 64, y, "N", nes.cpu.status & Nes6502::N ? olc::GREEN : olc::RED);
+        DrawString(x + 80, y, "V", nes.cpu.status & Nes6502::V ? olc::GREEN : olc::RED);
+        DrawString(x + 96, y, "-", nes.cpu.status & Nes6502::U ? olc::GREEN : olc::RED);
+        DrawString(x + 112, y, "B", nes.cpu.status & Nes6502::B ? olc::GREEN : olc::RED);
+        DrawString(x + 128, y, "D", nes.cpu.status & Nes6502::D ? olc::GREEN : olc::RED);
+        DrawString(x + 144, y, "I", nes.cpu.status & Nes6502::I ? olc::GREEN : olc::RED);
+        DrawString(x + 160, y, "Z", nes.cpu.status & Nes6502::Z ? olc::GREEN : olc::RED);
+        DrawString(x + 178, y, "C", nes.cpu.status & Nes6502::C ? olc::GREEN : olc::RED);
         DrawString(x, y + 10, "PC: $" + hex(nes.cpu.pc, 4));
         DrawString(x, y + 20, "A: $" + hex(nes.cpu.a, 2) + "  [" + std::to_string(nes.cpu.a) + "]");
         DrawString(x, y + 30, "X: $" + hex(nes.cpu.x, 2) + "  [" + std::to_string(nes.cpu.x) + "]");

@@ -30,14 +30,14 @@ set  (M6502_SOURCES
 	"src/public/Mapper_004.cpp"
 	"src/public/Mapper_066.h"
 	"src/public/Mapper_066.cpp"
-	"src/public/olc2C02.h"
-	"src/public/olc2C02.cpp"
-	"src/public/olc6502.h"
-	"src/public/olc6502.cpp"
+	"src/public/Nes2C02.h"
+	"src/public/Nes2C02.cpp"
+	"src/public/Nes6502.h"
+	"src/public/Nes6502.cpp"
  	"src/public/olcPGEX_Sound.h"
 	"src/public/olcPixelGameEngine.h"
-	"src/public/olc2A03.cpp"
-	"src/public/olc2A03.h"
+	"src/public/Nes2A03.cpp"
+	"src/public/Nes2A03.h"
 	)
 		
 source_group("src" FILES ${M6502_SOURCES})

@@ -1,4 +1,4 @@
-// Copyright [2020-2021] <tiansongyu>
+// Copyright [2020-2022] <tiansongyu>
 
 #pragma once
 #include <cstdint>
@@ -6,11 +6,11 @@
 
 #include "Cartridge.h"
 #include "olcPixelGameEngine.h"
-class olc2C02
+class Nes2C02
 {
   public:
-    olc2C02();
-    ~olc2C02();
+    Nes2C02();
+    ~Nes2C02();
 
   private:
     uint8_t tblName[2][1024];    // 名称表

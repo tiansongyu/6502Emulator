@@ -1,5 +1,5 @@
 /*
-        olc6502 - An emulation of the 6502/2A03 processor
+        Nes6502 - An emulation of the 6502/2A03 processor
         "Thanks Dad for believing computers were gonna be a big deal..." -
    javidx9
 
@@ -52,7 +52,7 @@
 
         Datasheet: http://archive.6502.org/datasheets/rockwell_r650x_r651x.pdf
 
-        Files: olc6502.h, olc6502.cpp
+        Files: Nes6502.h, Nes6502.cpp
 
         Relevant Video: https://youtu.be/8XmxKPJDGU0
 
@@ -103,11 +103,11 @@
 class Bus;
 
 // The 6502 Emulation Class. This is it!
-class olc6502
+class Nes6502
 {
   public:
-    olc6502();
-    ~olc6502();
+    Nes6502();
+    ~Nes6502();
 
   public:
     // CPU Core registers, exposed as public here for ease of access from external
@@ -197,8 +197,8 @@ class olc6502
     struct INSTRUCTION
     {
         std::string name;
-        uint8_t (olc6502::*operate)(void) = nullptr;
-        uint8_t (olc6502::*addrmode)(void) = nullptr;
+        uint8_t (Nes6502::*operate)(void) = nullptr;
+        uint8_t (Nes6502::*addrmode)(void) = nullptr;
         uint8_t cycles = 0;
     };
 

@@ -1,4 +1,21 @@
-// Copyright [2021] <tiansongyu>
+// Copyright (C) 2020-2022 tiansongyu
+//
+// This file is part of 6502Emulator.
+//
+// 6502Emulator is free GameEngine: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// 6502Emulator is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with 6502Emulator.  If not, see <http://www.gnu.org/licenses/>.
+//
+// 6502Emulator is actively maintained and developed!
 #ifndef __6502_6502LIB_SRC_PUBLIC_BUS_H_
 #define __6502_6502LIB_SRC_PUBLIC_BUS_H_
 
@@ -7,9 +24,9 @@
 #include <memory>
 
 #include "Cartridge.h"
-#include "olc2A03.h"
-#include "olc2C02.h"
-#include "olc6502.h"
+#include "Nes2A03.h"
+#include "Nes2C02.h"
+#include "Nes6502.h"
 
 class Bus
 {
@@ -19,11 +36,11 @@ class Bus
 
   public: // 总线
     // 6502 CPU
-    olc6502 cpu;
+    Nes6502 cpu;
     // 2C02 PPU图形处理器。。。显卡。。。
-    olc2C02 ppu;
+    Nes2C02 ppu;
     // 2A03 APU 声卡。。。
-    olc2A03 apu;
+    Nes2A03 apu;
     std::shared_ptr<Cartridge> cart;
     // CPU中2KB的内存RAM
     uint8_t cpuRam[2048];

@@ -1,20 +1,20 @@
-// Copyright [2020-2021] <tiansongyu>
+// Copyright [2020-2022] <tiansongyu>
 
-#include "olc2A03.h"
+#include "Nes2A03.h"
 
-uint8_t olc2A03::length_table[] = {10, 254, 20, 2,  40, 4,  80, 6,  160, 8,  60, 10, 14, 12, 26, 14,
+uint8_t Nes2A03::length_table[] = {10, 254, 20, 2,  40, 4,  80, 6,  160, 8,  60, 10, 14, 12, 26, 14,
                                    12, 16,  24, 18, 48, 20, 96, 22, 192, 24, 72, 26, 16, 28, 32, 30};
 
-olc2A03::olc2A03()
+Nes2A03::Nes2A03()
 {
     noise_seq.sequence = 0xDBDB;
 }
 
-olc2A03::~olc2A03()
+Nes2A03::~Nes2A03()
 {
 }
 
-void olc2A03::cpuWrite(uint16_t addr, uint8_t data)
+void Nes2A03::cpuWrite(uint16_t addr, uint8_t data)
 {
     switch (addr)
     {
@@ -191,7 +191,7 @@ void olc2A03::cpuWrite(uint16_t addr, uint8_t data)
     }
 }
 
-uint8_t olc2A03::cpuRead(uint16_t addr)
+uint8_t Nes2A03::cpuRead(uint16_t addr)
 {
     uint8_t data = 0x00;
 
@@ -205,7 +205,7 @@ uint8_t olc2A03::cpuRead(uint16_t addr)
     return data;
 }
 
-void olc2A03::clock()
+void Nes2A03::clock()
 {
     // Depending on the frame count, we set a flag to tell
     // us where we are in the sequence. Essentially, changes
@@ -337,7 +337,7 @@ void olc2A03::clock()
     clock_counter++;
 }
 
-double olc2A03::GetOutputSample()
+double Nes2A03::GetOutputSample()
 {
     if (bUseRawMode)
     {
@@ -350,6 +350,6 @@ double olc2A03::GetOutputSample()
     }
 }
 
-void olc2A03::reset()
+void Nes2A03::reset()
 {
 }

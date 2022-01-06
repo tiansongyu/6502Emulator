@@ -67,11 +67,11 @@ THIS CLASS IS VERY UNFINISHED
 #include <cstdint>
 #include <functional>
 
-class olc2A03
+class Nes2A03
 {
   public:
-    olc2A03();
-    ~olc2A03();
+    Nes2A03();
+    ~Nes2A03();
 
   public:
     void cpuWrite(uint16_t addr, uint8_t data);
