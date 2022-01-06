@@ -10,7 +10,7 @@ Bus::~Bus() {}
 
 void Bus::SetSampleFrequency(uint32_t sample_rate) {
   // sample_rate是声音采样率，这个采样率决定一个声音数据的发生周期
-  dAudioTimePerSystemSample = 1.0 / static_cast<double>sample_rate;
+  dAudioTimePerSystemSample = 1.0 / static_cast<double>(sample_rate);
   dAudioTimePerNESClock =
       1.0 / 5369318.0;  //   1 / ppu的时钟频率  = ppu的时钟周期
 }

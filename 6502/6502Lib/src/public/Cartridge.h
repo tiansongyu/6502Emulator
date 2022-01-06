@@ -1,4 +1,6 @@
 // Copyright [2021] <tiansongyu>
+#ifndef _6502_6502LIB_SRC_PUBLIC_CARTRIDGE_H_
+#define _6502_6502LIB_SRC_PUBLIC_CARTRIDGE_H_
 #include <cstdint>
 #include <fstream>
 #include <memory>
@@ -6,7 +8,7 @@
 #include <vector>
 
 #include "Mapper_000.h"
-//待添加不同种类的mapper
+// 待添加不同种类的mapper
 #include "Mapper_001.h"
 #include "Mapper_002.h"
 #include "Mapper_003.h"
@@ -15,7 +17,7 @@
 
 class Cartridge {
  public:
-  Cartridge(const std::string &sFileName);
+  explicit Cartridge(const std::string &sFileName);
   ~Cartridge();
 
  public:
@@ -49,3 +51,4 @@ class Cartridge {
 
   MIRROR Mirror();
 };
+#endif  // _6502_6502LIB_SRC_PUBLIC_CARTRIDGE_H_

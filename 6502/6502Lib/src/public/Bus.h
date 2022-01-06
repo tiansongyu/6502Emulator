@@ -1,6 +1,6 @@
 // Copyright [2021] <tiansongyu>
-#ifndef 6502_6502LIB_SRC_PUBLIC_BUS_H_
-#define 6502_6502LIB_SRC_PUBLIC_BUS_H_
+#ifndef __6502_6502LIB_SRC_PUBLIC_BUS_H_
+#define __6502_6502LIB_SRC_PUBLIC_BUS_H_
 
 #include <array>
 #include <cstdint>
@@ -79,4 +79,4 @@ class Bus {
   // 系统clock
   bool clock();
 };
-#endif  // 6502_6502LIB_SRC_PUBLIC_BUS_H_
+#endif  // __6502_6502LIB_SRC_PUBLIC_BUS_H_
