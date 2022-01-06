@@ -38,17 +38,26 @@ sudo apt install cmake mesa-common-dev libgl1-mesa-dev libglu1-mesa-dev alsa-bas
 
 安装vs2019
 ## 编译
+
+### linux环境
 ``` bash 
 git clone git@github.com:tiansongyu/6502Emulator.git && 
 cd 6502Emulator && 
 mkdir build  && 
-cd build 
+cd build &&
 cmake  -DCMAKE_BUILD_TYPE=Release .. && 
 cd 6502/6502Emulator/
 make -j12 && 
 ./6502Emulator
 ```
-### 可游玩游戏
+### Windows环境
+``` bash 
+git clone git@github.com:tiansongyu/6502Emulator.git && 
+cd 6502Emulator && 
+make_VS2019.bat
+``` 
+
+## 可游玩游戏
 
 每个游戏对应一个Mapper，只要实现游戏对应的Mapper，就可以游玩
 本模拟器实现的mapper有
