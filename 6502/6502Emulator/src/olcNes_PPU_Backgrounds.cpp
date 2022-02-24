@@ -165,7 +165,7 @@ class Demo_olcNES : public olc::PixelGameEngine
     bool OnUserCreate() override
     {
         // Load the cartridge
-        cart = std::make_shared<Cartridge>("./rom/Metal Max (Japan).nes");
+        cart = std::make_shared<Cartridge>("./rom/smb.nes");
 
         if (!cart->ImageValid())
             return false;
