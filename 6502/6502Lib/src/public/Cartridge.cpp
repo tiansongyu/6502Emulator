@@ -48,7 +48,6 @@ Cartridge::Cartridge(const std::string &sFileName)
     {
         // 读iNES文件头
         ifs.read(reinterpret_cast<char *>(&header), sizeof(sHeader));
-
         // 如果有mapper1，则调到512字节开始读取文件内容
         if (header.mapper1 & 0x04)
             ifs.seekg(512, std::ios_base::cur);

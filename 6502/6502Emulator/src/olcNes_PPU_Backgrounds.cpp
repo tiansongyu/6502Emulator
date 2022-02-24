@@ -253,6 +253,24 @@ class Demo_olcNES : public olc::PixelGameEngine
         if (GetKey(olc::Key::P).bPressed)
             (++nSelectedPalette) &= 0x07;
 
+        // 存储游戏状态
+        if (GetKey(olc::Key::F1).bPressed)
+        {
+            std::ofstream ofs;
+            ofs.open("./save_0.dat", std::ofstream::binary);
+            ofs.write(reinterpret_cast<char *>(&nes), sizeof(nes));
+            ofs.close();
+        }
+
+        // 还原游戏状态
+        if (GetKey(olc::Key::F2).bPressed)
+        {
+            std::ifstream ifs;
+            ifs.open("./save_0.dat", std::ofstream::binary);
+            ifs.read(reinterpret_cast<char *>(&nes), sizeof(nes));
+            ifs.close();
+        }
+
         DrawCpu(516, 2);
         // DrawCode(516, 72, 26);
 
@@ -368,6 +386,14 @@ class Demo_olcNES : public olc::PixelGameEngine
                 } while (!nes.cpu.complete());
                 // Reset frame completion flag
                 nes.ppu.frame_complete = false;
+            }
+            // 存储游戏状态
+            if (GetKey(olc::Key::Z).bPressed)
+            {
+                std::ofstream ofs;
+                ofs.open("./save_0.dat", std::ofstream::binary);
+                ofs.write(reinterpret_cast<char *>(&nes), sizeof(nes));
+                ofs.close();
             }
         }
 

@@ -15,6 +15,15 @@
 | B                     | J           |
 | Reset                 | R           |
 
+### 功能键
+
+| function        | key       |
+|-----------------|-----------|
+| save game state | F1        |
+| load game state | F2        |
+| reset game      | Backspace |
+| change palette  | P         |
+
 ## 实现的模块
 - BUS
 - Cartridge(卡带)
