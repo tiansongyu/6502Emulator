@@ -42,19 +42,19 @@ libglu1-mesa-dev alsa-base alsa-utils alsa-source libasound2-dev -y
 
 ### linux环境
 ``` bash 
-git clone git@github.com:tiansongyu/6502Emulator.git && 
-cd 6502Emulator && 
-mkdir build  && 
-cd build &&
-cmake  -DCMAKE_BUILD_TYPE=Release .. && 
+git clone git@github.com:tiansongyu/6502Emulator.git 
+cd 6502Emulator 
+mkdir build  
+cd build 
+cmake  -DCMAKE_BUILD_TYPE=Release .. 
 cd 6502/6502Emulator/
-make -j12 && 
+make -j12 
 ./6502Emulator
 ```
 ### Windows环境
 ``` bash 
-git clone git@github.com:tiansongyu/6502Emulator.git && 
-cd 6502Emulator && 
+git clone git@github.com:tiansongyu/6502Emulator.git 
+cd 6502Emulator 
 make_VS2019.bat
 ``` 
 
