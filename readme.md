@@ -41,7 +41,7 @@
 # ubuntu
 # 安装opengl、alsa
 sudo apt install cmake mesa-common-dev libgl1-mesa-dev \
-libglu1-mesa-dev alsa-base alsa-utils alsa-source libasound2-dev -y
+libglu1-mesa-dev alsa-base alsa-utils alsa-source libasound2-dev libpng-dev -y
 
 ```
 ### windows
