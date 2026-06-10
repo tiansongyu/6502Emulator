@@ -245,12 +245,14 @@ void Nes6502::Interrupt(uint16_t vector, uint8_t n_cycles) {
   write(0x0100 + stkp, pc & 0x00FF);
   stkp--;
 
-  // Then Push the status register to the stack
+  // Then Push the status register to the stack. The pushed copy must show
+  // I as it was when the interrupt hit - hardware raises I only after the
+  // push, so RTI re-enables interrupts inside the service routine's caller.
   SetFlag(B, 0);
   SetFlag(U, 1);
-  SetFlag(I, 1);
   write(0x0100 + stkp, status);
   stkp--;
+  SetFlag(I, 1);
 
   // Read new program counter location from fixed address
   pc = (uint16_t)read(vector) | ((uint16_t)read(vector + 1) << 8);
@@ -675,9 +677,9 @@ uint8_t Nes6502::BIT() {
 // Instruction: Break
 // Function:    Program Sourced Interrupt
 uint8_t Nes6502::BRK() {
-  pc++;
-
-  SetFlag(I, 1);
+  // The IMM addressing mode already advanced pc past the padding byte, so
+  // pc is the correct hardware return address (BRK opcode + 2). The pushed
+  // status shows B=1 and the pre-interrupt I; I is raised after the push.
   write(0x0100 + stkp, (pc >> 8) & 0x00FF);
   stkp--;
   write(0x0100 + stkp, pc & 0x00FF);
@@ -687,6 +689,7 @@ uint8_t Nes6502::BRK() {
   write(0x0100 + stkp, status);
   stkp--;
   SetFlag(B, 0);
+  SetFlag(I, 1);
 
   pc = (uint16_t)read(0xFFFE) | ((uint16_t)read(0xFFFF) << 8);
   return 0;
