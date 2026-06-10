@@ -22,10 +22,8 @@
 
 #include "Bus.h"
 
-#define OLC_PGE_APPLICATION
 #include "olcPixelGameEngine.h"
 
-#define OLC_PGEX_SOUND
 #include "olcPGEX_Sound.h"
 
 class Demo_olcNES : public olc::PixelGameEngine {
@@ -158,7 +156,8 @@ class Demo_olcNES : public olc::PixelGameEngine {
   static Demo_olcNES
       *pInstance;  // Static variable that will hold a pointer to "this"
 
-  static float SoundOut(int nChannel, float fGlobalTime, float fTimeStep) {
+  static float SoundOut(int nChannel, float /*fGlobalTime*/,
+                        float /*fTimeStep*/) {
     if (nChannel == 0) {
       while (!pInstance->nes.clock()) {
       }

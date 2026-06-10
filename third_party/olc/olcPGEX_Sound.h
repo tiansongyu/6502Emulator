@@ -67,14 +67,6 @@
         David Barr, aka javidx9, �OneLoneCoder 2019
 */
 
-#ifdef __GNUC__
-// 关闭 警告：由于数据类型范围限制，比较结果永远为真
-// 关闭 警告：unused parameter
-#pragma GCC diagnostic ignored "-Wtype-limits"
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-
-#endif
-
 #ifndef OLC_PGEX_SOUND_H
 #define OLC_PGEX_SOUND_H
 
