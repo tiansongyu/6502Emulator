@@ -16,36 +16,18 @@
 // along with 6502Emulator.  If not, see <http://www.gnu.org/licenses/>.
 //
 // 6502Emulator is actively maintained and developed!
-#ifdef __GNUC__
-// 关闭 警告：由于数据类型范围限制，比较结果永远为真
-// 关闭 警告：unused parameter
-
-#pragma GCC diagnostic ignored "-Wtype-limits"
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-#endif
 #include "Mapper_001.h"
 
 Mapper_001::Mapper_001(uint8_t prgBanks, uint8_t chrBanks)
     : Mapper(prgBanks, chrBanks) {
-  vRAMStatic.resize(32 * 1024);
+  // MMC1 卡带带 8KB PRG RAM（$6000-$7FFF），由 Cartridge 统一处理
+  prgRam.resize(8 * 1024);
+  reset();
 }
 
 Mapper_001::~Mapper_001() {}
 
-bool Mapper_001::cpuMapRead(uint16_t addr, uint32_t &mapped_addr,
-                            uint8_t &data) {
-  if (addr >= 0x6000 && addr <= 0x7FFF) {
-    // 0x6000 -> 0x7FFF 是mapper中的ram
-    // Read is from static ram on cartridge
-    mapped_addr = 0xFFFFFFFF;
-
-    // Read data from RAM
-    data = vRAMStatic[addr & 0x1FFF];
-
-    // Signal mapper has handled request
-    return true;
-  }
-
+bool Mapper_001::cpuMapRead(uint16_t addr, uint32_t &mapped_addr) {
   if (addr >= 0x8000) {
     if (nControlRegister & 0b01000) {
       // 16K Mode
@@ -54,7 +36,7 @@ bool Mapper_001::cpuMapRead(uint16_t addr, uint32_t &mapped_addr,
         return true;
       }
 
-      if (addr >= 0xC000 && addr <= 0xFFFF) {
+      if (addr >= 0xC000) {
         mapped_addr = nPRGBankSelect16Hi * 0x4000 + (addr & 0x3FFF);
         return true;
       }
@@ -68,19 +50,8 @@ bool Mapper_001::cpuMapRead(uint16_t addr, uint32_t &mapped_addr,
   return false;
 }
 
-bool Mapper_001::cpuMapWrite(uint16_t addr, uint32_t &mapped_addr,
+bool Mapper_001::cpuMapWrite(uint16_t addr, uint32_t & /*mapped_addr*/,
                              uint8_t data) {
-  if (addr >= 0x6000 && addr <= 0x7FFF) {
-    // Write is to static ram on cartridge
-    mapped_addr = 0xFFFFFFFF;
-
-    // Write data to RAM
-    vRAMStatic[addr & 0x1FFF] = data;
-
-    // Signal mapper has handled request
-    return true;
-  }
-
   if (addr >= 0x8000) {
     // 与几乎所有其他映射器不同，MMC1 通过串行端口进行配置以减少引脚数。
     // CPU $8000 - $FFFF 连接到一个公共移位寄存器。将位 7 设置（$80 到
@@ -225,12 +196,12 @@ bool Mapper_001::ppuMapRead(uint16_t addr, uint32_t &mapped_addr) {
     } else {
       if (nControlRegister & 0b10000) {
         // 4K CHR Bank Mode
-        if (addr >= 0x0000 && addr <= 0x0FFF) {
+        if (addr <= 0x0FFF) {
           mapped_addr = nCHRBankSelect4Lo * 0x1000 + (addr & 0x0FFF);
           return true;
         }
 
-        if (addr >= 0x1000 && addr <= 0x1FFF) {
+        if (addr >= 0x1000) {
           mapped_addr = nCHRBankSelect4Hi * 0x1000 + (addr & 0x0FFF);
           return true;
         }
@@ -252,9 +223,13 @@ bool Mapper_001::ppuMapWrite(uint16_t addr, uint32_t &mapped_addr) {
       return true;
     }
 
+    // 注意：CHR-ROM 卡带返回 true 但未设置 mapped_addr 是原始行为
+    //（会把数据写进 vCHRMemory[0]）；保持原样，修复为独立提交。
+    mapped_addr = 0;
     return true;
-  } else
+  } else {
     return false;
+  }
 }
 
 void Mapper_001::reset() {

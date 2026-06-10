@@ -1,8 +1,6 @@
 // Copyright [2020-2022] <tiansongyu>
 
 #pragma once
-#include <vector>
-
 #include "Mapper.h"
 
 class Mapper_004 : public Mapper {
@@ -11,7 +9,7 @@ class Mapper_004 : public Mapper {
   ~Mapper_004();
 
  public:
-  bool cpuMapRead(uint16_t addr, uint32_t &mapped_addr, uint8_t &data) override;
+  bool cpuMapRead(uint16_t addr, uint32_t &mapped_addr) override;
   bool cpuMapWrite(uint16_t addr, uint32_t &mapped_addr,
                    uint8_t data = 0) override;
   bool ppuMapRead(uint16_t addr, uint32_t &mapped_addr) override;
@@ -44,6 +42,4 @@ class Mapper_004 : public Mapper {
   // No local equipment required
 
   MIRROR mirrormode = MIRROR::HORIZONTAL;
-
-  std::vector<uint8_t> vRAMStatic;
 };

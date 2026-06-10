@@ -16,8 +16,7 @@
 // along with 6502Emulator.  If not, see <http://www.gnu.org/licenses/>.
 //
 // 6502Emulator is actively maintained and developed!
-#ifndef __6502_6502LIB_SRC_PUBLIC_BUS_H_
-#define __6502_6502LIB_SRC_PUBLIC_BUS_H_
+#pragma once
 
 #include <array>
 #include <cstdint>
@@ -64,8 +63,11 @@ class Bus {
   uint8_t cpuRead(uint16_t addr, bool bReadOnly = false);
 
  private:
-  // ppu apu 经过的总共周期
-  uint32_t nSystemClockCounter = 0;
+  // PPU 时钟与 CPU 时钟是 3:1。用显式的相位计数器而不是对一个
+  // 不断增长的计数器取模——后者在 uint32 回绕时会让相位跳变
+  //（2^32 % 3 != 0），导致 CPU 被多打或漏打一拍。
+  uint8_t cpu_phase = 0;   // 0,1,2 循环；0 时 CPU 走一拍
+  bool odd_cycle = false;  // 全局奇偶相位（DMA 对齐用）
   // 控制寄存器
   uint8_t controller_state[2];
 
@@ -96,4 +98,3 @@ class Bus {
   // 系统clock
   bool clock();
 };
-#endif  // __6502_6502LIB_SRC_PUBLIC_BUS_H_

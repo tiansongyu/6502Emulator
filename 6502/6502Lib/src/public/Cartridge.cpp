@@ -19,9 +19,15 @@
 
 #include "Cartridge.h"
 
-#include <stdio.h>
-
+#include <fstream>
 #include <iostream>
+
+#include "Mapper_000.h"
+#include "Mapper_001.h"
+#include "Mapper_002.h"
+#include "Mapper_003.h"
+#include "Mapper_004.h"
+#include "Mapper_066.h"
 Cartridge::Cartridge(const std::string &sFileName) {
   // iNES 格式文件头
   // nes文件格式wiki:https://wiki.nesdev.com/w/index.php?title=INES#Name_of_file_format
@@ -119,36 +125,34 @@ Cartridge::Cartridge(const std::string &sFileName) {
 Cartridge::~Cartridge() {}
 
 bool Cartridge::ImageValid() { return bImageValid; }
+// $6000-$7FFF 是卡带 PRG RAM 窗口。带 RAM 的 mapper 把 prgRam 容器
+// 设为非空——数据本身回答了"有没有 RAM"，不需要哨兵地址协议。
 bool Cartridge::cpuRead(uint16_t addr, uint8_t &data) {
-  uint32_t mapped_addr = 0;
-  // cpu读取卡带中的内容
-
-  if (pMapper->cpuMapRead(addr, mapped_addr, data)) {
-    if (mapped_addr == 0xFFFFFFFF) {
-      // Mapper has actually set the data value, for example cartridge based RAM
-      return true;
-    } else {
-      // Mapper has produced an offset into cartridge bank memory
-      data = vPRGMemory[mapped_addr];
-    }
+  if (!pMapper->prgRam.empty() && addr >= 0x6000 && addr <= 0x7FFF) {
+    data = pMapper->prgRam[addr & 0x1FFF];
     return true;
-  } else
-    return false;
+  }
+
+  uint32_t mapped_addr = 0;
+  if (pMapper->cpuMapRead(addr, mapped_addr)) {
+    data = vPRGMemory[mapped_addr];
+    return true;
+  }
+  return false;
 }
 
 bool Cartridge::cpuWrite(uint16_t addr, uint8_t data) {
+  if (!pMapper->prgRam.empty() && addr >= 0x6000 && addr <= 0x7FFF) {
+    pMapper->prgRam[addr & 0x1FFF] = data;
+    return true;
+  }
+
   uint32_t mapped_addr = 0;
   if (pMapper->cpuMapWrite(addr, mapped_addr, data)) {
-    if (mapped_addr == 0xFFFFFFFF) {
-      // Mapper has actually set the data value, for example cartridge based RAM
-      return true;
-    } else {
-      // Mapper has produced an offset into cartridge bank memory
-      vPRGMemory[mapped_addr] = data;
-    }
+    vPRGMemory[mapped_addr] = data;
     return true;
-  } else
-    return false;
+  }
+  return false;
 }
 
 bool Cartridge::ppuRead(uint16_t addr, uint8_t &data) {

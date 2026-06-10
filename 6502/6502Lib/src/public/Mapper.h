@@ -2,6 +2,7 @@
 
 #pragma once
 #include <cstdint>
+#include <vector>
 
 enum MIRROR {
   HARDWARE,
@@ -14,12 +15,16 @@ enum MIRROR {
 class Mapper {
  public:
   Mapper(uint8_t prgBanks, uint8_t chrBanks);
-  ~Mapper();
+  virtual ~Mapper();
 
  public:
+  // 卡带上的 PRG RAM（$6000-$7FFF 窗口）。没有 RAM 的 mapper 保持
+  // 为空，Cartridge 据此决定是否响应该地址段——数据本身就是
+  // "有没有 RAM" 的答案，不再需要带内哨兵地址协议。
+  std::vector<uint8_t> prgRam;
+
   // Transform CPU bus address into PRG ROM offset
-  virtual bool cpuMapRead(uint16_t addr, uint32_t &mapped_addr,
-                          uint8_t &data) = 0;
+  virtual bool cpuMapRead(uint16_t addr, uint32_t &mapped_addr) = 0;
   virtual bool cpuMapWrite(uint16_t addr, uint32_t &mapped_addr,
                            uint8_t data = 0) = 0;
   // Transform PPU bus address into CHR ROM offset

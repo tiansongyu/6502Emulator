@@ -16,8 +16,7 @@
 // along with 6502Emulator.  If not, see <http://www.gnu.org/licenses/>.
 //
 // 6502Emulator is actively maintained and developed!
-#ifndef _6502_6502LIB_SRC_PUBLIC_MAPPER_000_H_
-#define _6502_6502LIB_SRC_PUBLIC_MAPPER_000_H_
+#pragma once
 #include "Mapper.h"
 
 class Mapper_000 : public Mapper {
@@ -26,7 +25,7 @@ class Mapper_000 : public Mapper {
   ~Mapper_000();
 
  public:
-  bool cpuMapRead(uint16_t addr, uint32_t &mapped_addr, uint8_t &data) override;
+  bool cpuMapRead(uint16_t addr, uint32_t &mapped_addr) override;
   bool cpuMapWrite(uint16_t addr, uint32_t &mapped_addr,
                    uint8_t data = 0) override;
   bool ppuMapRead(uint16_t addr, uint32_t &mapped_addr) override;
@@ -35,4 +34,3 @@ class Mapper_000 : public Mapper {
 
   // No local equipment required
 };
-#endif  // _6502_6502LIB_SRC_PUBLIC_MAPPER_000_H_

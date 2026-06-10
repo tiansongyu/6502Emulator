@@ -16,12 +16,6 @@
 // along with 6502Emulator.  If not, see <http://www.gnu.org/licenses/>.
 //
 // 6502Emulator is actively maintained and developed!
-#ifdef __GNUC__
-// 关闭 警告：由于数据类型范围限制，比较结果永远为真
-// 关闭 警告：unused parameter
-#pragma GCC diagnostic ignored "-Wtype-limits"
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-#endif
 #include "Mapper_003.h"
 
 Mapper_003::Mapper_003(uint8_t prgBanks, uint8_t chrBanks)
@@ -36,10 +30,9 @@ void Mapper_003::reset() {
   regLo = 0x00;
 }
 
-bool Mapper_003::cpuMapRead(uint16_t addr, uint32_t &mapped_addr,
-                            uint8_t &data) {
+bool Mapper_003::cpuMapRead(uint16_t addr, uint32_t &mapped_addr) {
   // 存在ROM为16KB和32KB两种情况
-  if (addr >= 0x8000 && addr <= 0xFFFF) {
+  if (addr >= 0x8000) {
     if (nPRGBanks == 1)  // 16KB
       mapped_addr = addr & 0x3FFF;
     else if (nPRGBanks == 2)  // 32KB
@@ -50,10 +43,10 @@ bool Mapper_003::cpuMapRead(uint16_t addr, uint32_t &mapped_addr,
   return false;
 }
 
-bool Mapper_003::cpuMapWrite(uint16_t addr, uint32_t &mapped_addr,
+bool Mapper_003::cpuMapWrite(uint16_t addr, uint32_t & /*mapped_addr*/,
                              uint8_t data) {
   // 修改寄存器regLo的值
-  if (addr >= 0x8000 && addr <= 0xFFFF) {
+  if (addr >= 0x8000) {
     regLo = data & 0b00000011;
   }
   return false;
@@ -66,7 +59,7 @@ bool Mapper_003::ppuMapRead(uint16_t addr, uint32_t &mapped_addr) {
 
   // mapper_3
   // PPU $0000-$1FFF: 8 KB switchable CHR ROM bank
-  if (addr >= 0x0000 && addr <= 0x1FFF) {
+  if (addr <= 0x1FFF) {
     mapped_addr = regLo * 0x2000 + addr;
     return true;
   }
@@ -74,6 +67,6 @@ bool Mapper_003::ppuMapRead(uint16_t addr, uint32_t &mapped_addr) {
   return false;
 }
 
-bool Mapper_003::ppuMapWrite(uint16_t addr, uint32_t &mapped_addr) {
+bool Mapper_003::ppuMapWrite(uint16_t /*addr*/, uint32_t & /*mapped_addr*/) {
   return false;
 }

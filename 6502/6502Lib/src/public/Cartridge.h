@@ -16,22 +16,14 @@
 // along with 6502Emulator.  If not, see <http://www.gnu.org/licenses/>.
 //
 // 6502Emulator is actively maintained and developed!
-#ifndef _6502_6502LIB_SRC_PUBLIC_CARTRIDGE_H_
-#define _6502_6502LIB_SRC_PUBLIC_CARTRIDGE_H_
+#pragma once
 
 #include <cstdint>
-#include <fstream>
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "Mapper_000.h"
-// 待添加不同种类的mapper
-#include "Mapper_001.h"
-#include "Mapper_002.h"
-#include "Mapper_003.h"
-#include "Mapper_004.h"
-#include "Mapper_066.h"
+#include "Mapper.h"
 
 class Cartridge {
  public:
@@ -69,4 +61,3 @@ class Cartridge {
 
   MIRROR Mirror();
 };
-#endif  // _6502_6502LIB_SRC_PUBLIC_CARTRIDGE_H_

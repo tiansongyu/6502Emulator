@@ -16,10 +16,7 @@
 // along with 6502Emulator.  If not, see <http://www.gnu.org/licenses/>.
 //
 // 6502Emulator is actively maintained and developed!
-#ifndef _6502_6502LIB_SRC_PUBLIC_MAPPER_001_H_
-#define _6502_6502LIB_SRC_PUBLIC_MAPPER_001_H_
-#include <vector>
-
+#pragma once
 #include "Mapper.h"
 
 class Mapper_001 : public Mapper {
@@ -28,7 +25,7 @@ class Mapper_001 : public Mapper {
   ~Mapper_001();
 
  public:
-  bool cpuMapRead(uint16_t addr, uint32_t &mapped_addr, uint8_t &data) override;
+  bool cpuMapRead(uint16_t addr, uint32_t &mapped_addr) override;
   bool cpuMapWrite(uint16_t addr, uint32_t &mapped_addr,
                    uint8_t data = 0) override;
   bool ppuMapRead(uint16_t addr, uint32_t &mapped_addr) override;
@@ -53,7 +50,4 @@ class Mapper_001 : public Mapper {
   // No local equipment required
 
   MIRROR mirrormode = MIRROR::HORIZONTAL;
-
-  std::vector<uint8_t> vRAMStatic;
 };
-#endif  // _6502_6502LIB_SRC_PUBLIC_MAPPER_001_H_

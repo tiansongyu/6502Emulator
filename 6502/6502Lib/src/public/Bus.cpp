@@ -102,7 +102,8 @@ void Bus::reset() {
   cpu.reset();
   ppu.reset();
   apu.reset();
-  nSystemClockCounter = 0;
+  cpu_phase = 0;
+  odd_cycle = false;
   dma_page = 0x00;
   dma_addr = 0x00;
   dma_data = 0x00;
@@ -120,9 +121,7 @@ bool Bus::clock() {
   apu.clock();
 
   // CPU的时钟周期比PPU和APU的慢3倍，也就是说，PPU和APU每执行3次，CPU执行一次
-  // 这是NES模拟器中规定的
-  // 使用nSystemClockCounter来记录ppu的时钟周期. 除3取余即可得到cpu时钟
-  if (nSystemClockCounter % 3 == 0) {
+  if (cpu_phase == 0) {
     // 判断是否发生DMA传送(将OAM数据传送到PPU中)
     if (dma_transfer) {
       // TODO(tiansongyu): 可能存在cpu的周期bug
@@ -133,12 +132,12 @@ bool Bus::clock() {
       // 256 个交替读 / 写周期。） dma_dummy的默认是true
       if (dma_dummy) {
         // 执行周期必须是偶数，需要等待一个cpu周期
-        if (nSystemClockCounter % 2 == 1) {
+        if (odd_cycle) {
           // DMA开始传送
           dma_dummy = false;
         }
       } else {
-        if (nSystemClockCounter % 2 == 0) {
+        if (!odd_cycle) {
           // 偶数周期从cpu中读取数据，
           // dma_page存储着 0x(dma_page)xx数据
           // xx通常从0开始 ，0xFF结束，
@@ -195,7 +194,8 @@ bool Bus::clock() {
     cpu.irq();
   }
 
-  nSystemClockCounter++;
+  if (++cpu_phase == 3) cpu_phase = 0;
+  odd_cycle = !odd_cycle;
   // 如果准备好声音数据，开始发声。。
   return bAudioSampleReady;
 }

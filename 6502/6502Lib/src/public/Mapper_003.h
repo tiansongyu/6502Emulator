@@ -26,7 +26,7 @@ class Mapper_003 : public Mapper {
   ~Mapper_003();
 
  public:
-  bool cpuMapRead(uint16_t addr, uint32_t &mapped_addr, uint8_t &data) override;
+  bool cpuMapRead(uint16_t addr, uint32_t &mapped_addr) override;
   bool cpuMapWrite(uint16_t addr, uint32_t &mapped_addr,
                    uint8_t data = 0) override;
   bool ppuMapRead(uint16_t addr, uint32_t &mapped_addr) override;

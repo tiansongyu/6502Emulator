@@ -9,7 +9,7 @@ Mapper::Mapper(uint8_t prgBanks, uint8_t chrBanks) {
   // reset();
 }
 
-Mapper::~Mapper() {}
+Mapper::~Mapper() {}  // virtual：经基类指针析构派生 mapper
 
 MIRROR Mapper::mirror() { return MIRROR::HARDWARE; }
 

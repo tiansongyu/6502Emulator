@@ -16,70 +16,28 @@
 // along with 6502Emulator.  If not, see <http://www.gnu.org/licenses/>.
 //
 // 6502Emulator is actively maintained and developed!
-#ifdef __GNUC__
-// 关闭 警告：由于数据类型范围限制，比较结果永远为真
-// 关闭 警告：unused parameter
-#pragma GCC diagnostic ignored "-Wtype-limits"
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-#endif
 #include "Mapper_004.h"
-
-#include <stdio.h>
 
 Mapper_004::Mapper_004(uint8_t prgBanks, uint8_t chrBanks)
     : Mapper(prgBanks, chrBanks) {
-  vRAMStatic.resize(32 * 1024);
+  // MMC3 卡带带 8KB PRG RAM（$6000-$7FFF），由 Cartridge 统一处理
+  prgRam.resize(8 * 1024);
+  reset();
 }
 
 Mapper_004::~Mapper_004() {}
 
-bool Mapper_004::cpuMapRead(uint16_t addr, uint32_t &mapped_addr,
-                            uint8_t &data) {
-  if (addr >= 0x6000 && addr <= 0x7FFF) {
-    // 0x6000 -> 0x7FFF 是mapper中的ram
-    // Read is from static ram on cartridge
-    mapped_addr = 0xFFFFFFFF;
-
-    // Read data from RAM
-    data = vRAMStatic[addr & 0x1FFF];
-
-    // Signal mapper has handled request
-    return true;
-  }
-  if (addr >= 0x8000 && addr <= 0x9FFF) {
-    mapped_addr = pPRGBank[0] + (addr & 0x1FFF);
-    return true;
-  }
-
-  if (addr >= 0xA000 && addr <= 0xBFFF) {
-    mapped_addr = pPRGBank[1] + (addr & 0x1FFF);
-    return true;
-  }
-
-  if (addr >= 0xC000 && addr <= 0xDFFF) {
-    mapped_addr = pPRGBank[2] + (addr & 0x1FFF);
-    return true;
-  }
-
-  if (addr >= 0xE000 && addr <= 0xFFFF) {
-    mapped_addr = pPRGBank[3] + (addr & 0x1FFF);
+bool Mapper_004::cpuMapRead(uint16_t addr, uint32_t &mapped_addr) {
+  // $8000-$FFFF 均分为 4 个 8KB 槽位，地址位 14-13 直接就是槽位号
+  if (addr >= 0x8000) {
+    mapped_addr = pPRGBank[(addr >> 13) & 0x03] + (addr & 0x1FFF);
     return true;
   }
   return false;
 }
 
-bool Mapper_004::cpuMapWrite(uint16_t addr, uint32_t &mapped_addr,
+bool Mapper_004::cpuMapWrite(uint16_t addr, uint32_t & /*mapped_addr*/,
                              uint8_t data) {
-  if (addr >= 0x6000 && addr <= 0x7FFF) {
-    // Write is to static ram on cartridge
-    mapped_addr = 0xFFFFFFFF;
-
-    // Write data to RAM
-    vRAMStatic[addr & 0x1FFF] = data;
-
-    // Signal mapper has handled request
-    return true;
-  }
   if (addr >= 0x8000 && addr <= 0x9FFF) {
     // Bank Select
     // 判断为偶数时
@@ -160,7 +118,7 @@ bool Mapper_004::cpuMapWrite(uint16_t addr, uint32_t &mapped_addr,
     return false;
   }
 
-  if (addr >= 0xE000 && addr <= 0xFFFF) {
+  if (addr >= 0xE000) {
     if (!(addr & 0x0001)) {
       bIRQEnable = false;
       bIRQActive = false;
@@ -174,50 +132,15 @@ bool Mapper_004::cpuMapWrite(uint16_t addr, uint32_t &mapped_addr,
 }
 
 bool Mapper_004::ppuMapRead(uint16_t addr, uint32_t &mapped_addr) {
-  if (addr >= 0x0000 && addr <= 0x03FF) {
-    mapped_addr = pCHRBank[0] + (addr & 0x03FF);
+  // $0000-$1FFF 均分为 8 个 1KB 槽位，地址位 12-10 直接就是槽位号
+  if (addr <= 0x1FFF) {
+    mapped_addr = pCHRBank[addr >> 10] + (addr & 0x03FF);
     return true;
   }
-
-  if (addr >= 0x0400 && addr <= 0x07FF) {
-    mapped_addr = pCHRBank[1] + (addr & 0x03FF);
-    return true;
-  }
-
-  if (addr >= 0x0800 && addr <= 0x0BFF) {
-    mapped_addr = pCHRBank[2] + (addr & 0x03FF);
-    return true;
-  }
-
-  if (addr >= 0x0C00 && addr <= 0x0FFF) {
-    mapped_addr = pCHRBank[3] + (addr & 0x03FF);
-    return true;
-  }
-
-  if (addr >= 0x1000 && addr <= 0x13FF) {
-    mapped_addr = pCHRBank[4] + (addr & 0x03FF);
-    return true;
-  }
-
-  if (addr >= 0x1400 && addr <= 0x17FF) {
-    mapped_addr = pCHRBank[5] + (addr & 0x03FF);
-    return true;
-  }
-
-  if (addr >= 0x1800 && addr <= 0x1BFF) {
-    mapped_addr = pCHRBank[6] + (addr & 0x03FF);
-    return true;
-  }
-
-  if (addr >= 0x1C00 && addr <= 0x1FFF) {
-    mapped_addr = pCHRBank[7] + (addr & 0x03FF);
-    return true;
-  }
-
   return false;
 }
 
-bool Mapper_004::ppuMapWrite(uint16_t addr, uint32_t &mapped_addr) {
+bool Mapper_004::ppuMapWrite(uint16_t /*addr*/, uint32_t & /*mapped_addr*/) {
   return false;
 }
 

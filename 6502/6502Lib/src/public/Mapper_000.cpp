@@ -16,12 +16,6 @@
 // along with 6502Emulator.  If not, see <http://www.gnu.org/licenses/>.
 //
 // 6502Emulator is actively maintained and developed!
-#ifdef __GNUC__
-// 关闭 警告：由于数据类型范围限制，比较结果永远为真
-// 关闭 警告：unused parameter
-#pragma GCC diagnostic ignored "-Wtype-limits"
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-#endif
 
 #include "Mapper_000.h"
 
@@ -34,8 +28,7 @@ Mapper_000::~Mapper_000() {}
 
 void Mapper_000::reset() {}
 
-bool Mapper_000::cpuMapRead(uint16_t addr, uint32_t &mapped_addr,
-                            uint8_t &data) {
+bool Mapper_000::cpuMapRead(uint16_t addr, uint32_t &mapped_addr) {
   // if PRGROM is 16KB
   //     CPU Address Bus          PRG ROM
   //     0x8000 -> 0xBFFF: Map    0x0000 -> 0x3FFF
@@ -46,7 +39,7 @@ bool Mapper_000::cpuMapRead(uint16_t addr, uint32_t &mapped_addr,
 
   // PRGROM分为16KB和32KB两种情况
   // 如果16KB，则其实只有0x3FFF使用到，从0x4000 -> 0x7FFF等同于0x0000 -> 0x3FFF
-  if (addr >= 0x8000 && addr <= 0xFFFF) {
+  if (addr >= 0x8000) {
     mapped_addr = addr & (nPRGBanks > 1 ? 0x7FFF : 0x3FFF);
     return true;
   }
@@ -55,9 +48,11 @@ bool Mapper_000::cpuMapRead(uint16_t addr, uint32_t &mapped_addr,
 }
 
 bool Mapper_000::cpuMapWrite(uint16_t addr, uint32_t &mapped_addr,
-                             uint8_t data) {
+                             uint8_t /*data*/) {
   // data没有使用,map中没有寄存器，cpu不会向map写入数据
-  if (addr >= 0x8000 && addr <= 0xFFFF) {
+  // 注意：把写入映射进 PRG ROM 是原始行为（会改写 ROM 镜像），
+  // 保持原样，写保护作为独立的行为修正提交。
+  if (addr >= 0x8000) {
     mapped_addr = addr & (nPRGBanks > 1 ? 0x7FFF : 0x3FFF);
     return true;
   }
@@ -69,7 +64,7 @@ bool Mapper_000::ppuMapRead(uint16_t addr, uint32_t &mapped_addr) {
   // There is no mapping required for PPU
   // PPU Address Bus          CHR ROM
   // 0x0000 -> 0x1FFF: Map    0x0000 -> 0x1FFF
-  if (addr >= 0x0000 && addr <= 0x1FFF) {
+  if (addr <= 0x1FFF) {
     mapped_addr = addr;
     return true;
   }
@@ -78,7 +73,7 @@ bool Mapper_000::ppuMapRead(uint16_t addr, uint32_t &mapped_addr) {
 }
 
 bool Mapper_000::ppuMapWrite(uint16_t addr, uint32_t &mapped_addr) {
-  if (addr >= 0x0000 && addr <= 0x1FFF) {
+  if (addr <= 0x1FFF) {
     if (nCHRBanks == 0) {
       // Treat as RAM
       mapped_addr = addr;
