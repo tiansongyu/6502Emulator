@@ -179,8 +179,7 @@ uint8_t Nes2C02::cpuRead(uint16_t addr, bool rdonly) {
       case 0x0004:  // OAM Data
         // https://wiki.nesdev.com/w/index.php?title=PPU_programmer_reference#OAM_data_.28.242004.29_.3C.3E_read.2Fwrite
         // 这个读取几乎不用（DMA 才是主要途径）
-        // 注意：原始代码这里的赋值位于 break 之后，是永远不会执行的死代码，
-        // 保持原行为（返回 0），修复作为独立的行为修正提交。
+        data = pOAM[oam_addr];
         break;
 
       case 0x0007:  // PPU Data
@@ -238,7 +237,10 @@ void Nes2C02::cpuWrite(uint16_t addr, uint8_t data) {
       // ppu地址是一个16位地址，分两次传输：先高字节，后低字节。
       // 写入暂存在 tram，第二次写完成后整体转移进 vram 指针。
       if (address_latch == 0) {
-        tram_addr.reg = (uint16_t)((data & 0x3F) << 8);
+        // 高字节写入只替换高位，保留低字节——游戏依赖这一点在
+        // 渲染中途做分屏滚动（如状态栏分割）。
+        tram_addr.reg =
+            (uint16_t)((data & 0x3F) << 8) | (tram_addr.reg & 0x00FF);
         address_latch = 1;
       } else {
         tram_addr.reg = (tram_addr.reg & 0xFF00) | data;
