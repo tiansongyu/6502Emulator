@@ -49,9 +49,14 @@ Cartridge::Cartridge(const std::string &sFileName) {
   std::ifstream ifs;
   ifs.open(sFileName, std::ifstream::binary);
   if (ifs.is_open()) {
-    // 读iNES文件头
+    // 读iNES文件头并校验魔数 "NES\x1A"
     ifs.read(reinterpret_cast<char *>(&header), sizeof(sHeader));
-    // 如果有mapper1，则调到512字节开始读取文件内容
+    if (header.name[0] != 'N' || header.name[1] != 'E' ||
+        header.name[2] != 'S' || header.name[3] != 0x1A) {
+      std::cerr << "not an iNES file: " << sFileName << std::endl;
+      return;
+    }
+    // 如果有 trainer，跳过 512 字节再读取文件内容
     if (header.mapper1 & 0x04) ifs.seekg(512, std::ios_base::cur);
 
     // 读取这个iNES文件所使用的mapperid号
@@ -113,11 +118,14 @@ Cartridge::Cartridge(const std::string &sFileName) {
         pMapper = std::make_shared<Mapper_066>(nPRGBanks, nCHRBanks);
         break;
       default:
-        std::cout << "can not find the correct mapper" << std::endl;
+        std::cerr << "unsupported mapper " << int(nMapperID) << ": "
+                  << sFileName << std::endl;
         break;
     }
-    printf("MapperID is %d \n", nMapperID);
-    bImageValid = true;
+
+    // 只有文件头合法且 mapper 受支持才算加载成功——
+    // 旧代码无条件置 true，之后解引用空 pMapper 直接崩溃。
+    bImageValid = (pMapper != nullptr);
     ifs.close();
   }
 }

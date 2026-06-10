@@ -60,11 +60,11 @@ void Bus::cpuWrite(uint16_t addr, uint8_t data) {
     dma_page = data;
     dma_addr = 0x00;
     dma_transfer = true;
-  } else if (addr >= 0x4016 && addr <= 0x4017) {
-    // 控制寄存器地址
-    // 0x4016 - 0x4017是控制寄存器地址，cpu通过读取此地址中的数据
-    // 获取控制命令
-    controller_state[addr & 0x0001] = controller[addr & 0x0001];
+  } else if (addr == 0x4016) {
+    // 写 $4016 是手柄选通：两个手柄同时锁存当前按键状态。
+    //（$4017 写入只属于 APU 帧计数器，上面的 APU 分支已经处理。）
+    controller_state[0] = controller[0];
+    controller_state[1] = controller[1];
   }
 }
 
@@ -82,9 +82,10 @@ uint8_t Bus::cpuRead(uint16_t addr, bool bReadOnly) {
     // APU读寄存器
     data = apu.cpuRead(addr);
   } else if (addr >= 0x4016 && addr <= 0x4017) {
-    // 读取控制命令数据
+    // 读取控制命令数据（高位在前的移位读出）。
+    // 调试器的只读访问不能移位，否则旁观即干扰。
     data = (controller_state[addr & 0x0001] & 0x80) > 0;
-    controller_state[addr & 0x0001] <<= 1;
+    if (!bReadOnly) controller_state[addr & 0x0001] <<= 1;
   }
 
   return data;
