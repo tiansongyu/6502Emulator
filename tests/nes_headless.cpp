@@ -29,6 +29,11 @@ static uint64_t fnv1a(const uint8_t *p, size_t n, uint64_t h = 0xcbf29ce48422232
   return h;
 }
 
+// Bus never zeroes cpuRam, so power-on RAM is whatever the process stack
+// held - nestest's tail end executes zero-page bytes it never wrote, making
+// runs non-deterministic. Zero it explicitly for reproducible baselines.
+static void zeroRam(Bus &nes) { memset(nes.cpuRam, 0, sizeof(nes.cpuRam)); }
+
 static std::shared_ptr<Cartridge> loadCart(const char *path) {
   auto cart = std::make_shared<Cartridge>(path);
   if (!cart->ImageValid()) {
@@ -45,6 +50,7 @@ static void stepInstruction(Bus &nes) {
 
 static int runTrace(const char *rom, int count) {
   Bus nes;
+  zeroRam(nes);
   nes.insertCartridge(loadCart(rom));
   nes.reset();
   nes.cpu.pc = 0xC000;  // nestest automation entry point
@@ -68,6 +74,7 @@ static void runFrame(Bus &nes) {
 
 static int runFrames(const char *rom, int frames, int startAt) {
   Bus nes;
+  zeroRam(nes);
   nes.insertCartridge(loadCart(rom));
   nes.SetSampleFrequency(44100);
   nes.reset();
@@ -89,6 +96,7 @@ static int runFrames(const char *rom, int frames, int startAt) {
 
 static int runAudio(const char *rom, double seconds, int startAt) {
   Bus nes;
+  zeroRam(nes);
   nes.insertCartridge(loadCart(rom));
   nes.SetSampleFrequency(44100);
   nes.reset();

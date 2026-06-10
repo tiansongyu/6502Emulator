@@ -1,7 +1,7 @@
 /*
-        Nes6502 - An emulation of the 6502/2A03 processor
-        "Thanks Dad for believing computers were gonna be a big deal..." -
-   javidx9
+        olc6502 - An emulation of the 6502/2A03 processor
+        "Thanks Dad for believing computers were gonna be a big deal..."
+   - javidx9
 
         License (OLC-3)
         ~~~~~~~~~~~~~~~
@@ -36,197 +36,154 @@
         (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
         OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-        Background
-        ~~~~~~~~~~
-        I love this microprocessor. It was at the heart of two of my favourite
-        machines, the BBC Micro, and the Nintendo Entertainment System, as well
-        as countless others in that era. I learnt to program on the Model B, and
-        I learnt to love games on the NES, so in many ways, this processor is
-        why I am the way I am today.
-
-        In February 2019, I decided to undertake a selfish personal project and
-        build a NES emulator. Ive always wanted to, and as such I've avoided
-        looking at source code for such things. This made making this a real
-        personal challenge. I know its been done countless times, and very
-   likely in far more clever and accurate ways than mine, but I'm proud of this.
-
-        Datasheet: http://archive.6502.org/datasheets/rockwell_r650x_r651x.pdf
-
-        Files: Nes6502.h, Nes6502.cpp
-
-        Relevant Video:
-
-        Links
-        ~~~~~
-        YouTube:	https://www.youtube.com/javidx9
-                                https://www.youtube.com/javidx9extra
-        Discord:	https://discord.gg/WhwHUMV
-        Twitter:	https://www.twitter.com/javidx9
-        Twitch:		https://www.twitch.tv/javidx9
-        GitHub:		https://www.github.com/onelonecoder
-        Patreon:	https://www.patreon.com/javidx9
-        Homepage:	https://www.onelonecoder.com
-
         Author
         ~~~~~~
-        David Barr, aka javidx9, �OneLoneCoder 2019
+        David Barr, aka javidx9, OneLoneCoder 2019
 */
 
 #include "Nes6502.h"
 
 #include "Bus.h"
 
-// Constructor
-Nes6502::Nes6502() {
-  // Assembles the translation table. It's big, it's ugly, but it yields a
-  // convenient way to emulate the 6502. I'm certain there are some "code-golf"
-  // strategies to reduce this but I've deliberately kept it verbose for study
-  // and alteration
-
-  // It is 16x16 entries. This gives 256 instructions. It is arranged to that
-  // the bottom 4 bits of the instruction choose the column, and the top 4 bits
-  // choose the row.
-
-  // For convenience to get function pointers to members of this class, I'm
-  // using this or else it will be much much larger :D
-
-  // The table is one big initialiser list of initialiser lists...
-  using a = Nes6502;
-  lookup = {
-      {"BRK", &a::BRK, &a::IMM, 7}, {"ORA", &a::ORA, &a::IZX, 6},
-      {"???", &a::XXX, &a::IMP, 2}, {"???", &a::XXX, &a::IMP, 8},
-      {"???", &a::NOP, &a::IMP, 3}, {"ORA", &a::ORA, &a::ZP0, 3},
-      {"ASL", &a::ASL, &a::ZP0, 5}, {"???", &a::XXX, &a::IMP, 5},
-      {"PHP", &a::PHP, &a::IMP, 3}, {"ORA", &a::ORA, &a::IMM, 2},
-      {"ASL", &a::ASL, &a::IMP, 2}, {"???", &a::XXX, &a::IMP, 2},
-      {"???", &a::NOP, &a::IMP, 4}, {"ORA", &a::ORA, &a::ABS, 4},
-      {"ASL", &a::ASL, &a::ABS, 6}, {"???", &a::XXX, &a::IMP, 6},
-      {"BPL", &a::BPL, &a::REL, 2}, {"ORA", &a::ORA, &a::IZY, 5},
-      {"???", &a::XXX, &a::IMP, 2}, {"???", &a::XXX, &a::IMP, 8},
-      {"???", &a::NOP, &a::IMP, 4}, {"ORA", &a::ORA, &a::ZPX, 4},
-      {"ASL", &a::ASL, &a::ZPX, 6}, {"???", &a::XXX, &a::IMP, 6},
-      {"CLC", &a::CLC, &a::IMP, 2}, {"ORA", &a::ORA, &a::ABY, 4},
-      {"???", &a::NOP, &a::IMP, 2}, {"???", &a::XXX, &a::IMP, 7},
-      {"???", &a::NOP, &a::IMP, 4}, {"ORA", &a::ORA, &a::ABX, 4},
-      {"ASL", &a::ASL, &a::ABX, 7}, {"???", &a::XXX, &a::IMP, 7},
-      {"JSR", &a::JSR, &a::ABS, 6}, {"AND", &a::AND, &a::IZX, 6},
-      {"???", &a::XXX, &a::IMP, 2}, {"???", &a::XXX, &a::IMP, 8},
-      {"BIT", &a::BIT, &a::ZP0, 3}, {"AND", &a::AND, &a::ZP0, 3},
-      {"ROL", &a::ROL, &a::ZP0, 5}, {"???", &a::XXX, &a::IMP, 5},
-      {"PLP", &a::PLP, &a::IMP, 4}, {"AND", &a::AND, &a::IMM, 2},
-      {"ROL", &a::ROL, &a::IMP, 2}, {"???", &a::XXX, &a::IMP, 2},
-      {"BIT", &a::BIT, &a::ABS, 4}, {"AND", &a::AND, &a::ABS, 4},
-      {"ROL", &a::ROL, &a::ABS, 6}, {"???", &a::XXX, &a::IMP, 6},
-      {"BMI", &a::BMI, &a::REL, 2}, {"AND", &a::AND, &a::IZY, 5},
-      {"???", &a::XXX, &a::IMP, 2}, {"???", &a::XXX, &a::IMP, 8},
-      {"???", &a::NOP, &a::IMP, 4}, {"AND", &a::AND, &a::ZPX, 4},
-      {"ROL", &a::ROL, &a::ZPX, 6}, {"???", &a::XXX, &a::IMP, 6},
-      {"SEC", &a::SEC, &a::IMP, 2}, {"AND", &a::AND, &a::ABY, 4},
-      {"???", &a::NOP, &a::IMP, 2}, {"???", &a::XXX, &a::IMP, 7},
-      {"???", &a::NOP, &a::IMP, 4}, {"AND", &a::AND, &a::ABX, 4},
-      {"ROL", &a::ROL, &a::ABX, 7}, {"???", &a::XXX, &a::IMP, 7},
-      {"RTI", &a::RTI, &a::IMP, 6}, {"EOR", &a::EOR, &a::IZX, 6},
-      {"???", &a::XXX, &a::IMP, 2}, {"???", &a::XXX, &a::IMP, 8},
-      {"???", &a::NOP, &a::IMP, 3}, {"EOR", &a::EOR, &a::ZP0, 3},
-      {"LSR", &a::LSR, &a::ZP0, 5}, {"???", &a::XXX, &a::IMP, 5},
-      {"PHA", &a::PHA, &a::IMP, 3}, {"EOR", &a::EOR, &a::IMM, 2},
-      {"LSR", &a::LSR, &a::IMP, 2}, {"???", &a::XXX, &a::IMP, 2},
-      {"JMP", &a::JMP, &a::ABS, 3}, {"EOR", &a::EOR, &a::ABS, 4},
-      {"LSR", &a::LSR, &a::ABS, 6}, {"???", &a::XXX, &a::IMP, 6},
-      {"BVC", &a::BVC, &a::REL, 2}, {"EOR", &a::EOR, &a::IZY, 5},
-      {"???", &a::XXX, &a::IMP, 2}, {"???", &a::XXX, &a::IMP, 8},
-      {"???", &a::NOP, &a::IMP, 4}, {"EOR", &a::EOR, &a::ZPX, 4},
-      {"LSR", &a::LSR, &a::ZPX, 6}, {"???", &a::XXX, &a::IMP, 6},
-      {"CLI", &a::CLI, &a::IMP, 2}, {"EOR", &a::EOR, &a::ABY, 4},
-      {"???", &a::NOP, &a::IMP, 2}, {"???", &a::XXX, &a::IMP, 7},
-      {"???", &a::NOP, &a::IMP, 4}, {"EOR", &a::EOR, &a::ABX, 4},
-      {"LSR", &a::LSR, &a::ABX, 7}, {"???", &a::XXX, &a::IMP, 7},
-      {"RTS", &a::RTS, &a::IMP, 6}, {"ADC", &a::ADC, &a::IZX, 6},
-      {"???", &a::XXX, &a::IMP, 2}, {"???", &a::XXX, &a::IMP, 8},
-      {"???", &a::NOP, &a::IMP, 3}, {"ADC", &a::ADC, &a::ZP0, 3},
-      {"ROR", &a::ROR, &a::ZP0, 5}, {"???", &a::XXX, &a::IMP, 5},
-      {"PLA", &a::PLA, &a::IMP, 4}, {"ADC", &a::ADC, &a::IMM, 2},
-      {"ROR", &a::ROR, &a::IMP, 2}, {"???", &a::XXX, &a::IMP, 2},
-      {"JMP", &a::JMP, &a::IND, 5}, {"ADC", &a::ADC, &a::ABS, 4},
-      {"ROR", &a::ROR, &a::ABS, 6}, {"???", &a::XXX, &a::IMP, 6},
-      {"BVS", &a::BVS, &a::REL, 2}, {"ADC", &a::ADC, &a::IZY, 5},
-      {"???", &a::XXX, &a::IMP, 2}, {"???", &a::XXX, &a::IMP, 8},
-      {"???", &a::NOP, &a::IMP, 4}, {"ADC", &a::ADC, &a::ZPX, 4},
-      {"ROR", &a::ROR, &a::ZPX, 6}, {"???", &a::XXX, &a::IMP, 6},
-      {"SEI", &a::SEI, &a::IMP, 2}, {"ADC", &a::ADC, &a::ABY, 4},
-      {"???", &a::NOP, &a::IMP, 2}, {"???", &a::XXX, &a::IMP, 7},
-      {"???", &a::NOP, &a::IMP, 4}, {"ADC", &a::ADC, &a::ABX, 4},
-      {"ROR", &a::ROR, &a::ABX, 7}, {"???", &a::XXX, &a::IMP, 7},
-      {"???", &a::NOP, &a::IMP, 2}, {"STA", &a::STA, &a::IZX, 6},
-      {"???", &a::NOP, &a::IMP, 2}, {"???", &a::XXX, &a::IMP, 6},
-      {"STY", &a::STY, &a::ZP0, 3}, {"STA", &a::STA, &a::ZP0, 3},
-      {"STX", &a::STX, &a::ZP0, 3}, {"???", &a::XXX, &a::IMP, 3},
-      {"DEY", &a::DEY, &a::IMP, 2}, {"???", &a::NOP, &a::IMP, 2},
-      {"TXA", &a::TXA, &a::IMP, 2}, {"???", &a::XXX, &a::IMP, 2},
-      {"STY", &a::STY, &a::ABS, 4}, {"STA", &a::STA, &a::ABS, 4},
-      {"STX", &a::STX, &a::ABS, 4}, {"???", &a::XXX, &a::IMP, 4},
-      {"BCC", &a::BCC, &a::REL, 2}, {"STA", &a::STA, &a::IZY, 6},
-      {"???", &a::XXX, &a::IMP, 2}, {"???", &a::XXX, &a::IMP, 6},
-      {"STY", &a::STY, &a::ZPX, 4}, {"STA", &a::STA, &a::ZPX, 4},
-      {"STX", &a::STX, &a::ZPY, 4}, {"???", &a::XXX, &a::IMP, 4},
-      {"TYA", &a::TYA, &a::IMP, 2}, {"STA", &a::STA, &a::ABY, 5},
-      {"TXS", &a::TXS, &a::IMP, 2}, {"???", &a::XXX, &a::IMP, 5},
-      {"???", &a::NOP, &a::IMP, 5}, {"STA", &a::STA, &a::ABX, 5},
-      {"???", &a::XXX, &a::IMP, 5}, {"???", &a::XXX, &a::IMP, 5},
-      {"LDY", &a::LDY, &a::IMM, 2}, {"LDA", &a::LDA, &a::IZX, 6},
-      {"LDX", &a::LDX, &a::IMM, 2}, {"???", &a::XXX, &a::IMP, 6},
-      {"LDY", &a::LDY, &a::ZP0, 3}, {"LDA", &a::LDA, &a::ZP0, 3},
-      {"LDX", &a::LDX, &a::ZP0, 3}, {"???", &a::XXX, &a::IMP, 3},
-      {"TAY", &a::TAY, &a::IMP, 2}, {"LDA", &a::LDA, &a::IMM, 2},
-      {"TAX", &a::TAX, &a::IMP, 2}, {"???", &a::XXX, &a::IMP, 2},
-      {"LDY", &a::LDY, &a::ABS, 4}, {"LDA", &a::LDA, &a::ABS, 4},
-      {"LDX", &a::LDX, &a::ABS, 4}, {"???", &a::XXX, &a::IMP, 4},
-      {"BCS", &a::BCS, &a::REL, 2}, {"LDA", &a::LDA, &a::IZY, 5},
-      {"???", &a::XXX, &a::IMP, 2}, {"???", &a::XXX, &a::IMP, 5},
-      {"LDY", &a::LDY, &a::ZPX, 4}, {"LDA", &a::LDA, &a::ZPX, 4},
-      {"LDX", &a::LDX, &a::ZPY, 4}, {"???", &a::XXX, &a::IMP, 4},
-      {"CLV", &a::CLV, &a::IMP, 2}, {"LDA", &a::LDA, &a::ABY, 4},
-      {"TSX", &a::TSX, &a::IMP, 2}, {"???", &a::XXX, &a::IMP, 4},
-      {"LDY", &a::LDY, &a::ABX, 4}, {"LDA", &a::LDA, &a::ABX, 4},
-      {"LDX", &a::LDX, &a::ABY, 4}, {"???", &a::XXX, &a::IMP, 4},
-      {"CPY", &a::CPY, &a::IMM, 2}, {"CMP", &a::CMP, &a::IZX, 6},
-      {"???", &a::NOP, &a::IMP, 2}, {"???", &a::XXX, &a::IMP, 8},
-      {"CPY", &a::CPY, &a::ZP0, 3}, {"CMP", &a::CMP, &a::ZP0, 3},
-      {"DEC", &a::DEC, &a::ZP0, 5}, {"???", &a::XXX, &a::IMP, 5},
-      {"INY", &a::INY, &a::IMP, 2}, {"CMP", &a::CMP, &a::IMM, 2},
-      {"DEX", &a::DEX, &a::IMP, 2}, {"???", &a::XXX, &a::IMP, 2},
-      {"CPY", &a::CPY, &a::ABS, 4}, {"CMP", &a::CMP, &a::ABS, 4},
-      {"DEC", &a::DEC, &a::ABS, 6}, {"???", &a::XXX, &a::IMP, 6},
-      {"BNE", &a::BNE, &a::REL, 2}, {"CMP", &a::CMP, &a::IZY, 5},
-      {"???", &a::XXX, &a::IMP, 2}, {"???", &a::XXX, &a::IMP, 8},
-      {"???", &a::NOP, &a::IMP, 4}, {"CMP", &a::CMP, &a::ZPX, 4},
-      {"DEC", &a::DEC, &a::ZPX, 6}, {"???", &a::XXX, &a::IMP, 6},
-      {"CLD", &a::CLD, &a::IMP, 2}, {"CMP", &a::CMP, &a::ABY, 4},
-      {"NOP", &a::NOP, &a::IMP, 2}, {"???", &a::XXX, &a::IMP, 7},
-      {"???", &a::NOP, &a::IMP, 4}, {"CMP", &a::CMP, &a::ABX, 4},
-      {"DEC", &a::DEC, &a::ABX, 7}, {"???", &a::XXX, &a::IMP, 7},
-      {"CPX", &a::CPX, &a::IMM, 2}, {"SBC", &a::SBC, &a::IZX, 6},
-      {"???", &a::NOP, &a::IMP, 2}, {"???", &a::XXX, &a::IMP, 8},
-      {"CPX", &a::CPX, &a::ZP0, 3}, {"SBC", &a::SBC, &a::ZP0, 3},
-      {"INC", &a::INC, &a::ZP0, 5}, {"???", &a::XXX, &a::IMP, 5},
-      {"INX", &a::INX, &a::IMP, 2}, {"SBC", &a::SBC, &a::IMM, 2},
-      {"NOP", &a::NOP, &a::IMP, 2}, {"???", &a::SBC, &a::IMP, 2},
-      {"CPX", &a::CPX, &a::ABS, 4}, {"SBC", &a::SBC, &a::ABS, 4},
-      {"INC", &a::INC, &a::ABS, 6}, {"???", &a::XXX, &a::IMP, 6},
-      {"BEQ", &a::BEQ, &a::REL, 2}, {"SBC", &a::SBC, &a::IZY, 5},
-      {"???", &a::XXX, &a::IMP, 2}, {"???", &a::XXX, &a::IMP, 8},
-      {"???", &a::NOP, &a::IMP, 4}, {"SBC", &a::SBC, &a::ZPX, 4},
-      {"INC", &a::INC, &a::ZPX, 6}, {"???", &a::XXX, &a::IMP, 6},
-      {"SED", &a::SED, &a::IMP, 2}, {"SBC", &a::SBC, &a::ABY, 4},
-      {"NOP", &a::NOP, &a::IMP, 2}, {"???", &a::XXX, &a::IMP, 7},
-      {"???", &a::NOP, &a::IMP, 4}, {"SBC", &a::SBC, &a::ABX, 4},
-      {"INC", &a::INC, &a::ABX, 7}, {"???", &a::XXX, &a::IMP, 7},
+// The opcode translation table. 16x16 entries: the bottom 4 bits of the
+// instruction byte choose the column, the top 4 bits choose the row.
+// "???" rows are unofficial opcodes, captured by XXX (a NOP with the
+// documented cycle cost).
+using a = Nes6502;
+const Nes6502::Instruction Nes6502::lookup[256] = {
+      {"BRK", &a::BRK, AM::IMM, 7}, {"ORA", &a::ORA, AM::IZX, 6},
+      {"???", &a::XXX, AM::IMP, 2}, {"???", &a::XXX, AM::IMP, 8},
+      {"???", &a::NOP, AM::IMP, 3}, {"ORA", &a::ORA, AM::ZP0, 3},
+      {"ASL", &a::ASL, AM::ZP0, 5}, {"???", &a::XXX, AM::IMP, 5},
+      {"PHP", &a::PHP, AM::IMP, 3}, {"ORA", &a::ORA, AM::IMM, 2},
+      {"ASL", &a::ASL, AM::IMP, 2}, {"???", &a::XXX, AM::IMP, 2},
+      {"???", &a::NOP, AM::IMP, 4}, {"ORA", &a::ORA, AM::ABS, 4},
+      {"ASL", &a::ASL, AM::ABS, 6}, {"???", &a::XXX, AM::IMP, 6},
+      {"BPL", &a::BPL, AM::REL, 2}, {"ORA", &a::ORA, AM::IZY, 5},
+      {"???", &a::XXX, AM::IMP, 2}, {"???", &a::XXX, AM::IMP, 8},
+      {"???", &a::NOP, AM::IMP, 4}, {"ORA", &a::ORA, AM::ZPX, 4},
+      {"ASL", &a::ASL, AM::ZPX, 6}, {"???", &a::XXX, AM::IMP, 6},
+      {"CLC", &a::CLC, AM::IMP, 2}, {"ORA", &a::ORA, AM::ABY, 4},
+      {"???", &a::NOP, AM::IMP, 2}, {"???", &a::XXX, AM::IMP, 7},
+      {"???", &a::NOP, AM::IMP, 4}, {"ORA", &a::ORA, AM::ABX, 4},
+      {"ASL", &a::ASL, AM::ABX, 7}, {"???", &a::XXX, AM::IMP, 7},
+      {"JSR", &a::JSR, AM::ABS, 6}, {"AND", &a::AND, AM::IZX, 6},
+      {"???", &a::XXX, AM::IMP, 2}, {"???", &a::XXX, AM::IMP, 8},
+      {"BIT", &a::BIT, AM::ZP0, 3}, {"AND", &a::AND, AM::ZP0, 3},
+      {"ROL", &a::ROL, AM::ZP0, 5}, {"???", &a::XXX, AM::IMP, 5},
+      {"PLP", &a::PLP, AM::IMP, 4}, {"AND", &a::AND, AM::IMM, 2},
+      {"ROL", &a::ROL, AM::IMP, 2}, {"???", &a::XXX, AM::IMP, 2},
+      {"BIT", &a::BIT, AM::ABS, 4}, {"AND", &a::AND, AM::ABS, 4},
+      {"ROL", &a::ROL, AM::ABS, 6}, {"???", &a::XXX, AM::IMP, 6},
+      {"BMI", &a::BMI, AM::REL, 2}, {"AND", &a::AND, AM::IZY, 5},
+      {"???", &a::XXX, AM::IMP, 2}, {"???", &a::XXX, AM::IMP, 8},
+      {"???", &a::NOP, AM::IMP, 4}, {"AND", &a::AND, AM::ZPX, 4},
+      {"ROL", &a::ROL, AM::ZPX, 6}, {"???", &a::XXX, AM::IMP, 6},
+      {"SEC", &a::SEC, AM::IMP, 2}, {"AND", &a::AND, AM::ABY, 4},
+      {"???", &a::NOP, AM::IMP, 2}, {"???", &a::XXX, AM::IMP, 7},
+      {"???", &a::NOP, AM::IMP, 4}, {"AND", &a::AND, AM::ABX, 4},
+      {"ROL", &a::ROL, AM::ABX, 7}, {"???", &a::XXX, AM::IMP, 7},
+      {"RTI", &a::RTI, AM::IMP, 6}, {"EOR", &a::EOR, AM::IZX, 6},
+      {"???", &a::XXX, AM::IMP, 2}, {"???", &a::XXX, AM::IMP, 8},
+      {"???", &a::NOP, AM::IMP, 3}, {"EOR", &a::EOR, AM::ZP0, 3},
+      {"LSR", &a::LSR, AM::ZP0, 5}, {"???", &a::XXX, AM::IMP, 5},
+      {"PHA", &a::PHA, AM::IMP, 3}, {"EOR", &a::EOR, AM::IMM, 2},
+      {"LSR", &a::LSR, AM::IMP, 2}, {"???", &a::XXX, AM::IMP, 2},
+      {"JMP", &a::JMP, AM::ABS, 3}, {"EOR", &a::EOR, AM::ABS, 4},
+      {"LSR", &a::LSR, AM::ABS, 6}, {"???", &a::XXX, AM::IMP, 6},
+      {"BVC", &a::BVC, AM::REL, 2}, {"EOR", &a::EOR, AM::IZY, 5},
+      {"???", &a::XXX, AM::IMP, 2}, {"???", &a::XXX, AM::IMP, 8},
+      {"???", &a::NOP, AM::IMP, 4}, {"EOR", &a::EOR, AM::ZPX, 4},
+      {"LSR", &a::LSR, AM::ZPX, 6}, {"???", &a::XXX, AM::IMP, 6},
+      {"CLI", &a::CLI, AM::IMP, 2}, {"EOR", &a::EOR, AM::ABY, 4},
+      {"???", &a::NOP, AM::IMP, 2}, {"???", &a::XXX, AM::IMP, 7},
+      {"???", &a::NOP, AM::IMP, 4}, {"EOR", &a::EOR, AM::ABX, 4},
+      {"LSR", &a::LSR, AM::ABX, 7}, {"???", &a::XXX, AM::IMP, 7},
+      {"RTS", &a::RTS, AM::IMP, 6}, {"ADC", &a::ADC, AM::IZX, 6},
+      {"???", &a::XXX, AM::IMP, 2}, {"???", &a::XXX, AM::IMP, 8},
+      {"???", &a::NOP, AM::IMP, 3}, {"ADC", &a::ADC, AM::ZP0, 3},
+      {"ROR", &a::ROR, AM::ZP0, 5}, {"???", &a::XXX, AM::IMP, 5},
+      {"PLA", &a::PLA, AM::IMP, 4}, {"ADC", &a::ADC, AM::IMM, 2},
+      {"ROR", &a::ROR, AM::IMP, 2}, {"???", &a::XXX, AM::IMP, 2},
+      {"JMP", &a::JMP, AM::IND, 5}, {"ADC", &a::ADC, AM::ABS, 4},
+      {"ROR", &a::ROR, AM::ABS, 6}, {"???", &a::XXX, AM::IMP, 6},
+      {"BVS", &a::BVS, AM::REL, 2}, {"ADC", &a::ADC, AM::IZY, 5},
+      {"???", &a::XXX, AM::IMP, 2}, {"???", &a::XXX, AM::IMP, 8},
+      {"???", &a::NOP, AM::IMP, 4}, {"ADC", &a::ADC, AM::ZPX, 4},
+      {"ROR", &a::ROR, AM::ZPX, 6}, {"???", &a::XXX, AM::IMP, 6},
+      {"SEI", &a::SEI, AM::IMP, 2}, {"ADC", &a::ADC, AM::ABY, 4},
+      {"???", &a::NOP, AM::IMP, 2}, {"???", &a::XXX, AM::IMP, 7},
+      {"???", &a::NOP, AM::IMP, 4}, {"ADC", &a::ADC, AM::ABX, 4},
+      {"ROR", &a::ROR, AM::ABX, 7}, {"???", &a::XXX, AM::IMP, 7},
+      {"???", &a::NOP, AM::IMP, 2}, {"STA", &a::STA, AM::IZX, 6},
+      {"???", &a::NOP, AM::IMP, 2}, {"???", &a::XXX, AM::IMP, 6},
+      {"STY", &a::STY, AM::ZP0, 3}, {"STA", &a::STA, AM::ZP0, 3},
+      {"STX", &a::STX, AM::ZP0, 3}, {"???", &a::XXX, AM::IMP, 3},
+      {"DEY", &a::DEY, AM::IMP, 2}, {"???", &a::NOP, AM::IMP, 2},
+      {"TXA", &a::TXA, AM::IMP, 2}, {"???", &a::XXX, AM::IMP, 2},
+      {"STY", &a::STY, AM::ABS, 4}, {"STA", &a::STA, AM::ABS, 4},
+      {"STX", &a::STX, AM::ABS, 4}, {"???", &a::XXX, AM::IMP, 4},
+      {"BCC", &a::BCC, AM::REL, 2}, {"STA", &a::STA, AM::IZY, 6},
+      {"???", &a::XXX, AM::IMP, 2}, {"???", &a::XXX, AM::IMP, 6},
+      {"STY", &a::STY, AM::ZPX, 4}, {"STA", &a::STA, AM::ZPX, 4},
+      {"STX", &a::STX, AM::ZPY, 4}, {"???", &a::XXX, AM::IMP, 4},
+      {"TYA", &a::TYA, AM::IMP, 2}, {"STA", &a::STA, AM::ABY, 5},
+      {"TXS", &a::TXS, AM::IMP, 2}, {"???", &a::XXX, AM::IMP, 5},
+      {"???", &a::NOP, AM::IMP, 5}, {"STA", &a::STA, AM::ABX, 5},
+      {"???", &a::XXX, AM::IMP, 5}, {"???", &a::XXX, AM::IMP, 5},
+      {"LDY", &a::LDY, AM::IMM, 2}, {"LDA", &a::LDA, AM::IZX, 6},
+      {"LDX", &a::LDX, AM::IMM, 2}, {"???", &a::XXX, AM::IMP, 6},
+      {"LDY", &a::LDY, AM::ZP0, 3}, {"LDA", &a::LDA, AM::ZP0, 3},
+      {"LDX", &a::LDX, AM::ZP0, 3}, {"???", &a::XXX, AM::IMP, 3},
+      {"TAY", &a::TAY, AM::IMP, 2}, {"LDA", &a::LDA, AM::IMM, 2},
+      {"TAX", &a::TAX, AM::IMP, 2}, {"???", &a::XXX, AM::IMP, 2},
+      {"LDY", &a::LDY, AM::ABS, 4}, {"LDA", &a::LDA, AM::ABS, 4},
+      {"LDX", &a::LDX, AM::ABS, 4}, {"???", &a::XXX, AM::IMP, 4},
+      {"BCS", &a::BCS, AM::REL, 2}, {"LDA", &a::LDA, AM::IZY, 5},
+      {"???", &a::XXX, AM::IMP, 2}, {"???", &a::XXX, AM::IMP, 5},
+      {"LDY", &a::LDY, AM::ZPX, 4}, {"LDA", &a::LDA, AM::ZPX, 4},
+      {"LDX", &a::LDX, AM::ZPY, 4}, {"???", &a::XXX, AM::IMP, 4},
+      {"CLV", &a::CLV, AM::IMP, 2}, {"LDA", &a::LDA, AM::ABY, 4},
+      {"TSX", &a::TSX, AM::IMP, 2}, {"???", &a::XXX, AM::IMP, 4},
+      {"LDY", &a::LDY, AM::ABX, 4}, {"LDA", &a::LDA, AM::ABX, 4},
+      {"LDX", &a::LDX, AM::ABY, 4}, {"???", &a::XXX, AM::IMP, 4},
+      {"CPY", &a::CPY, AM::IMM, 2}, {"CMP", &a::CMP, AM::IZX, 6},
+      {"???", &a::NOP, AM::IMP, 2}, {"???", &a::XXX, AM::IMP, 8},
+      {"CPY", &a::CPY, AM::ZP0, 3}, {"CMP", &a::CMP, AM::ZP0, 3},
+      {"DEC", &a::DEC, AM::ZP0, 5}, {"???", &a::XXX, AM::IMP, 5},
+      {"INY", &a::INY, AM::IMP, 2}, {"CMP", &a::CMP, AM::IMM, 2},
+      {"DEX", &a::DEX, AM::IMP, 2}, {"???", &a::XXX, AM::IMP, 2},
+      {"CPY", &a::CPY, AM::ABS, 4}, {"CMP", &a::CMP, AM::ABS, 4},
+      {"DEC", &a::DEC, AM::ABS, 6}, {"???", &a::XXX, AM::IMP, 6},
+      {"BNE", &a::BNE, AM::REL, 2}, {"CMP", &a::CMP, AM::IZY, 5},
+      {"???", &a::XXX, AM::IMP, 2}, {"???", &a::XXX, AM::IMP, 8},
+      {"???", &a::NOP, AM::IMP, 4}, {"CMP", &a::CMP, AM::ZPX, 4},
+      {"DEC", &a::DEC, AM::ZPX, 6}, {"???", &a::XXX, AM::IMP, 6},
+      {"CLD", &a::CLD, AM::IMP, 2}, {"CMP", &a::CMP, AM::ABY, 4},
+      {"NOP", &a::NOP, AM::IMP, 2}, {"???", &a::XXX, AM::IMP, 7},
+      {"???", &a::NOP, AM::IMP, 4}, {"CMP", &a::CMP, AM::ABX, 4},
+      {"DEC", &a::DEC, AM::ABX, 7}, {"???", &a::XXX, AM::IMP, 7},
+      {"CPX", &a::CPX, AM::IMM, 2}, {"SBC", &a::SBC, AM::IZX, 6},
+      {"???", &a::NOP, AM::IMP, 2}, {"???", &a::XXX, AM::IMP, 8},
+      {"CPX", &a::CPX, AM::ZP0, 3}, {"SBC", &a::SBC, AM::ZP0, 3},
+      {"INC", &a::INC, AM::ZP0, 5}, {"???", &a::XXX, AM::IMP, 5},
+      {"INX", &a::INX, AM::IMP, 2}, {"SBC", &a::SBC, AM::IMM, 2},
+      {"NOP", &a::NOP, AM::IMP, 2}, {"???", &a::SBC, AM::IMP, 2},
+      {"CPX", &a::CPX, AM::ABS, 4}, {"SBC", &a::SBC, AM::ABS, 4},
+      {"INC", &a::INC, AM::ABS, 6}, {"???", &a::XXX, AM::IMP, 6},
+      {"BEQ", &a::BEQ, AM::REL, 2}, {"SBC", &a::SBC, AM::IZY, 5},
+      {"???", &a::XXX, AM::IMP, 2}, {"???", &a::XXX, AM::IMP, 8},
+      {"???", &a::NOP, AM::IMP, 4}, {"SBC", &a::SBC, AM::ZPX, 4},
+      {"INC", &a::INC, AM::ZPX, 6}, {"???", &a::XXX, AM::IMP, 6},
+      {"SED", &a::SED, AM::IMP, 2}, {"SBC", &a::SBC, AM::ABY, 4},
+      {"NOP", &a::NOP, AM::IMP, 2}, {"???", &a::XXX, AM::IMP, 7},
+      {"???", &a::NOP, AM::IMP, 4}, {"SBC", &a::SBC, AM::ABX, 4},
+      {"INC", &a::INC, AM::ABX, 7}, {"???", &a::XXX, AM::IMP, 7},
   };
-}
 
-Nes6502::~Nes6502() {
-  // Destructor - has nothing to do
-}
+Nes6502::Nes6502() {}
+
+Nes6502::~Nes6502() {}
 
 ///////////////////////////////////////////////////////////////////////////////
 // BUS CONNECTIVITY
@@ -252,15 +209,11 @@ void Nes6502::write(uint16_t a, uint8_t d) { bus->cpuWrite(a, d); }
 // bit which remains at 1. An absolute address is read from location 0xFFFC
 // which contains a second address that the program counter is set to. This
 // allows the programmer to jump to a known and programmable location in the
-// memory to start executing from. Typically the programmer would set the value
-// at location 0xFFFC at compile time.
+// memory to start executing from.
 void Nes6502::reset() {
   // Get address to set program counter to
-  addr_abs = 0xFFFC;
-  uint16_t lo = read(addr_abs + 0);
-  uint16_t hi = read(addr_abs + 1);
-
-  // Set it
+  uint16_t lo = read(0xFFFC);
+  uint16_t hi = read(0xFFFD);
   pc = (hi << 8) | lo;
 
   // Reset internal registers
@@ -279,69 +232,42 @@ void Nes6502::reset() {
   cycles = 8;
 }
 
-// Interrupt requests are a complex operation and only happen if the
-// "disable interrupt" flag is 0. IRQs can happen at any time, but
-// you dont want them to be destructive to the operation of the running
-// program. Therefore the current instruction is allowed to finish
-// (which I facilitate by doing the whole thing when cycles == 0) and
-// then the current program counter is stored on the stack. Then the
-// current status register is stored on the stack. When the routine
-// that services the interrupt has finished, the status register
-// and program counter can be restored to how they where before it
-// occurred. This is impemented by the "RTI" instruction. Once the IRQ
-// has happened, in a similar way to a reset, a programmable address
-// is read form hard coded location 0xFFFE, which is subsequently
-// set to the program counter.
-void Nes6502::irq() {
-  // If interrupts are allowed
-  if (GetFlag(I) == 0) {
-    // Push the program counter to the stack. It's 16-bits dont
-    // forget so that takes two pushes
-    write(0x0100 + stkp, (pc >> 8) & 0x00FF);
-    stkp--;
-    write(0x0100 + stkp, pc & 0x00FF);
-    stkp--;
-
-    // Then Push the status register to the stack
-    SetFlag(B, 0);
-    SetFlag(U, 1);
-    SetFlag(I, 1);
-    write(0x0100 + stkp, status);
-    stkp--;
-
-    // Read new program counter location from fixed address
-    addr_abs = 0xFFFE;
-    uint16_t lo = read(addr_abs + 0);
-    uint16_t hi = read(addr_abs + 1);
-    pc = (hi << 8) | lo;
-
-    // IRQs take time
-    cycles = 7;
-  }
-}
-
-// A Non-Maskable Interrupt cannot be ignored. It behaves in exactly the
-// same way as a regular IRQ, but reads the new program counter address
-// form location 0xFFFA.
-void Nes6502::nmi() {
+// The common interrupt sequence: the current instruction is allowed to finish
+// (which I facilitate by doing the whole thing when cycles == 0), then the
+// program counter and status register are pushed to the stack, interrupts are
+// disabled, and execution continues at the address read from the vector. The
+// service routine returns with RTI, which restores status and pc.
+void Nes6502::Interrupt(uint16_t vector, uint8_t n_cycles) {
+  // Push the program counter to the stack. It's 16-bits dont
+  // forget so that takes two pushes
   write(0x0100 + stkp, (pc >> 8) & 0x00FF);
   stkp--;
   write(0x0100 + stkp, pc & 0x00FF);
   stkp--;
 
+  // Then Push the status register to the stack
   SetFlag(B, 0);
   SetFlag(U, 1);
   SetFlag(I, 1);
   write(0x0100 + stkp, status);
   stkp--;
 
-  addr_abs = 0xFFFA;
-  uint16_t lo = read(addr_abs + 0);
-  uint16_t hi = read(addr_abs + 1);
-  pc = (hi << 8) | lo;
+  // Read new program counter location from fixed address
+  pc = (uint16_t)read(vector) | ((uint16_t)read(vector + 1) << 8);
 
-  cycles = 8;
+  // Interrupts take time
+  cycles = n_cycles;
 }
+
+// Interrupt requests only happen if the "disable interrupt" flag is 0.
+void Nes6502::irq() {
+  if (GetFlag(I) == 0) Interrupt(0xFFFE, 7);
+}
+
+// A Non-Maskable Interrupt cannot be ignored. It behaves in exactly the
+// same way as a regular IRQ, but reads the new program counter address
+// form location 0xFFFA.
+void Nes6502::nmi() { Interrupt(0xFFFA, 8); }
 
 // Perform one clock cycles worth of emulation
 void Nes6502::clock() {
@@ -361,10 +287,6 @@ void Nes6502::clock() {
     // how to implement the instruction
     opcode = read(pc);
 
-#ifdef LOGMODE
-    uint16_t log_pc = pc;
-#endif
-
     // Always set the unused status flag bit to 1
     SetFlag(U, true);
 
@@ -376,7 +298,7 @@ void Nes6502::clock() {
 
     // Perform fetch of intermmediate data using the
     // required addressing mode
-    uint8_t additional_cycle1 = (this->*lookup[opcode].addrmode)();
+    uint8_t additional_cycle1 = DoAddressing(lookup[opcode].mode);
 
     // Perform operation
     uint8_t additional_cycle2 = (this->*lookup[opcode].operate)();
@@ -387,29 +309,7 @@ void Nes6502::clock() {
 
     // Always set the unused status flag bit to 1
     SetFlag(U, true);
-
-#ifdef LOGMODE
-    // This logger dumps every cycle the entire processor state for analysis.
-    // This can be used for debugging the emulation, but has little utility
-    // during emulation. Its also very slow, so only use if you have to.
-    if (logfile == nullptr) logfile = fopen("Nes6502.txt", "wt");
-    if (logfile != nullptr) {
-      fprintf(logfile,
-              "%10d:%02d PC:%04X %s A:%02X X:%02X Y:%02X %s%s%s%s%s%s%s%s "
-              "STKP:%02X\n",
-              clock_count, 0, log_pc, "XXX", a, x, y, GetFlag(N) ? "N" : ".",
-              GetFlag(V) ? "V" : ".", GetFlag(U) ? "U" : ".",
-              GetFlag(B) ? "B" : ".", GetFlag(D) ? "D" : ".",
-              GetFlag(I) ? "I" : ".", GetFlag(Z) ? "Z" : ".",
-              GetFlag(C) ? "C" : ".", stkp);
-    }
-#endif
   }
-
-  // Increment global clock count - This is actually unused unless logging is
-  // enabled but I've kept it in because its a handy watch variable for
-  // debugging
-  clock_count++;
 
   // Decrement the number of cycles remaining for this instruction
   cycles--;
@@ -442,6 +342,24 @@ void Nes6502::SetFlag(FLAGS6502 f, bool v) {
 // function returns a flag saying it has potential, as does each instruction. If
 // both instruction and address function return 1, then an additional clock
 // cycle is required.
+
+uint8_t Nes6502::DoAddressing(AM mode) {
+  switch (mode) {
+    case AM::IMP: return IMP();
+    case AM::IMM: return IMM();
+    case AM::ZP0: return ZP0();
+    case AM::ZPX: return ZPX();
+    case AM::ZPY: return ZPY();
+    case AM::REL: return REL();
+    case AM::ABS: return ABS();
+    case AM::ABX: return ABX();
+    case AM::ABY: return ABY();
+    case AM::IND: return IND();
+    case AM::IZX: return IZX();
+    case AM::IZY: return IZY();
+  }
+  return 0;
+}
 
 // Address Mode: Implied
 // There is no additional data required for this instruction. The instruction
@@ -528,10 +446,7 @@ uint8_t Nes6502::ABX() {
   addr_abs = (hi << 8) | lo;
   addr_abs += x;
 
-  if ((addr_abs & 0xFF00) != (hi << 8))
-    return 1;
-  else
-    return 0;
+  return ((addr_abs & 0xFF00) != (hi << 8)) ? 1 : 0;
 }
 
 // Address Mode: Absolute with Y Offset
@@ -547,10 +462,7 @@ uint8_t Nes6502::ABY() {
   addr_abs = (hi << 8) | lo;
   addr_abs += y;
 
-  if ((addr_abs & 0xFF00) != (hi << 8))
-    return 1;
-  else
-    return 0;
+  return ((addr_abs & 0xFF00) != (hi << 8)) ? 1 : 0;
 }
 
 // Note: The next 3 address modes use indirection (aka Pointers!)
@@ -611,10 +523,7 @@ uint8_t Nes6502::IZY() {
   addr_abs = (hi << 8) | lo;
   addr_abs += y;
 
-  if ((addr_abs & 0xFF00) != (hi << 8))
-    return 1;
-  else
-    return 0;
+  return ((addr_abs & 0xFF00) != (hi << 8)) ? 1 : 0;
 }
 
 // This function sources the data used by the instruction into
@@ -625,114 +534,60 @@ uint8_t Nes6502::IZY() {
 // the location held within addr_abs, so it is read from there.
 // Immediate adress mode exploits this slightly, as that has
 // set addr_abs = pc + 1, so it fetches the data from the
-// next byte for example "LDA $FF" just loads the accumulator with
-// 256, i.e. no far reaching memory fetch is required. "fetched"
-// is a variable global to the CPU, and is set by calling this
-// function. It also returns it for convenience.
+// next byte.
 uint8_t Nes6502::fetch() {
-  if (!(lookup[opcode].addrmode == &Nes6502::IMP)) fetched = read(addr_abs);
+  if (lookup[opcode].mode != AM::IMP) fetched = read(addr_abs);
   return fetched;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// SHARED INSTRUCTION MECHANICS
+
+// All branch instructions are the same circuit: if the condition holds,
+// jump to pc + relative offset, paying one extra cycle for the taken
+// branch and another for crossing a page boundary.
+uint8_t Nes6502::Branch(bool take) {
+  if (take) {
+    cycles++;
+    addr_abs = pc + addr_rel;
+
+    if ((addr_abs & 0xFF00) != (pc & 0xFF00)) cycles++;
+
+    pc = addr_abs;
+  }
+  return 0;
+}
+
+// Shift and rotate instructions write their result to the accumulator in
+// implied (accumulator) mode, and back to memory otherwise.
+void Nes6502::StoreALU(uint8_t v) {
+  if (lookup[opcode].mode == AM::IMP)
+    a = v;
+  else
+    write(addr_abs, v);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 // INSTRUCTION IMPLEMENTATIONS
 
-// Note: Ive started with the two most complicated instructions to emulate,
-// which ironically is addition and subtraction! Ive tried to include a detailed
-// explanation as to why they are so complex, yet so fundamental. Im also NOT
-// going to do this through the explanation of 1 and 2's complement.
-
 // Instruction: Add with Carry In
 // Function:    A = A + M + C
 // Flags Out:   C, V, N, Z
 //
-// Explanation:
-// The purpose of this function is to add a value to the accumulator and a carry
-// bit. If the result is > 255 there is an overflow setting the carry bit. Ths
-// allows you to chain together ADC instructions to add numbers larger than
-// 8-bits. This in itself is simple, however the 6502 supports the concepts of
-// Negativity/Positivity and Signed Overflow.
-//
-// 10000100 = 128 + 4 = 132 in normal circumstances, we know this as unsigned
-// and it allows us to represent numbers between 0 and 255 (given 8 bits). The
-// 6502 can also interpret this word as something else if we assume those 8 bits
-// represent the range -128 to +127, i.e. it has become signed.
-//
-// Since 132 > 127, it effectively wraps around, through -128, to -124. This
-// wraparound is called overflow, and this is a useful to know as it indicates
-// that the calculation has gone outside the permissable range, and therefore no
-// longer makes numeric sense.
-//
-// Note the implementation of ADD is the same in binary, this is just about how
-// the numbers are represented, so the word 10000100 can be both -124 and 132
-// depending upon the context the programming is using it in. We can prove this!
-//
-//  10000100 =  132  or  -124
-// +00010001 = + 17      + 17
-//  ========    ===       ===     See, both are valid additions, but our
-//  interpretation of 10010101 =  149  or  -107     the context changes the
-//  value, not the hardware!
-//
-// In principle under the -128 to 127 range:
-// 10000000 = -128, 11111111 = -1, 00000000 = 0, 00000000 = +1, 01111111 = +127
-// therefore negative numbers have the most significant set, positive numbers do
-// not
-//
-// To assist us, the 6502 can set the overflow flag, if the result of the
-// addition has wrapped around. V <- ~(A^M) & A^(A+M+C) :D lol, let's work out
-// why!
-//
-// Let's suppose we have A = 30, M = 10 and C = 0
-//          A = 30 = 00011110
-//          M = 10 = 00001010+
-//     RESULT = 40 = 00101000
-//
-// Here we have not gone out of range. The resulting significant bit has not
-// changed. So let's make a truth table to understand when overflow has
-// occurred. Here I take the MSB of each component, where R is RESULT.
-//
-// A  M  R | V | A^R | A^M |~(A^M) |
-// 0  0  0 | 0 |  0  |  0  |   1   |
-// 0  0  1 | 1 |  1  |  0  |   1   |
-// 0  1  0 | 0 |  0  |  1  |   0   |
-// 0  1  1 | 0 |  1  |  1  |   0   |  so V = ~(A^M) & (A^R)
-// 1  0  0 | 0 |  1  |  1  |   0   |
-// 1  0  1 | 0 |  0  |  1  |   0   |
-// 1  1  0 | 1 |  1  |  0  |   1   |
-// 1  1  1 | 0 |  0  |  0  |   1   |
-//
-// We can see how the above equation calculates V, based on A, M and R. V was
-// chosen based on the following hypothesis:
-//       Positive Number + Positive Number = Negative Result -> Overflow
-//       Negative Number + Negative Number = Positive Result -> Overflow
-//       Positive Number + Negative Number = Either Result -> Cannot Overflow
-//       Positive Number + Positive Number = Positive Result -> OK! No Overflow
-//       Negative Number + Negative Number = Negative Result -> OK! NO Overflow
-
+// The addition is performed in the 16-bit domain so the carry appears in
+// bit 8. The signed overflow flag is V = ~(A^M) & (A^R) on the sign bits:
+// adding two numbers of the same sign overflowed exactly when the result's
+// sign differs from theirs.
 uint8_t Nes6502::ADC() {
-  // Grab the data that we are adding to the accumulator
   fetch();
 
-  // Add is performed in 16-bit domain for emulation to capture any
-  // carry bit, which will exist in bit 8 of the 16-bit word
-  temp = (uint16_t)a + (uint16_t)fetched + (uint16_t)GetFlag(C);
-
-  // The carry flag out exists in the high byte bit 0
-  SetFlag(C, temp > 255);
-
-  // The Zero flag is set if the result is 0
-  SetFlag(Z, (temp & 0x00FF) == 0);
-
-  // The signed Overflow flag is set based on all that up there! :D
-  SetFlag(
-      V, (~((uint16_t)a ^ (uint16_t)fetched) & ((uint16_t)a ^ (uint16_t)temp)) &
-             0x0080);
-
-  // The negative flag is set to the most significant bit of the result
-  SetFlag(N, temp & 0x80);
-
-  // Load the result into the accumulator (it's 8-bit dont forget!)
-  a = temp & 0x00FF;
+  uint16_t t = (uint16_t)a + (uint16_t)fetched + (uint16_t)GetFlag(C);
+  SetFlag(C, t > 255);
+  SetFlag(Z, (t & 0x00FF) == 0);
+  SetFlag(V,
+          (~((uint16_t)a ^ (uint16_t)fetched) & ((uint16_t)a ^ t)) & 0x0080);
+  SetFlag(N, t & 0x80);
+  a = t & 0x00FF;
 
   // This instruction has the potential to require an additional clock cycle
   return 1;
@@ -742,55 +597,21 @@ uint8_t Nes6502::ADC() {
 // Function:    A = A - M - (1 - C)
 // Flags Out:   C, V, N, Z
 //
-// Explanation:
-// Given the explanation for ADC above, we can reorganise our data
-// to use the same computation for addition, for subtraction by multiplying
-// the data by -1, i.e. make it negative
-//
-// A = A - M - (1 - C)  ->  A = A + -1 * (M - (1 - C))  ->  A = A + (-M + 1 + C)
-//
-// To make a signed positive number negative, we can invert the bits and add 1
-// (OK, I lied, a little bit of 1 and 2s complement :P)
-//
-//  5 = 00000101
-// -5 = 11111010 + 00000001 = 11111011 (or 251 in our 0 to 255 range)
-//
-// The range is actually unimportant, because if I take the value 15, and add
-// 251 to it, given we wrap around at 256, the result is 10, so it has
-// effectively subtracted 5, which was the original intention. (15 + 251) % 256
-// = 10
-//
-// Note that the equation above used (1-C), but this got converted to + 1 + C.
-// This means we already have the +1, so all we need to do is invert the bits
-// of M, the data(!) therfore we can simply add, exactly the same way we did
-// before.
-
+// A - M - (1-C) = A + ~M + C in two's complement, so inverting the operand
+// turns this into exactly the addition above.
 uint8_t Nes6502::SBC() {
   fetch();
 
-  // Operating in 16-bit domain to capture carry out
-
-  // We can invert the bottom 8 bits with bitwise xor
   uint16_t value = ((uint16_t)fetched) ^ 0x00FF;
 
-  // Notice this is exactly the same as addition from here!
-  temp = (uint16_t)a + value + (uint16_t)GetFlag(C);
-  SetFlag(C, temp & 0xFF00);
-  SetFlag(Z, ((temp & 0x00FF) == 0));
-  SetFlag(V, (temp ^ (uint16_t)a) & (temp ^ value) & 0x0080);
-  SetFlag(N, temp & 0x0080);
-  a = temp & 0x00FF;
+  uint16_t t = (uint16_t)a + value + (uint16_t)GetFlag(C);
+  SetFlag(C, t & 0xFF00);
+  SetFlag(Z, ((t & 0x00FF) == 0));
+  SetFlag(V, (t ^ (uint16_t)a) & (t ^ value) & 0x0080);
+  SetFlag(N, t & 0x0080);
+  a = t & 0x00FF;
   return 1;
 }
-
-// OK! Complicated operations are done! the following are much simpler
-// and conventional. The typical order of events is:
-// 1) Fetch the data you are working with
-// 2) Perform calculation
-// 3) Store the result in desired place
-// 4) Set Flags of the status register
-// 5) Return if instruction has potential to require additional
-//    clock cycle
 
 // Instruction: Bitwise Logic AND
 // Function:    A = A & M
@@ -808,107 +629,46 @@ uint8_t Nes6502::AND() {
 // Flags Out:   N, Z, C
 uint8_t Nes6502::ASL() {
   fetch();
-  temp = (uint16_t)fetched << 1;
-  SetFlag(C, (temp & 0xFF00) > 0);
-  SetFlag(Z, (temp & 0x00FF) == 0x00);
-  SetFlag(N, temp & 0x80);
-  if (lookup[opcode].addrmode == &Nes6502::IMP)
-    a = temp & 0x00FF;
-  else
-    write(addr_abs, temp & 0x00FF);
+  uint16_t t = (uint16_t)fetched << 1;
+  SetFlag(C, (t & 0xFF00) > 0);
+  SetFlag(Z, (t & 0x00FF) == 0x00);
+  SetFlag(N, t & 0x80);
+  StoreALU(t & 0x00FF);
   return 0;
 }
 
 // Instruction: Branch if Carry Clear
-// Function:    if(C == 0) pc = address
-uint8_t Nes6502::BCC() {
-  if (GetFlag(C) == 0) {
-    cycles++;
-    addr_abs = pc + addr_rel;
-
-    if ((addr_abs & 0xFF00) != (pc & 0xFF00)) cycles++;
-
-    pc = addr_abs;
-  }
-  return 0;
-}
+uint8_t Nes6502::BCC() { return Branch(GetFlag(C) == 0); }
 
 // Instruction: Branch if Carry Set
-// Function:    if(C == 1) pc = address
-uint8_t Nes6502::BCS() {
-  if (GetFlag(C) == 1) {
-    cycles++;
-    addr_abs = pc + addr_rel;
-
-    if ((addr_abs & 0xFF00) != (pc & 0xFF00)) cycles++;
-
-    pc = addr_abs;
-  }
-  return 0;
-}
+uint8_t Nes6502::BCS() { return Branch(GetFlag(C) == 1); }
 
 // Instruction: Branch if Equal
-// Function:    if(Z == 1) pc = address
-uint8_t Nes6502::BEQ() {
-  if (GetFlag(Z) == 1) {
-    cycles++;
-    addr_abs = pc + addr_rel;
-
-    if ((addr_abs & 0xFF00) != (pc & 0xFF00)) cycles++;
-
-    pc = addr_abs;
-  }
-  return 0;
-}
-
-uint8_t Nes6502::BIT() {
-  fetch();
-  temp = a & fetched;
-  SetFlag(Z, (temp & 0x00FF) == 0x00);
-  SetFlag(N, fetched & (1 << 7));
-  SetFlag(V, fetched & (1 << 6));
-  return 0;
-}
-
-// Instruction: Branch if Negative
-// Function:    if(N == 1) pc = address
-uint8_t Nes6502::BMI() {
-  if (GetFlag(N) == 1) {
-    cycles++;
-    addr_abs = pc + addr_rel;
-
-    if ((addr_abs & 0xFF00) != (pc & 0xFF00)) cycles++;
-
-    pc = addr_abs;
-  }
-  return 0;
-}
+uint8_t Nes6502::BEQ() { return Branch(GetFlag(Z) == 1); }
 
 // Instruction: Branch if Not Equal
-// Function:    if(Z == 0) pc = address
-uint8_t Nes6502::BNE() {
-  if (GetFlag(Z) == 0) {
-    cycles++;
-    addr_abs = pc + addr_rel;
+uint8_t Nes6502::BNE() { return Branch(GetFlag(Z) == 0); }
 
-    if ((addr_abs & 0xFF00) != (pc & 0xFF00)) cycles++;
-
-    pc = addr_abs;
-  }
-  return 0;
-}
+// Instruction: Branch if Negative
+uint8_t Nes6502::BMI() { return Branch(GetFlag(N) == 1); }
 
 // Instruction: Branch if Positive
-// Function:    if(N == 0) pc = address
-uint8_t Nes6502::BPL() {
-  if (GetFlag(N) == 0) {
-    cycles++;
-    addr_abs = pc + addr_rel;
+uint8_t Nes6502::BPL() { return Branch(GetFlag(N) == 0); }
 
-    if ((addr_abs & 0xFF00) != (pc & 0xFF00)) cycles++;
+// Instruction: Branch if Overflow Clear
+uint8_t Nes6502::BVC() { return Branch(GetFlag(V) == 0); }
 
-    pc = addr_abs;
-  }
+// Instruction: Branch if Overflow Set
+uint8_t Nes6502::BVS() { return Branch(GetFlag(V) == 1); }
+
+// Instruction: Test Bits in Memory with Accumulator
+// Function:    Z <- (A & M) == 0,  N <- M7,  V <- M6
+uint8_t Nes6502::BIT() {
+  fetch();
+  uint16_t t = a & fetched;
+  SetFlag(Z, (t & 0x00FF) == 0x00);
+  SetFlag(N, fetched & (1 << 7));
+  SetFlag(V, fetched & (1 << 6));
   return 0;
 }
 
@@ -932,57 +692,25 @@ uint8_t Nes6502::BRK() {
   return 0;
 }
 
-// Instruction: Branch if Overflow Clear
-// Function:    if(V == 0) pc = address
-uint8_t Nes6502::BVC() {
-  if (GetFlag(V) == 0) {
-    cycles++;
-    addr_abs = pc + addr_rel;
-
-    if ((addr_abs & 0xFF00) != (pc & 0xFF00)) cycles++;
-
-    pc = addr_abs;
-  }
-  return 0;
-}
-
-// Instruction: Branch if Overflow Set
-// Function:    if(V == 1) pc = address
-uint8_t Nes6502::BVS() {
-  if (GetFlag(V) == 1) {
-    cycles++;
-    addr_abs = pc + addr_rel;
-
-    if ((addr_abs & 0xFF00) != (pc & 0xFF00)) cycles++;
-
-    pc = addr_abs;
-  }
-  return 0;
-}
-
 // Instruction: Clear Carry Flag
-// Function:    C = 0
 uint8_t Nes6502::CLC() {
   SetFlag(C, false);
   return 0;
 }
 
 // Instruction: Clear Decimal Flag
-// Function:    D = 0
 uint8_t Nes6502::CLD() {
   SetFlag(D, false);
   return 0;
 }
 
-// Instruction: Disable Interrupts / Clear Interrupt Flag
-// Function:    I = 0
+// Instruction: Enable Interrupts / Clear Interrupt Disable Flag
 uint8_t Nes6502::CLI() {
   SetFlag(I, false);
   return 0;
 }
 
 // Instruction: Clear Overflow Flag
-// Function:    V = 0
 uint8_t Nes6502::CLV() {
   SetFlag(V, false);
   return 0;
@@ -993,10 +721,10 @@ uint8_t Nes6502::CLV() {
 // Flags Out:   N, C, Z
 uint8_t Nes6502::CMP() {
   fetch();
-  temp = (uint16_t)a - (uint16_t)fetched;
+  uint16_t t = (uint16_t)a - (uint16_t)fetched;
   SetFlag(C, a >= fetched);
-  SetFlag(Z, (temp & 0x00FF) == 0x0000);
-  SetFlag(N, temp & 0x0080);
+  SetFlag(Z, (t & 0x00FF) == 0x0000);
+  SetFlag(N, t & 0x0080);
   return 1;
 }
 
@@ -1005,10 +733,10 @@ uint8_t Nes6502::CMP() {
 // Flags Out:   N, C, Z
 uint8_t Nes6502::CPX() {
   fetch();
-  temp = (uint16_t)x - (uint16_t)fetched;
+  uint16_t t = (uint16_t)x - (uint16_t)fetched;
   SetFlag(C, x >= fetched);
-  SetFlag(Z, (temp & 0x00FF) == 0x0000);
-  SetFlag(N, temp & 0x0080);
+  SetFlag(Z, (t & 0x00FF) == 0x0000);
+  SetFlag(N, t & 0x0080);
   return 0;
 }
 
@@ -1017,10 +745,10 @@ uint8_t Nes6502::CPX() {
 // Flags Out:   N, C, Z
 uint8_t Nes6502::CPY() {
   fetch();
-  temp = (uint16_t)y - (uint16_t)fetched;
+  uint16_t t = (uint16_t)y - (uint16_t)fetched;
   SetFlag(C, y >= fetched);
-  SetFlag(Z, (temp & 0x00FF) == 0x0000);
-  SetFlag(N, temp & 0x0080);
+  SetFlag(Z, (t & 0x00FF) == 0x0000);
+  SetFlag(N, t & 0x0080);
   return 0;
 }
 
@@ -1029,10 +757,10 @@ uint8_t Nes6502::CPY() {
 // Flags Out:   N, Z
 uint8_t Nes6502::DEC() {
   fetch();
-  temp = fetched - 1;
-  write(addr_abs, temp & 0x00FF);
-  SetFlag(Z, (temp & 0x00FF) == 0x0000);
-  SetFlag(N, temp & 0x0080);
+  uint16_t t = fetched - 1;
+  write(addr_abs, t & 0x00FF);
+  SetFlag(Z, (t & 0x00FF) == 0x0000);
+  SetFlag(N, t & 0x0080);
   return 0;
 }
 
@@ -1072,10 +800,10 @@ uint8_t Nes6502::EOR() {
 // Flags Out:   N, Z
 uint8_t Nes6502::INC() {
   fetch();
-  temp = fetched + 1;
-  write(addr_abs, temp & 0x00FF);
-  SetFlag(Z, (temp & 0x00FF) == 0x0000);
-  SetFlag(N, temp & 0x0080);
+  uint16_t t = fetched + 1;
+  write(addr_abs, t & 0x00FF);
+  SetFlag(Z, (t & 0x00FF) == 0x0000);
+  SetFlag(N, t & 0x0080);
   return 0;
 }
 
@@ -1153,20 +881,21 @@ uint8_t Nes6502::LDY() {
   return 1;
 }
 
+// Instruction: Logical Shift Right
+// Function:    A = 0 -> (A >> 1) -> C
+// Flags Out:   N, Z, C
 uint8_t Nes6502::LSR() {
   fetch();
   SetFlag(C, fetched & 0x0001);
-  temp = fetched >> 1;
-  SetFlag(Z, (temp & 0x00FF) == 0x0000);
-  SetFlag(N, temp & 0x0080);
-  if (lookup[opcode].addrmode == &Nes6502::IMP)
-    a = temp & 0x00FF;
-  else
-    write(addr_abs, temp & 0x00FF);
+  uint16_t t = fetched >> 1;
+  SetFlag(Z, (t & 0x00FF) == 0x0000);
+  SetFlag(N, t & 0x0080);
+  StoreALU(t & 0x00FF);
   return 0;
 }
 
 uint8_t Nes6502::NOP() {
+  // Not all NOPs are equal: some unofficial ones can take an extra cycle
   switch (opcode) {
     case 0x1C:
     case 0x3C:
@@ -1175,7 +904,6 @@ uint8_t Nes6502::NOP() {
     case 0xDC:
     case 0xFC:
       return 1;
-      break;
   }
   return 0;
 }
@@ -1230,32 +958,34 @@ uint8_t Nes6502::PLP() {
   return 0;
 }
 
+// Instruction: Rotate Left
+// Function:    A = C <- (A << 1) <- C
+// Flags Out:   N, Z, C
 uint8_t Nes6502::ROL() {
   fetch();
-  temp = (uint16_t)(fetched << 1) | GetFlag(C);
-  SetFlag(C, temp & 0xFF00);
-  SetFlag(Z, (temp & 0x00FF) == 0x0000);
-  SetFlag(N, temp & 0x0080);
-  if (lookup[opcode].addrmode == &Nes6502::IMP)
-    a = temp & 0x00FF;
-  else
-    write(addr_abs, temp & 0x00FF);
+  uint16_t t = (uint16_t)(fetched << 1) | GetFlag(C);
+  SetFlag(C, t & 0xFF00);
+  SetFlag(Z, (t & 0x00FF) == 0x0000);
+  SetFlag(N, t & 0x0080);
+  StoreALU(t & 0x00FF);
   return 0;
 }
 
+// Instruction: Rotate Right
+// Function:    A = C -> (A >> 1) -> C
+// Flags Out:   N, Z, C
 uint8_t Nes6502::ROR() {
   fetch();
-  temp = (uint16_t)(GetFlag(C) << 7) | (fetched >> 1);
+  uint16_t t = (uint16_t)(GetFlag(C) << 7) | (fetched >> 1);
   SetFlag(C, fetched & 0x01);
-  SetFlag(Z, (temp & 0x00FF) == 0x00);
-  SetFlag(N, temp & 0x0080);
-  if (lookup[opcode].addrmode == &Nes6502::IMP)
-    a = temp & 0x00FF;
-  else
-    write(addr_abs, temp & 0x00FF);
+  SetFlag(Z, (t & 0x00FF) == 0x00);
+  SetFlag(N, t & 0x0080);
+  StoreALU(t & 0x00FF);
   return 0;
 }
 
+// Instruction: Return from Interrupt
+// Function:    Status <- stack, pc <- stack
 uint8_t Nes6502::RTI() {
   stkp++;
   status = read(0x0100 + stkp);
@@ -1269,6 +999,8 @@ uint8_t Nes6502::RTI() {
   return 0;
 }
 
+// Instruction: Return from Sub-Routine
+// Function:    pc <- stack, pc + 1
 uint8_t Nes6502::RTS() {
   stkp++;
   pc = (uint16_t)read(0x0100 + stkp);
@@ -1280,21 +1012,18 @@ uint8_t Nes6502::RTS() {
 }
 
 // Instruction: Set Carry Flag
-// Function:    C = 1
 uint8_t Nes6502::SEC() {
   SetFlag(C, true);
   return 0;
 }
 
 // Instruction: Set Decimal Flag
-// Function:    D = 1
 uint8_t Nes6502::SED() {
   SetFlag(D, true);
   return 0;
 }
 
-// Instruction: Set Interrupt Flag / Enable Interrupts
-// Function:    I = 1
+// Instruction: Set Interrupt Flag / Disable Interrupts
 uint8_t Nes6502::SEI() {
   SetFlag(I, true);
   return 0;
@@ -1322,7 +1051,6 @@ uint8_t Nes6502::STY() {
 }
 
 // Instruction: Transfer Accumulator to X Register
-// Function:    X = A
 // Flags Out:   N, Z
 uint8_t Nes6502::TAX() {
   x = a;
@@ -1332,7 +1060,6 @@ uint8_t Nes6502::TAX() {
 }
 
 // Instruction: Transfer Accumulator to Y Register
-// Function:    Y = A
 // Flags Out:   N, Z
 uint8_t Nes6502::TAY() {
   y = a;
@@ -1342,7 +1069,6 @@ uint8_t Nes6502::TAY() {
 }
 
 // Instruction: Transfer Stack Pointer to X Register
-// Function:    X = stack pointer
 // Flags Out:   N, Z
 uint8_t Nes6502::TSX() {
   x = stkp;
@@ -1352,7 +1078,6 @@ uint8_t Nes6502::TSX() {
 }
 
 // Instruction: Transfer X Register to Accumulator
-// Function:    A = X
 // Flags Out:   N, Z
 uint8_t Nes6502::TXA() {
   a = x;
@@ -1362,14 +1087,12 @@ uint8_t Nes6502::TXA() {
 }
 
 // Instruction: Transfer X Register to Stack Pointer
-// Function:    stack pointer = X
 uint8_t Nes6502::TXS() {
   stkp = x;
   return 0;
 }
 
 // Instruction: Transfer Y Register to Accumulator
-// Function:    A = Y
 // Flags Out:   N, Z
 uint8_t Nes6502::TYA() {
   a = y;
@@ -1424,73 +1147,82 @@ std::map<uint16_t, std::string> Nes6502::disassemble(uint16_t nStart,
     // Read instruction, and get its readable name
     uint8_t opcode = bus->cpuRead(addr, true);
     addr++;
-    sInst += lookup[opcode].name + " ";
+    sInst += lookup[opcode].name;
+    sInst += " ";
 
     // Get oprands from desired locations, and form the
     // instruction based upon its addressing mode. These
     // routines mimmick the actual fetch routine of the
     // 6502 in order to get accurate data as part of the
     // instruction
-    if (lookup[opcode].addrmode == &Nes6502::IMP) {
-      sInst += " {IMP}";
-    } else if (lookup[opcode].addrmode == &Nes6502::IMM) {
-      value = bus->cpuRead(addr, true);
-      addr++;
-      sInst += "#$" + hex(value, 2) + " {IMM}";
-    } else if (lookup[opcode].addrmode == &Nes6502::ZP0) {
-      lo = bus->cpuRead(addr, true);
-      addr++;
-      hi = 0x00;
-      sInst += "$" + hex(lo, 2) + " {ZP0}";
-    } else if (lookup[opcode].addrmode == &Nes6502::ZPX) {
-      lo = bus->cpuRead(addr, true);
-      addr++;
-      hi = 0x00;
-      sInst += "$" + hex(lo, 2) + ", X {ZPX}";
-    } else if (lookup[opcode].addrmode == &Nes6502::ZPY) {
-      lo = bus->cpuRead(addr, true);
-      addr++;
-      hi = 0x00;
-      sInst += "$" + hex(lo, 2) + ", Y {ZPY}";
-    } else if (lookup[opcode].addrmode == &Nes6502::IZX) {
-      lo = bus->cpuRead(addr, true);
-      addr++;
-      hi = 0x00;
-      sInst += "($" + hex(lo, 2) + ", X) {IZX}";
-    } else if (lookup[opcode].addrmode == &Nes6502::IZY) {
-      lo = bus->cpuRead(addr, true);
-      addr++;
-      hi = 0x00;
-      sInst += "($" + hex(lo, 2) + "), Y {IZY}";
-    } else if (lookup[opcode].addrmode == &Nes6502::ABS) {
-      lo = bus->cpuRead(addr, true);
-      addr++;
-      hi = bus->cpuRead(addr, true);
-      addr++;
-      sInst += "$" + hex((uint16_t)(hi << 8) | lo, 4) + " {ABS}";
-    } else if (lookup[opcode].addrmode == &Nes6502::ABX) {
-      lo = bus->cpuRead(addr, true);
-      addr++;
-      hi = bus->cpuRead(addr, true);
-      addr++;
-      sInst += "$" + hex((uint16_t)(hi << 8) | lo, 4) + ", X {ABX}";
-    } else if (lookup[opcode].addrmode == &Nes6502::ABY) {
-      lo = bus->cpuRead(addr, true);
-      addr++;
-      hi = bus->cpuRead(addr, true);
-      addr++;
-      sInst += "$" + hex((uint16_t)(hi << 8) | lo, 4) + ", Y {ABY}";
-    } else if (lookup[opcode].addrmode == &Nes6502::IND) {
-      lo = bus->cpuRead(addr, true);
-      addr++;
-      hi = bus->cpuRead(addr, true);
-      addr++;
-      sInst += "($" + hex((uint16_t)(hi << 8) | lo, 4) + ") {IND}";
-    } else if (lookup[opcode].addrmode == &Nes6502::REL) {
-      value = bus->cpuRead(addr, true);
-      addr++;
-      sInst += "$" + hex(value, 2) + " [$" + hex(addr + (int8_t)value, 4) +
-               "] {REL}";
+    switch (lookup[opcode].mode) {
+      case AM::IMP:
+        sInst += " {IMP}";
+        break;
+      case AM::IMM:
+        value = bus->cpuRead(addr, true);
+        addr++;
+        sInst += "#$" + hex(value, 2) + " {IMM}";
+        break;
+      case AM::ZP0:
+        lo = bus->cpuRead(addr, true);
+        addr++;
+        sInst += "$" + hex(lo, 2) + " {ZP0}";
+        break;
+      case AM::ZPX:
+        lo = bus->cpuRead(addr, true);
+        addr++;
+        sInst += "$" + hex(lo, 2) + ", X {ZPX}";
+        break;
+      case AM::ZPY:
+        lo = bus->cpuRead(addr, true);
+        addr++;
+        sInst += "$" + hex(lo, 2) + ", Y {ZPY}";
+        break;
+      case AM::IZX:
+        lo = bus->cpuRead(addr, true);
+        addr++;
+        sInst += "($" + hex(lo, 2) + ", X) {IZX}";
+        break;
+      case AM::IZY:
+        lo = bus->cpuRead(addr, true);
+        addr++;
+        sInst += "($" + hex(lo, 2) + "), Y {IZY}";
+        break;
+      case AM::ABS:
+        lo = bus->cpuRead(addr, true);
+        addr++;
+        hi = bus->cpuRead(addr, true);
+        addr++;
+        sInst += "$" + hex((uint16_t)(hi << 8) | lo, 4) + " {ABS}";
+        break;
+      case AM::ABX:
+        lo = bus->cpuRead(addr, true);
+        addr++;
+        hi = bus->cpuRead(addr, true);
+        addr++;
+        sInst += "$" + hex((uint16_t)(hi << 8) | lo, 4) + ", X {ABX}";
+        break;
+      case AM::ABY:
+        lo = bus->cpuRead(addr, true);
+        addr++;
+        hi = bus->cpuRead(addr, true);
+        addr++;
+        sInst += "$" + hex((uint16_t)(hi << 8) | lo, 4) + ", Y {ABY}";
+        break;
+      case AM::IND:
+        lo = bus->cpuRead(addr, true);
+        addr++;
+        hi = bus->cpuRead(addr, true);
+        addr++;
+        sInst += "($" + hex((uint16_t)(hi << 8) | lo, 4) + ") {IND}";
+        break;
+      case AM::REL:
+        value = bus->cpuRead(addr, true);
+        addr++;
+        sInst += "$" + hex(value, 2) + " [$" + hex(addr + (int8_t)value, 4) +
+                 "] {REL}";
+        break;
     }
 
     // Add the formed string to a std::map, using the instruction's
