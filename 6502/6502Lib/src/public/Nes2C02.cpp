@@ -570,7 +570,7 @@ void Nes2C02::ForegroundFetch() {
     uint8_t nOAMEntry = 0;
     bSpriteZeroHitPossible = false;
 
-    while (nOAMEntry < 64 && sprite_count < 9) {
+    while (nOAMEntry < 64) {
       int16_t diff = ((int16_t)scanline - (int16_t)OAM[nOAMEntry].y);
 
       if (diff >= 0 && diff < (control.sprite_size ? 16 : 8)) {
@@ -582,15 +582,15 @@ void Nes2C02::ForegroundFetch() {
           memcpy(&spriteScanline[sprite_count], &OAM[nOAMEntry],
                  sizeof(sObjectAttributeEntry));
           sprite_count++;
+        } else {
+          // 第 9 个落在本行的精灵：置溢出标志（硬件的真实扫描还有
+          // 一个著名的对角线 bug，这里采用简单的正确近似）
+          status.sprite_overflow = 1;
         }
       }
 
       nOAMEntry++;
     }
-
-    // 注：sprite_count 永远不会超过 8（上面的 < 8 守卫），所以这个
-    // 标志现在永远不会置位——保持原行为，修复作为独立提交。
-    status.sprite_overflow = (sprite_count > 8);
   }
 
   if (cycle == 340) {
@@ -679,20 +679,15 @@ void Nes2C02::ComposePixel() {
       palette = bg_palette;
     }
 
-    // 0 号精灵命中：前景与背景同时不透明且双双开启渲染
+    // 0 号精灵命中：前景与背景同时不透明且双双开启渲染。
+    // 若背景或精灵任意一方关闭了左缘 8 像素渲染，则命中不会发生在
+    // 屏幕最左 8 像素内（nesdev: Sprite 0 hit）。
     if (bSpriteZeroHitPossible && bSpriteZeroBeingRendered) {
       if (mask.render_background & mask.render_sprites) {
-        // 屏幕左缘 8 像素的渲染开关影响命中起始列。
-        // 注：~(a|b) 对 uint8 恒为真，是原始代码的 bug，
-        // 保持原行为（恒走 cycle>=9 分支），修复作为独立提交。
-        if (~(mask.render_background_left | mask.render_sprites_left)) {
-          if (cycle >= 9 && cycle < 258) {
-            status.sprite_zero_hit = 1;
-          }
-        } else {
-          if (cycle >= 1 && cycle < 258) {
-            status.sprite_zero_hit = 1;
-          }
+        int first_hit_cycle =
+            (mask.render_background_left && mask.render_sprites_left) ? 1 : 9;
+        if (cycle >= first_hit_cycle && cycle < 258) {
+          status.sprite_zero_hit = 1;
         }
       }
     }
