@@ -65,8 +65,10 @@ void Bus::cpuWrite(uint16_t addr, uint8_t data) {
     dma_addr = 0x00;
     dma_transfer = true;
   } else if (addr == 0x4016) {
-    // 写 $4016 是手柄选通：两个手柄同时锁存当前按键状态。
+    // $4016 bit0 是手柄选通线：拉高期间两个手柄持续锁存当前按键，
+    // 拉低后冻结，由读取逐位移出。
     //（$4017 写入只属于 APU 帧计数器，上面的 APU 分支已经处理。）
+    controller_strobe = data & 0x01;
     controller_state[0] = controller[0];
     controller_state[1] = controller[1];
   }
@@ -87,9 +89,14 @@ uint8_t Bus::cpuRead(uint16_t addr, bool bReadOnly) {
     data = apu.cpuRead(addr);
   } else if (addr >= 0x4016 && addr <= 0x4017) {
     // 读取控制命令数据（高位在前的移位读出）。
+    // 选通线拉高期间手柄持续重新锁存，读到的总是实时的第一个键；
     // 调试器的只读访问不能移位，否则旁观即干扰。
+    if (controller_strobe) {
+      controller_state[0] = controller[0];
+      controller_state[1] = controller[1];
+    }
     data = (controller_state[addr & 0x0001] & 0x80) > 0;
-    if (!bReadOnly) controller_state[addr & 0x0001] <<= 1;
+    if (!bReadOnly && !controller_strobe) controller_state[addr & 0x0001] <<= 1;
   }
 
   return data;
@@ -197,7 +204,9 @@ bool Bus::clock() {
   // CPU 用 I 标志决定是否受理。由游戏代码通过 mapper 自己确认中断
   //（MMC3 写 $E000）来释放 IRQ 线——总线在受理前就替游戏清线，
   // 会让 I=1 期间到来的 IRQ 永久丢失（Metal Max 的中断问题根因）。
-  if (cart->GetMapper()->irqState()) {
+  // 受理推迟到指令边界（DMA 期间 CPU 停摆，自然也不受理）——
+  // 电平触发保证晚受理不丢请求。
+  if (cart->GetMapper()->irqState() && !dma_transfer && cpu.complete()) {
     cpu.irq();
   }
 
@@ -210,12 +219,14 @@ bool Bus::clock() {
 static const char kSaveMagic[4] = {'N', 'E', 'S', 'S'};
 static const uint32_t kSaveVersion = 1;
 
-void Bus::SaveState(std::ostream &os) const {
+void Bus::SaveState(std::ostream &os) {
   PutPod(os, kSaveMagic);
   PutPod(os, kSaveVersion);
+  PutPod(os, cart->MapperId());
   PutPod(os, cpuRam);
   PutPod(os, controller);
   PutPod(os, controller_state);
+  PutPod(os, controller_strobe);
   PutPod(os, cpu_phase);
   PutPod(os, odd_cycle);
   PutPod(os, dma_page);
@@ -233,13 +244,19 @@ void Bus::SaveState(std::ostream &os) const {
 bool Bus::LoadState(std::istream &is) {
   char magic[4];
   uint32_t version = 0;
+  uint8_t mapper_id = 0xFF;
   GetPod(is, magic);
   GetPod(is, version);
-  if (memcmp(magic, kSaveMagic, 4) != 0 || version != kSaveVersion)
+  GetPod(is, mapper_id);
+  // 在改写任何机器状态之前完成全部头部校验——魔数、版本、
+  // 存档所属的 mapper——校验失败时机器保持原样。
+  if (!is.good() || memcmp(magic, kSaveMagic, 4) != 0 ||
+      version != kSaveVersion || mapper_id != cart->MapperId())
     return false;
   GetPod(is, cpuRam);
   GetPod(is, controller);
   GetPod(is, controller_state);
+  GetPod(is, controller_strobe);
   GetPod(is, cpu_phase);
   GetPod(is, odd_cycle);
   GetPod(is, dma_page);
@@ -251,6 +268,6 @@ bool Bus::LoadState(std::istream &is) {
   cpu.LoadState(is);
   ppu.LoadState(is);
   apu.LoadState(is);
-  if (!cart->LoadState(is)) return false;
+  cart->LoadState(is);
   return is.good();
 }

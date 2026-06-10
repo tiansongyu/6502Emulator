@@ -40,10 +40,11 @@ class Bus {
   // 2A03 APU 声卡。。。
   Nes2A03 apu;
   std::shared_ptr<Cartridge> cart;
-  // CPU中2KB的内存RAM
-  uint8_t cpuRam[2048];
+  // CPU中2KB的内存RAM。上电清零，保证模拟器开机行为确定
+  //（真实硬件是随机值，但确定性对调试和回归测试更有价值）
+  uint8_t cpuRam[2048] = {};
   // 控制器数据暂存位置
-  uint8_t controller[2];
+  uint8_t controller[2] = {};
 
  public:
   // 设置声音发声频率
@@ -68,8 +69,9 @@ class Bus {
   //（2^32 % 3 != 0），导致 CPU 被多打或漏打一拍。
   uint8_t cpu_phase = 0;   // 0,1,2 循环；0 时 CPU 走一拍
   bool odd_cycle = false;  // 全局奇偶相位（DMA 对齐用）
-  // 控制寄存器
-  uint8_t controller_state[2];
+  // 控制器移位寄存器与选通线
+  uint8_t controller_state[2] = {};
+  bool controller_strobe = false;
 
  private:
   // 游戏精灵的传送使用DMA机制，精灵一共有64个，每个精灵大小为4个字节
@@ -101,6 +103,6 @@ class Bus {
   // 显式版本化存档：魔数 + 版本号 + 各芯片逐字段状态。
   // 旧实现把整个 Bus 对象按 sizeof 裸 dump（含 vector/指针，跨进程
   // 未定义行为，且完全丢失 mapper 的 bank 切换状态）。
-  void SaveState(std::ostream &os) const;
+  void SaveState(std::ostream &os);
   bool LoadState(std::istream &is);
 };

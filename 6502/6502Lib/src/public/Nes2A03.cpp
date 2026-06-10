@@ -93,9 +93,14 @@ void Nes2A03::cpuWrite(uint16_t addr, uint8_t data) {
       break;
 
     case 0x4015:  // 通道开关
+      // 关闭某个通道的同时，硬件立即把它的长度计数器清零——
+      // 轮询 $4015 的音频驱动依赖这个即时反馈。
       pulse[0].enable = data & 0x01;
       pulse[1].enable = data & 0x02;
       noise.enable = data & 0x04;
+      if (!pulse[0].enable) pulse[0].lc.counter = 0;
+      if (!pulse[1].enable) pulse[1].lc.counter = 0;
+      if (!noise.enable) noise.lc.counter = 0;
       // 三角波与 DMC 未实现
       break;
   }
@@ -120,7 +125,7 @@ void Nes2A03::clock() {
   bool bQuarterFrameClock = false;
   bool bHalfFrameClock = false;
 
-  if (clock_counter % 6 == 0) {
+  if (apu_phase == 0) {
     frame_clock_counter++;
 
     // 4-Step Sequence Mode
@@ -211,7 +216,7 @@ void Nes2A03::clock() {
   noise_visual =
       (noise.enable && noise.env.output > 1) ? noise.seq.reload : 2047;
 
-  clock_counter++;
+  if (++apu_phase == 6) apu_phase = 0;
 }
 
 double Nes2A03::GetOutputSample() {
@@ -243,7 +248,7 @@ void Nes2A03::reset() {
   sweep[0] = sweeper{};
   sweep[1] = sweeper{};
   frame_clock_counter = 0;
-  clock_counter = 0;
+  apu_phase = 0;
   mixer_hp_in = 0.0;
   mixer_hp_out = 0.0;
   pulse1_visual = 2047;
@@ -256,7 +261,7 @@ void Nes2A03::SaveState(std::ostream &os) const {
   PutPod(os, noise);
   PutPod(os, sweep);
   PutPod(os, frame_clock_counter);
-  PutPod(os, clock_counter);
+  PutPod(os, apu_phase);
   PutPod(os, mixer_hp_in);
   PutPod(os, mixer_hp_out);
 }
@@ -266,7 +271,7 @@ void Nes2A03::LoadState(std::istream &is) {
   GetPod(is, noise);
   GetPod(is, sweep);
   GetPod(is, frame_clock_counter);
-  GetPod(is, clock_counter);
+  GetPod(is, apu_phase);
   GetPod(is, mixer_hp_in);
   GetPod(is, mixer_hp_out);
 }

@@ -95,8 +95,10 @@ Cartridge::Cartridge(const std::string &sFileName) {
       ifs.read(reinterpret_cast<char *>(vPRGMemory.data()), vPRGMemory.size());
 
       nCHRBanks = ((header.prg_ram_size & 0x38) << 8) | header.chr_rom_chunks;
-      vCHRMemory.resize(nCHRBanks * 8192);
-      ifs.read((char *)vCHRMemory.data(), vCHRMemory.size());
+      // CHR 数量为 0 的卡带用的是 8KB CHR RAM（与 iNES1 分支一致），
+      // 否则首次 CHR 写入就会越过空 vector 的边界
+      vCHRMemory.resize(nCHRBanks == 0 ? 8192 : nCHRBanks * 8192);
+      ifs.read(reinterpret_cast<char *>(vCHRMemory.data()), vCHRMemory.size());
     }
 
     // 选择对应的映射器
@@ -203,17 +205,14 @@ MIRROR Cartridge::Mirror() {
 }
 
 std::shared_ptr<Mapper> Cartridge::GetMapper() { return pMapper; }
+// mapper 归属校验由 Bus::LoadState 在文件头里完成（必须先于任何
+// 状态改写），这里只搬运内容。
 void Cartridge::SaveState(std::ostream &os) const {
-  PutPod(os, nMapperID);
   if (nCHRBanks == 0) PutBytes(os, vCHRMemory);  // CHR RAM 才有可变内容
   pMapper->SaveState(os);
 }
 
-bool Cartridge::LoadState(std::istream &is) {
-  uint8_t id = 0;
-  GetPod(is, id);
-  if (id != nMapperID) return false;  // 存档属于另一种卡带
+void Cartridge::LoadState(std::istream &is) {
   if (nCHRBanks == 0) GetBytes(is, vCHRMemory);
   pMapper->LoadState(is);
-  return true;
 }

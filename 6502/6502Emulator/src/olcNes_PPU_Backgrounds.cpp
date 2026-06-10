@@ -19,12 +19,15 @@
 //
 // GUI 前端。模拟器核心（M6502Lib）不依赖此文件，可独立复用。
 //
-// 线程模型：开启音频时，模拟器由声卡线程驱动（SoundOut 回调里
-// while(!nes.clock())），GUI 线程只读取帧缓冲并采集输入。
+// 线程模型：开启音频时，模拟器由声卡线程驱动（合成回调里
+// while(!nes.clock())），GUI 线程采集输入并读取帧缓冲。
 // 一切对整机的修改（reset / 读档 / 存档）都通过原子请求标志
-// 交给驱动线程执行，GUI 线程绝不直接改写正在运行的机器。
+// 交给驱动线程执行。调试面板（CPU 寄存器/OAM/模式表）直接读取
+// 运行中的机器，可能读到撕裂的中间值——它们只影响显示，不影响
+// 模拟本身。
 #include <atomic>
 #include <fstream>
+#include <sstream>
 #include <string>
 
 #include "Bus.h"
@@ -55,10 +58,14 @@ class Demo_olcNES : public olc::PixelGameEngine {
 
   uint8_t nSelectedPalette = 0x00;
 
-  // 跨线程请求：GUI 线程置位，驱动模拟器的线程消费
+  // 跨线程请求：GUI 线程置位，驱动模拟器的线程消费。
+  // 存档/读档的文件 IO 留在 GUI 线程（实时音频线程上一次磁盘卡顿
+  // 就是一次爆音），音频线程只做内存内的序列化/反序列化。
   std::atomic<bool> bResetRequested{false};
   std::atomic<bool> bSaveRequested{false};
   std::atomic<bool> bLoadRequested{false};
+  std::atomic<bool> bSaveReady{false};
+  std::string sStateBuffer;  // 请求标志保护下的传递缓冲
 
   // 核心库输出的是普通 32 位像素缓冲；这里持有引擎侧精灵，
   // 每帧把缓冲拷入再绘制。
@@ -130,12 +137,15 @@ class Demo_olcNES : public olc::PixelGameEngine {
   void ServiceRequests() {
     if (bResetRequested.exchange(false)) nes.reset();
     if (bSaveRequested.exchange(false)) {
-      std::ofstream ofs(sSavePath, std::ofstream::binary);
-      if (ofs) nes.SaveState(ofs);
+      std::ostringstream os(std::ios::binary);
+      nes.SaveState(os);
+      sStateBuffer = os.str();
+      bSaveReady = true;  // 文件写出由 GUI 线程完成
     }
     if (bLoadRequested.exchange(false)) {
-      std::ifstream ifs(sSavePath, std::ifstream::binary);
-      if (ifs) nes.LoadState(ifs);
+      std::istringstream is(sStateBuffer);
+      // 头部校验不通过（比如存档属于另一个游戏）时机器保持原样
+      nes.LoadState(is);
     }
   }
 
@@ -153,7 +163,19 @@ class Demo_olcNES : public olc::PixelGameEngine {
     // 回调运行在声卡线程上：先处理跨线程请求，再推动模拟器
     // 直到产生下一个 44.1kHz 样本——这就是模拟器的实时节拍器。
     nes.SetSampleFrequency(44100);
-    bAudioDriven = olc::SOUND::InitialiseAudio(44100, 1, 8, 512);
+#if defined(__linux__) || defined(_WIN32) || defined(__EMSCRIPTEN__)
+    try {
+      bAudioDriven = olc::SOUND::InitialiseAudio(44100, 1, 8, 512);
+    } catch (const std::exception &) {
+      // ALSA 后端的失败路径会 join 一个从未启动的线程并抛出
+      // system_error——捕获它并退回无声模式，而不是直接终止
+      bAudioDriven = false;
+    }
+#else
+    // 其他平台的 olcPGEX_Sound 后端是个返回 true 的空桩（线程不跑、
+    // 回调永远不会被调用），不能信任其返回值
+    bAudioDriven = false;
+#endif
     if (bAudioDriven) {
       olc::SOUND::SetUserSynthFunction(
           [this](int nChannel, float /*fGlobalTime*/, float /*fTimeStep*/) {
@@ -170,7 +192,8 @@ class Demo_olcNES : public olc::PixelGameEngine {
   // We must play nicely now with the sound hardware, so unload
   // it when the application terminates
   bool OnUserDestroy() override {
-    olc::SOUND::DestroyAudio();
+    // DestroyAudio 会无条件 join 音频线程，未启动时不可调用
+    if (bAudioDriven) olc::SOUND::DestroyAudio();
     return true;
   }
 
@@ -183,10 +206,23 @@ class Demo_olcNES : public olc::PixelGameEngine {
       if (GetKey(m.key).bHeld) pad |= m.bit;
     nes.controller[0] = pad;
 
-    // 热键
+    // 热键。文件 IO 在本线程完成：F1 请求驱动线程做内存快照，
+    // 就绪后写盘；F2 先读入内存，再请求驱动线程应用。
     if (GetKey(olc::Key::BACK).bPressed) bResetRequested = true;
     if (GetKey(olc::Key::F1).bPressed) bSaveRequested = true;
-    if (GetKey(olc::Key::F2).bPressed) bLoadRequested = true;
+    if (bSaveReady.exchange(false)) {
+      std::ofstream ofs(sSavePath, std::ofstream::binary);
+      if (ofs) ofs.write(sStateBuffer.data(), sStateBuffer.size());
+    }
+    if (GetKey(olc::Key::F2).bPressed && !bLoadRequested) {
+      std::ifstream ifs(sSavePath, std::ifstream::binary);
+      if (ifs) {
+        std::ostringstream buf;
+        buf << ifs.rdbuf();
+        sStateBuffer = buf.str();
+        bLoadRequested = true;
+      }
+    }
     if (GetKey(olc::Key::P).bPressed) (++nSelectedPalette) &= 0x07;
 
     if (!bAudioDriven) {

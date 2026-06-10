@@ -33,6 +33,7 @@ class Cartridge {
 
  public:
   bool ImageValid();
+  uint8_t MapperId() const { return nMapperID; }
   std::shared_ptr<Mapper> GetMapper();
 
  private:
@@ -63,7 +64,7 @@ class Cartridge {
   // 存档：mapper 寄存器 + PRG RAM + CHR RAM（ROM 内容不会变，不入档；
   // 记录 mapper 号用于加载时核对存档与卡带是否匹配）
   void SaveState(std::ostream &os) const;
-  bool LoadState(std::istream &is);
+  void LoadState(std::istream &is);
 
   MIRROR Mirror();
 };

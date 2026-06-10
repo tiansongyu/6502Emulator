@@ -68,7 +68,9 @@ class Nes2A03 {
 
  private:
   uint32_t frame_clock_counter = 0;
-  uint32_t clock_counter = 0;
+  // PPU 时钟 / 6 = APU 时钟。显式相位计数器，不用自由增长的
+  // 计数器取模（uint32 回绕时 2^32 % 6 != 0，相位会跳变）。
+  uint8_t apu_phase = 0;
 
  private:
   static const uint8_t length_table[];
