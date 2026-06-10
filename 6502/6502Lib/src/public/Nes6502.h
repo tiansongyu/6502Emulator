@@ -44,6 +44,7 @@
 #pragma once
 
 #include <cstdint>
+#include <iosfwd>
 #include <map>
 #include <string>
 
@@ -87,6 +88,10 @@ class Nes6502 {
   // Produces a map of strings, with keys equivalent to instruction start
   // locations in memory, for the specified address range
   std::map<uint16_t, std::string> disassemble(uint16_t nStart, uint16_t nStop);
+
+  // 存档：按字段顺序读写 CPU 的全部运行状态
+  void SaveState(std::ostream &os) const;
+  void LoadState(std::istream &is);
 
   // The status register stores 8 flags. Ive enumerated these here for ease
   // of access. You can access the status register directly since its public.

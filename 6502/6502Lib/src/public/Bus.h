@@ -18,8 +18,8 @@
 // 6502Emulator is actively maintained and developed!
 #pragma once
 
-#include <array>
 #include <cstdint>
+#include <iosfwd>
 #include <memory>
 
 #include "Cartridge.h"
@@ -97,4 +97,10 @@ class Bus {
   void reset();
   // 系统clock
   bool clock();
+
+  // 显式版本化存档：魔数 + 版本号 + 各芯片逐字段状态。
+  // 旧实现把整个 Bus 对象按 sizeof 裸 dump（含 vector/指针，跨进程
+  // 未定义行为，且完全丢失 mapper 的 bank 切换状态）。
+  void SaveState(std::ostream &os) const;
+  bool LoadState(std::istream &is);
 };

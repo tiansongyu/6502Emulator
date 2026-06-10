@@ -47,6 +47,7 @@
 #pragma once
 
 #include <cstdint>
+#include <iosfwd>
 
 class Nes2A03 {
  public:
@@ -60,6 +61,10 @@ class Nes2A03 {
   void reset();
 
   double GetOutputSample();
+
+  // 存档：通道/扫频/帧计数器/滤波器状态
+  void SaveState(std::ostream &os) const;
+  void LoadState(std::istream &is);
 
  private:
   uint32_t frame_clock_counter = 0;

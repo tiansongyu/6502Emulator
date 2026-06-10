@@ -18,6 +18,8 @@
 // 6502Emulator is actively maintained and developed!
 #include "Mapper_001.h"
 
+#include "StateIO.h"
+
 Mapper_001::Mapper_001(uint8_t prgBanks, uint8_t chrBanks)
     : Mapper(prgBanks, chrBanks) {
   // MMC1 卡带带 8KB PRG RAM（$6000-$7FFF），由 Cartridge 统一处理
@@ -245,3 +247,31 @@ void Mapper_001::reset() {
 }
 
 MIRROR Mapper_001::mirror() { return mirrormode; }
+
+void Mapper_001::SaveState(std::ostream &os) const {
+  Mapper::SaveState(os);
+  PutPod(os, nCHRBankSelect4Lo);
+  PutPod(os, nCHRBankSelect4Hi);
+  PutPod(os, nCHRBankSelect8);
+  PutPod(os, nPRGBankSelect16Lo);
+  PutPod(os, nPRGBankSelect16Hi);
+  PutPod(os, nPRGBankSelect32);
+  PutPod(os, nLoadRegister);
+  PutPod(os, nLoadRegisterCount);
+  PutPod(os, nControlRegister);
+  PutPod(os, mirrormode);
+}
+
+void Mapper_001::LoadState(std::istream &is) {
+  Mapper::LoadState(is);
+  GetPod(is, nCHRBankSelect4Lo);
+  GetPod(is, nCHRBankSelect4Hi);
+  GetPod(is, nCHRBankSelect8);
+  GetPod(is, nPRGBankSelect16Lo);
+  GetPod(is, nPRGBankSelect16Hi);
+  GetPod(is, nPRGBankSelect32);
+  GetPod(is, nLoadRegister);
+  GetPod(is, nLoadRegisterCount);
+  GetPod(is, nControlRegister);
+  GetPod(is, mirrormode);
+}

@@ -19,6 +19,8 @@
 
 #include "Mapper_000.h"
 
+#include "StateIO.h"
+
 Mapper_000::Mapper_000(uint8_t prgBanks, uint8_t chrBanks)
     : Mapper(prgBanks, chrBanks) {
   reset();
@@ -75,4 +77,14 @@ bool Mapper_000::ppuMapWrite(uint16_t addr, uint32_t &mapped_addr) {
   }
 
   return false;
+}
+
+void Mapper_000::SaveState(std::ostream &os) const {
+  Mapper::SaveState(os);
+
+}
+
+void Mapper_000::LoadState(std::istream &is) {
+  Mapper::LoadState(is);
+
 }

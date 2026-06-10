@@ -2,6 +2,7 @@
 
 #pragma once
 #include <cstdint>
+#include <iosfwd>
 #include <memory>
 
 #include "Cartridge.h"
@@ -192,4 +193,8 @@ class Nes2C02 {
   void clock();
   void reset();
   bool nmi = false;
+
+  // 存档：内部 VRAM/OAM/寄存器/渲染管线状态（不含帧缓冲，重跑即恢复）
+  void SaveState(std::ostream &os) const;
+  void LoadState(std::istream &is);
 };

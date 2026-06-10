@@ -2,6 +2,7 @@
 
 #pragma once
 #include <cstdint>
+#include <iosfwd>
 #include <vector>
 
 enum MIRROR {
@@ -42,6 +43,10 @@ class Mapper {
 
   // Scanline Counting
   virtual void scanline();
+
+  // 存档：基类写 PRG RAM，各 mapper 追加自己的 bank/IRQ 寄存器
+  virtual void SaveState(std::ostream &os) const;
+  virtual void LoadState(std::istream &is);
 
  protected:
   // These are stored locally as many of the mappers require this information

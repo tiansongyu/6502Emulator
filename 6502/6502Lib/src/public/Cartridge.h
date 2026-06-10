@@ -19,6 +19,7 @@
 #pragma once
 
 #include <cstdint>
+#include <iosfwd>
 #include <memory>
 #include <string>
 #include <vector>
@@ -58,6 +59,11 @@ class Cartridge {
 
   // 重置卡带
   void reset();
+
+  // 存档：mapper 寄存器 + PRG RAM + CHR RAM（ROM 内容不会变，不入档；
+  // 记录 mapper 号用于加载时核对存档与卡带是否匹配）
+  void SaveState(std::ostream &os) const;
+  bool LoadState(std::istream &is);
 
   MIRROR Mirror();
 };

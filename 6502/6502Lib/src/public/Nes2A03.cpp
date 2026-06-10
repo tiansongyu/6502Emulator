@@ -2,6 +2,8 @@
 
 #include "Nes2A03.h"
 
+#include "StateIO.h"
+
 const uint8_t Nes2A03::length_table[] = {
     10, 254, 20, 2,  40, 4,  80, 6,  160, 8,  60, 10, 14, 12, 26, 14,
     12, 16,  24, 18, 48, 20, 96, 22, 192, 24, 72, 26, 16, 28, 32, 30};
@@ -247,4 +249,24 @@ void Nes2A03::reset() {
   pulse1_visual = 2047;
   pulse2_visual = 2047;
   noise_visual = 2047;
+}
+
+void Nes2A03::SaveState(std::ostream &os) const {
+  PutPod(os, pulse);
+  PutPod(os, noise);
+  PutPod(os, sweep);
+  PutPod(os, frame_clock_counter);
+  PutPod(os, clock_counter);
+  PutPod(os, mixer_hp_in);
+  PutPod(os, mixer_hp_out);
+}
+
+void Nes2A03::LoadState(std::istream &is) {
+  GetPod(is, pulse);
+  GetPod(is, noise);
+  GetPod(is, sweep);
+  GetPod(is, frame_clock_counter);
+  GetPod(is, clock_counter);
+  GetPod(is, mixer_hp_in);
+  GetPod(is, mixer_hp_out);
 }

@@ -22,6 +22,8 @@
 #include <fstream>
 #include <iostream>
 
+#include "StateIO.h"
+
 #include "Mapper_000.h"
 #include "Mapper_001.h"
 #include "Mapper_002.h"
@@ -201,3 +203,17 @@ MIRROR Cartridge::Mirror() {
 }
 
 std::shared_ptr<Mapper> Cartridge::GetMapper() { return pMapper; }
+void Cartridge::SaveState(std::ostream &os) const {
+  PutPod(os, nMapperID);
+  if (nCHRBanks == 0) PutBytes(os, vCHRMemory);  // CHR RAM 才有可变内容
+  pMapper->SaveState(os);
+}
+
+bool Cartridge::LoadState(std::istream &is) {
+  uint8_t id = 0;
+  GetPod(is, id);
+  if (id != nMapperID) return false;  // 存档属于另一种卡带
+  if (nCHRBanks == 0) GetBytes(is, vCHRMemory);
+  pMapper->LoadState(is);
+  return true;
+}

@@ -17,6 +17,7 @@
 #include <cstdio>
 #include <cstring>
 #include <memory>
+#include <sstream>
 #include <string>
 
 #include "Bus.h"
@@ -160,6 +161,48 @@ static int runDump(const char *rom, int frame, int startAt, const char *out) {
   return 0;
 }
 
+// 存档往返测试：跑 a 帧后存档并继续跑 b 帧记录哈希；回读存档再跑
+// b 帧；两次哈希必须一致，否则存档遗漏了某些机器状态。
+static int runSaveTest(const char *rom, int a, int b, int startAt) {
+  Bus nes;
+  zeroRam(nes);
+  nes.insertCartridge(loadCart(rom));
+  nes.SetSampleFrequency(44100);
+  nes.reset();
+  for (int f = 1; f <= a; f++) {
+    nes.controller[0] = startButton(startAt, f);
+    runFrame(nes);
+  }
+
+  std::stringstream state;
+  nes.SaveState(state);
+
+  auto runAndHash = [&](Bus &n) {
+    uint64_t h = 0xcbf29ce484222325ULL;
+    for (int f = 0; f < b; f++) {
+      n.controller[0] = 0;
+      runFrame(n);
+      h = fnv1a(reinterpret_cast<const uint8_t *>(n.ppu.GetScreen()),
+                256 * 240 * 4, h);
+    }
+    return h;
+  };
+
+  uint64_t h1 = runAndHash(nes);
+
+  state.clear();
+  state.seekg(0);
+  if (!nes.LoadState(state)) {
+    printf("SAVETEST LOAD FAILED\n");
+    return 1;
+  }
+  uint64_t h2 = runAndHash(nes);
+
+  printf("SAVETEST %s: h1=%016" PRIx64 " h2=%016" PRIx64 " %s\n", rom, h1, h2,
+         h1 == h2 ? "PASS" : "FAIL");
+  return h1 == h2 ? 0 : 1;
+}
+
 int main(int argc, char **argv) {
   if (argc < 4) {
     fprintf(stderr,
@@ -178,6 +221,8 @@ int main(int argc, char **argv) {
     return runAudio(argv[2], atof(argv[3]), argc > 4 ? atoi(argv[4]) : 0);
   if (mode == "dump" && argc >= 6)
     return runDump(argv[2], atoi(argv[3]), atoi(argv[4]), argv[5]);
+  if (mode == "savetest" && argc >= 6)
+    return runSaveTest(argv[2], atoi(argv[3]), atoi(argv[4]), atoi(argv[5]));
   fprintf(stderr, "unknown mode %s\n", mode.c_str());
   return 2;
 }

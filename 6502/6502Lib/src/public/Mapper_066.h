@@ -16,6 +16,9 @@ class Mapper_066 : public Mapper {
   bool ppuMapWrite(uint16_t addr, uint32_t &mapped_addr) override;
   void reset() override;
 
+  void SaveState(std::ostream &os) const override;
+  void LoadState(std::istream &is) override;
+
  private:
   uint8_t regHi = 0x00;
   uint8_t regLo = 0x00;

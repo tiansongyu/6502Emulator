@@ -44,6 +44,7 @@
 #include "Nes6502.h"
 
 #include "Bus.h"
+#include "StateIO.h"
 
 // The opcode translation table. 16x16 entries: the bottom 4 bits of the
 // instruction byte choose the column, the top 4 bits choose the row.
@@ -1111,6 +1112,34 @@ uint8_t Nes6502::XXX() { return 0; }
 // HELPER FUNCTIONS
 
 bool Nes6502::complete() { return cycles == 0; }
+
+void Nes6502::SaveState(std::ostream &os) const {
+  PutPod(os, a);
+  PutPod(os, x);
+  PutPod(os, y);
+  PutPod(os, stkp);
+  PutPod(os, pc);
+  PutPod(os, status);
+  PutPod(os, fetched);
+  PutPod(os, addr_abs);
+  PutPod(os, addr_rel);
+  PutPod(os, opcode);
+  PutPod(os, cycles);
+}
+
+void Nes6502::LoadState(std::istream &is) {
+  GetPod(is, a);
+  GetPod(is, x);
+  GetPod(is, y);
+  GetPod(is, stkp);
+  GetPod(is, pc);
+  GetPod(is, status);
+  GetPod(is, fetched);
+  GetPod(is, addr_abs);
+  GetPod(is, addr_rel);
+  GetPod(is, opcode);
+  GetPod(is, cycles);
+}
 
 // This is the disassembly function. Its workings are not required for
 // emulation. It is merely a convenience function to turn the binary instruction

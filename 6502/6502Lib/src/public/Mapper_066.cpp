@@ -1,6 +1,8 @@
 // Copyright [2020-2022] <tiansongyu>
 #include "Mapper_066.h"
 
+#include "StateIO.h"
+
 Mapper_066::Mapper_066(uint8_t prgBanks, uint8_t chrBanks)
     : Mapper(prgBanks, chrBanks) {
   reset();
@@ -57,4 +59,16 @@ bool Mapper_066::ppuMapRead(uint16_t addr, uint32_t &mapped_addr) {
 
 bool Mapper_066::ppuMapWrite(uint16_t /*addr*/, uint32_t & /*mapped_addr*/) {
   return false;
+}
+
+void Mapper_066::SaveState(std::ostream &os) const {
+  Mapper::SaveState(os);
+  PutPod(os, regLo);
+  PutPod(os, regHi);
+}
+
+void Mapper_066::LoadState(std::istream &is) {
+  Mapper::LoadState(is);
+  GetPod(is, regLo);
+  GetPod(is, regHi);
 }

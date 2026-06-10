@@ -18,6 +18,10 @@
 // 6502Emulator is actively maintained and developed!
 #include "Bus.h"
 
+#include <cstring>
+
+#include "StateIO.h"
+
 Bus::Bus() {
   // 在nes最初启动时，连接cpu到bus
   cpu.ConnectBus(this);
@@ -201,4 +205,52 @@ bool Bus::clock() {
   odd_cycle = !odd_cycle;
   // 如果准备好声音数据，开始发声。。
   return bAudioSampleReady;
+}
+
+static const char kSaveMagic[4] = {'N', 'E', 'S', 'S'};
+static const uint32_t kSaveVersion = 1;
+
+void Bus::SaveState(std::ostream &os) const {
+  PutPod(os, kSaveMagic);
+  PutPod(os, kSaveVersion);
+  PutPod(os, cpuRam);
+  PutPod(os, controller);
+  PutPod(os, controller_state);
+  PutPod(os, cpu_phase);
+  PutPod(os, odd_cycle);
+  PutPod(os, dma_page);
+  PutPod(os, dma_addr);
+  PutPod(os, dma_data);
+  PutPod(os, dma_dummy);
+  PutPod(os, dma_transfer);
+  PutPod(os, dAudioTime);
+  cpu.SaveState(os);
+  ppu.SaveState(os);
+  apu.SaveState(os);
+  cart->SaveState(os);
+}
+
+bool Bus::LoadState(std::istream &is) {
+  char magic[4];
+  uint32_t version = 0;
+  GetPod(is, magic);
+  GetPod(is, version);
+  if (memcmp(magic, kSaveMagic, 4) != 0 || version != kSaveVersion)
+    return false;
+  GetPod(is, cpuRam);
+  GetPod(is, controller);
+  GetPod(is, controller_state);
+  GetPod(is, cpu_phase);
+  GetPod(is, odd_cycle);
+  GetPod(is, dma_page);
+  GetPod(is, dma_addr);
+  GetPod(is, dma_data);
+  GetPod(is, dma_dummy);
+  GetPod(is, dma_transfer);
+  GetPod(is, dAudioTime);
+  cpu.LoadState(is);
+  ppu.LoadState(is);
+  apu.LoadState(is);
+  if (!cart->LoadState(is)) return false;
+  return is.good();
 }

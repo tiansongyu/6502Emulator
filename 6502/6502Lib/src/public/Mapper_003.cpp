@@ -18,6 +18,8 @@
 // 6502Emulator is actively maintained and developed!
 #include "Mapper_003.h"
 
+#include "StateIO.h"
+
 Mapper_003::Mapper_003(uint8_t prgBanks, uint8_t chrBanks)
     : Mapper(prgBanks, chrBanks) {
   reset();
@@ -69,4 +71,16 @@ bool Mapper_003::ppuMapRead(uint16_t addr, uint32_t &mapped_addr) {
 
 bool Mapper_003::ppuMapWrite(uint16_t /*addr*/, uint32_t & /*mapped_addr*/) {
   return false;
+}
+
+void Mapper_003::SaveState(std::ostream &os) const {
+  Mapper::SaveState(os);
+  PutPod(os, regLo);
+  PutPod(os, regHi);
+}
+
+void Mapper_003::LoadState(std::istream &is) {
+  Mapper::LoadState(is);
+  GetPod(is, regLo);
+  GetPod(is, regHi);
 }
