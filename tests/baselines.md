@@ -16,12 +16,15 @@
 
 | ROM | mapper | start帧 | CUMULATIVE |
 | --- | --- | --- | --- |
-| smb.nes | 0 | 60 | ed5913ffb0d9c5cc |
-| Castlevania2.nes | 1 | 120 | c2841682c4095f4d |
-| contra.nes | 2 | 120 | fa6b791be024bd34 |
-| SolomonsKey.nes | 3 | 120 | eb76170fa663b974 |
-| Mega Man 3 (USA).nes | 4 | 120 | 64530862d17328c4 |
-| Doraemon (J).nes | 66 | 120 | 36de075395476135 |
+| smb.nes | 0 | 60 | 347fa787444eaea5 |
+| Castlevania2.nes | 1 | 120 | 404fe22aedd947d0 |
+| contra.nes | 2 | 120 | b91409b7b5dad7d4 |
+| SolomonsKey.nes | 3 | 120 | 188733b7d5e43f14 |
+| Mega Man 3 (USA).nes | 4 | 120 | 3d97698de547d0f1 |
+| Doraemon (J).nes | 66 | 120 | 7fcc11a73649f0b5 |
+
+（PPU 重构补全 reset() 初始化后重新生成；自此累计哈希跨二进制确定，
+恢复为主要判据。）
 
 ## APU：音频指标
 

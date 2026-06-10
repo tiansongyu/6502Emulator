@@ -6,6 +6,7 @@
 
 #include "Cartridge.h"
 #include "olcPixelGameEngine.h"
+
 class Nes2C02 {
  public:
   Nes2C02();
@@ -19,20 +20,13 @@ class Nes2C02 {
  private:
   olc::Pixel palScreen[0x40];                     // 颜色
   olc::Sprite sprScreen = olc::Sprite(256, 240);  // 显示器
-  olc::Sprite sprNameTable[2] = {
-      olc::Sprite(256, 240), olc::Sprite(256, 240)};  // 读取需要显示的名称表
   olc::Sprite sprPatternTable[2] = {olc::Sprite(128, 128),
                                     olc::Sprite(128, 128)};  // 需要显示的模式表
-  olc::Sprite sprSpriteTitle[26];  // 0-26个OAM中的精灵
 
  public:
   // 调试函数(打印各种信息)
   olc::Sprite &GetScreen();                                  // 屏幕
-  olc::Sprite &GetNameTable(uint8_t i);                      // 获取名称表
   olc::Sprite &GetPatternTable(uint8_t i, uint8_t palette);  // 获取模式表
-  //   olc::Sprite &GetSpriteTitle(uint8_t x,  // 打印部分精灵OAM信息
-  //                               uint8_t y, uint8_t title, uint8_t attr,
-  //                               uint8_t palette, int i);
 
   olc::Pixel &GetColourFromPaletteRam(uint8_t palette,
                                       uint8_t pixel);  // 获取调色后的pixel
@@ -139,7 +133,7 @@ class Nes2C02 {
   uint8_t oam_addr = 0x00;
 
   sObjectAttributeEntry spriteScanline[8];  // 在一行中，存放的最多8个精灵
-  uint8_t sprite_count;                     // 在一行中的精灵数量
+  uint8_t sprite_count = 0;                 // 在一行中的精灵数量
   uint8_t
       sprite_shifter_pattern_lo[8];  // 下一行将要绘制的精灵像素的低8个字节 信息
   uint8_t sprite_shifter_pattern_hi
@@ -169,6 +163,28 @@ class Nes2C02 {
  private:
   // 卡带
   std::shared_ptr<Cartridge> cart;
+
+  // 名称表/调色板内存的镜像寻址。两个 helper 返回字节引用，
+  // 读写共用同一份镜像逻辑。
+  uint8_t &NametableByte(uint16_t addr);
+  uint8_t &PaletteByte(uint16_t addr);
+
+  // 背景滚动“指针”操作（loopy 寄存器）
+  void IncrementScrollX();
+  void IncrementScrollY();
+  void TransferAddressX();
+  void TransferAddressY();
+  void LoadBackgroundShifters();
+  void UpdateShifters();
+
+  // clock() 的四个阶段
+  void BackgroundFetch();   // 可见扫描线上的背景瓦片状态机
+  void ForegroundFetch();   // 周期 257 评估精灵 / 周期 340 装载移位器
+  void ComposePixel();      // 背景与前景合成并写入屏幕
+  void AdvanceCounters();   // 推进 cycle/scanline 并通知 mapper
+
+  // 计算精灵某一行（低位面）的图样地址，统一处理 8x8 / 8x16 与垂直翻转
+  uint16_t SpritePatternAddrLo(const sObjectAttributeEntry &s) const;
 
  public:
   // 外部接口
