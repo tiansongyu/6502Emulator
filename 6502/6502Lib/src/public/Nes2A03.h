@@ -36,36 +36,17 @@
         (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
         OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-
         Relevant Video: https://youtu.be/xdzOvpYPmGE
-
-        Links
-        ~~~~~
-        YouTube:	https://www.youtube.com/javidx9
-                                https://www.youtube.com/javidx9extra
-        Discord:	https://discord.gg/WhwHUMV
-        Twitter:	https://www.twitter.com/javidx9
-        Twitch:		https://www.twitch.tv/javidx9
-        GitHub:		https://www.github.com/onelonecoder
-        Patreon:	https://www.patreon.com/javidx9
-        Homepage:	https://www.onelonecoder.com
 
         Author
         ~~~~~~
-        David Barr, aka javidx9, �OneLoneCoder 2019
+        David Barr, aka javidx9, OneLoneCoder 2019
 */
 
-/*
-
-IMPORTANT !!!!
-
-THIS CLASS IS VERY UNFINISHED
-
-*/
+// 实现状态：脉冲 1/2 与噪声通道可用；三角波与 DMC 尚未实现。
 #pragma once
 
 #include <cstdint>
-#include <functional>
 
 class Nes2A03 {
  public:
@@ -85,31 +66,14 @@ class Nes2A03 {
   uint32_t clock_counter = 0;
 
  private:
-  static uint8_t length_table[];
+  static const uint8_t length_table[];
 
  private:
   // Sequencer Module
   // ~~~~~~~~~~~~~~~~
-  // The purpose of the sequencer is to output a '1' after a given
-  // interval. It does this by counting down from a start value,
-  // when that value is < 0, it gets reset, and an internal "rotary"
-  // buffer is shifted. The nature of ths shifted pattern is different
-  // depending upon the channel, or module that requires sequencing.
-  // For example, the square wave channels simply rotate the preset
-  // sequence, but the noise channel needs to generate pseudo-random
-  // outputs originating from the preset sequence.
-  //
-  // Consider a square wave channel. A preset sequence of 01010101
-  // will output a 1 more freqently than 00010001, assuming we
-  // always output the LSB. The speed of this output is also
-  // governed by the timer counting down. The frequency is higher
-  // for small timer values, and lower for larger. Increasing
-  // the frequency of the output potentially increases the
-  // audible frequency. In fact, this is how the pulse channels
-  // fundamentally work. A "duty cycle" shape is loaded into the
-  // sequencer and the timer is used to vary the pitch, yielding
-  // notes.
-
+  // 序列器以 reload 为周期倒数计时，归零时旋转内部模板并输出其
+  // 最低位。脉冲通道的模板是占空比图样，噪声通道的模板是 LFSR。
+  // 输出频率随 reload 增大而降低——这就是音高的来源。
   struct sequencer {
     uint32_t sequence = 0x00000000;
     uint32_t new_sequence = 0x00000000;
@@ -117,9 +81,8 @@ class Nes2A03 {
     uint16_t reload = 0x0000;
     uint8_t output = 0x00;
 
-    // Pass in a lambda function to manipulate the sequence as required
-    // by the owner of this sequencer module
-    uint8_t clock(bool bEnable, std::function<void(uint32_t &s)> funcManip) {
+    // funcManip 由通道决定如何旋转/反馈模板（无捕获 lambda 即可转换）
+    uint8_t clock(bool bEnable, void (*funcManip)(uint32_t &s)) {
       if (bEnable) {
         timer--;
         if (timer == 0xFFFF) {
@@ -132,6 +95,7 @@ class Nes2A03 {
     }
   };
 
+  // 长度计数器：到 0 时静音通道；halt 暂停倒数
   struct lengthcounter {
     uint8_t counter = 0x00;
     uint8_t clock(bool bEnable, bool bHalt) {
@@ -143,6 +107,8 @@ class Nes2A03 {
     }
   };
 
+  // 包络发生器：disable 时输出恒定音量，否则按 divider 速度衰减，
+  // loop 模式下衰减到 0 后重新从 15 开始
   struct envelope {
     void clock(bool bLoop) {
       if (!start) {
@@ -153,10 +119,12 @@ class Nes2A03 {
             if (bLoop) {
               decay_count = 15;
             }
-          } else
+          } else {
             decay_count--;
-        } else
+          }
+        } else {
           divider_count--;
+        }
       } else {
         start = false;
         decay_count = 15;
@@ -178,10 +146,8 @@ class Nes2A03 {
     uint16_t decay_count = 0;
   };
 
-  struct oscpulse {
-    double dutycycle = 0;
-  };
-
+  // 扫频单元：周期性地按 shift 改变脉冲通道的 timer 周期（滑音），
+  // 目标周期越界时静音通道
   struct sweeper {
     bool enabled = false;
     bool down = false;
@@ -212,64 +178,43 @@ class Nes2A03 {
         }
       }
 
-      // if (enabled)
-      {
-        if (timer == 0 || reload) {
-          timer = period;
-          reload = false;
-        } else
-          timer--;
-
-        mute = (target < 8) || (target > 0x7FF);
+      if (timer == 0 || reload) {
+        timer = period;
+        reload = false;
+      } else {
+        timer--;
       }
+
+      mute = (target < 8) || (target > 0x7FF);
 
       return changed;
     }
   };
 
-  // One-pole low-pass filter state per channel (smooths sequencer steps,
-  // attenuates aliasing before sample-rate decimation in Bus::clock).
-  // Cutoff fixed near the analog NES low-pass corner.
-  double pulse1_lp = 0.0;
-  double pulse2_lp = 0.0;
-  double noise_lp = 0.0;
-  // High-pass on the mixed signal removes DC bias so mute/unmute toggles
-  // do not produce a step click at the speaker.
+  // 一个发声通道的全部状态。脉冲 1/2 与噪声共用同一结构，
+  // 差异只在各自的序列器模板与门控规则里。
+  // lp 是通道的一阶低通滤波状态（在 Bus::clock 降采样到 44.1kHz 之前
+  // 完成抗混叠，截止频率取 NES 模拟输出级附近）。
+  struct Channel {
+    bool enable = false;
+    bool halt = false;
+    sequencer seq;
+    envelope env;
+    lengthcounter lc;
+    double lp = 0.0;
+  };
+
+  Channel pulse[2];
+  Channel noise;
+  sweeper sweep[2];  // 扫频单元只属于两个脉冲通道，与 pulse[] 同下标
+
+  // 混音后的一阶高通（DC blocker）：消除通道开关造成的直流台阶，
+  // 它们正是扬声器里"砰"声的来源。
   double mixer_hp_in = 0.0;
   double mixer_hp_out = 0.0;
 
-  // Square Wave Pulse Channel 1
-  bool pulse1_enable = false;
-  bool pulse1_halt = false;
-  double pulse1_sample = 0.0;
-  double pulse1_output = 0.0;
-  sequencer pulse1_seq;
-  oscpulse pulse1_osc;
-  envelope pulse1_env;
-  lengthcounter pulse1_lc;
-  sweeper pulse1_sweep;
-
-  // Square Wave Pulse Channel 2
-  bool pulse2_enable = false;
-  bool pulse2_halt = false;
-  double pulse2_sample = 0.0;
-  double pulse2_output = 0.0;
-  sequencer pulse2_seq;
-  oscpulse pulse2_osc;
-  envelope pulse2_env;
-  lengthcounter pulse2_lc;
-  sweeper pulse2_sweep;
-
-  // Noise Channel
-  bool noise_enable = false;
-  bool noise_halt = false;
-  envelope noise_env;
-  lengthcounter noise_lc;
-  sequencer noise_seq;
-  double noise_sample = 0;
-  double noise_output = 0;
-
  public:
+  // 调试可视化：当前各通道的周期值（2047 表示静音）
   uint16_t pulse1_visual = 0;
   uint16_t pulse2_visual = 0;
   uint16_t noise_visual = 0;
