@@ -83,7 +83,6 @@ class Nes2A03 {
  private:
   uint32_t frame_clock_counter = 0;
   uint32_t clock_counter = 0;
-  bool bUseRawMode = false;
 
  private:
   static uint8_t length_table[];
@@ -179,35 +178,8 @@ class Nes2A03 {
     uint16_t decay_count = 0;
   };
 
-  struct oscpulse {  // 脉冲
-    double frequency = 0;
+  struct oscpulse {
     double dutycycle = 0;
-    double amplitude = 1;
-    double pi = 3.14159;
-    double harmonics = 20;
-
-    double sample(double t) {
-      double a = 0;
-      double b = 0;
-      double p = dutycycle * 2.0 * pi;
-
-      auto approxsin = [](float t) {
-        float j = t * 0.15915;
-        j = j - static_cast<int>(j);
-        return 20.785f * j * (j - 0.5) * (j - 1.0f);
-      };
-
-      for (double n = 1; n < harmonics; n++) {
-        double c = n * frequency * 2.0 * pi * t;
-        a += -approxsin(c) / n;
-        b += -approxsin(c - p * n) / n;
-
-        // a += -sin(c) / n;
-        // b += -sin(c - p * n) / n;
-      }
-
-      return (2.0 * amplitude / pi) * (a - b);
-    }
   };
 
   struct sweeper {
@@ -255,7 +227,16 @@ class Nes2A03 {
     }
   };
 
-  double dGlobalTime = 0.0;
+  // One-pole low-pass filter state per channel (smooths sequencer steps,
+  // attenuates aliasing before sample-rate decimation in Bus::clock).
+  // Cutoff fixed near the analog NES low-pass corner.
+  double pulse1_lp = 0.0;
+  double pulse2_lp = 0.0;
+  double noise_lp = 0.0;
+  // High-pass on the mixed signal removes DC bias so mute/unmute toggles
+  // do not produce a step click at the speaker.
+  double mixer_hp_in = 0.0;
+  double mixer_hp_out = 0.0;
 
   // Square Wave Pulse Channel 1
   bool pulse1_enable = false;

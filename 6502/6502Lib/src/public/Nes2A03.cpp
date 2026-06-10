@@ -211,8 +211,6 @@ void Nes2A03::clock() {
   bool bQuarterFrameClock = false;
   bool bHalfFrameClock = false;
 
-  dGlobalTime += (0.3333333333 / 1789773);
-
   if (clock_counter % 6 == 0) {
     frame_clock_counter++;
 
@@ -255,66 +253,56 @@ void Nes2A03::clock() {
       pulse2_sweep.clock(pulse2_seq.reload, 1);
     }
 
-    //  if (bUseRawMode)
-    {
-      // Update Pulse1 Channel ================================
-      pulse1_seq.clock(pulse1_enable, [](uint32_t &s) {
-        // Shift right by 1 bit, wrapping around
-        s = ((s & 0x0001) << 7) | ((s & 0x00FE) >> 1);
-      });
+    // Advance each channel's sequencer at the APU rate. The raw sequencer
+    // output (LSB of the rotating duty pattern) is the actual NES hardware
+    // signal; we then gate it by enable / length / sweep / timer and feed it
+    // into a one-pole low-pass to suppress the sub-sample step transitions
+    // that would otherwise alias when Bus::clock decimates to 44.1 kHz.
 
-      //    pulse1_sample = (double)pulse1_seq.output;
-    }
-    // else
-    {
-      pulse1_osc.frequency =
-          1789773.0 / (16.0 * static_cast<double>(pulse1_seq.reload + 1));
-      pulse1_osc.amplitude = static_cast<double>(pulse1_env.output - 1) / 16.0f;
-      pulse1_sample = pulse1_osc.sample(dGlobalTime);
-
-      if (pulse1_lc.counter > 0 && pulse1_seq.timer >= 8 &&
-          !pulse1_sweep.mute && pulse1_env.output > 2)
-        pulse1_output += (pulse1_sample - pulse1_output) * 0.5;
-      else
-        pulse1_output = 0;
-    }
-
-    // if (bUseRawMode)
-    {
-      // Update Pulse1 Channel ================================
-      pulse2_seq.clock(pulse2_enable, [](uint32_t &s) {
-        // Shift right by 1 bit, wrapping around
-        s = ((s & 0x0001) << 7) | ((s & 0x00FE) >> 1);
-      });
-
-      //    pulse2_sample = (double)pulse2_seq.output;
-    }
-    //  else
-    {
-      pulse2_osc.frequency =
-          1789773.0 / (16.0 * static_cast<double>(pulse2_seq.reload + 1));
-      pulse2_osc.amplitude = static_cast<double>(pulse2_env.output - 1) / 16.0;
-      pulse2_sample = pulse2_osc.sample(dGlobalTime);
-
-      if (pulse2_lc.counter > 0 && pulse2_seq.timer >= 8 &&
-          !pulse2_sweep.mute && pulse2_env.output > 2)
-        pulse2_output += (pulse2_sample - pulse2_output) * 0.5;
-      else
-        pulse2_output = 0;
-    }
-
+    pulse1_seq.clock(pulse1_enable, [](uint32_t &s) {
+      s = ((s & 0x0001) << 7) | ((s & 0x00FE) >> 1);
+    });
+    pulse2_seq.clock(pulse2_enable, [](uint32_t &s) {
+      s = ((s & 0x0001) << 7) | ((s & 0x00FE) >> 1);
+    });
     noise_seq.clock(noise_enable, [](uint32_t &s) {
       s = (((s & 0x0001) ^ ((s & 0x0002) >> 1)) << 14) | ((s & 0x7FFF) >> 1);
     });
 
-    if (noise_lc.counter > 0 && noise_seq.timer >= 8) {
-      noise_output = static_cast<double>(noise_seq.output) *
-                     (static_cast<double>(noise_env.output - 1) / 16.0);
+    auto gate_pulse = [](bool enable, const sequencer &seq,
+                         const lengthcounter &lc, const sweeper &sw,
+                         const envelope &env) -> double {
+      if (!enable) return 0.0;
+      if (lc.counter == 0) return 0.0;
+      if (seq.timer < 8) return 0.0;
+      if (sw.mute) return 0.0;
+      return static_cast<double>(seq.output) * static_cast<double>(env.output);
+    };
+
+    double p1_raw = gate_pulse(pulse1_enable, pulse1_seq, pulse1_lc,
+                               pulse1_sweep, pulse1_env);
+    double p2_raw = gate_pulse(pulse2_enable, pulse2_seq, pulse2_lc,
+                               pulse2_sweep, pulse2_env);
+    double n_raw = 0.0;
+    if (noise_enable && noise_lc.counter > 0 && noise_seq.timer >= 8) {
+      n_raw =
+          static_cast<double>(noise_seq.output) * static_cast<double>(noise_env.output);
     }
 
-    if (!pulse1_enable) pulse1_output = 0;
-    if (!pulse2_enable) pulse2_output = 0;
-    if (!noise_enable) noise_output = 0;
+    // One-pole LPF: y += a * (x - y)
+    // Sample rate at this point is APU rate ~894.886 kHz (NES master / 6).
+    // a = 1 - exp(-2*pi*fc/fs); fc=14 kHz => a ~= 0.0961.
+    constexpr double kLpAlpha = 0.0961;
+    pulse1_lp += kLpAlpha * (p1_raw - pulse1_lp);
+    pulse2_lp += kLpAlpha * (p2_raw - pulse2_lp);
+    noise_lp += kLpAlpha * (n_raw - noise_lp);
+
+    pulse1_sample = pulse1_lp;
+    pulse2_sample = pulse2_lp;
+    noise_sample = noise_lp;
+    pulse1_output = pulse1_lp;
+    pulse2_output = pulse2_lp;
+    noise_output = noise_lp;
   }
 
   // Frequency sweepers change at high frequency
@@ -334,13 +322,25 @@ void Nes2A03::clock() {
 }
 
 double Nes2A03::GetOutputSample() {
-  if (bUseRawMode) {
-    return (pulse1_sample - 0.5) * 0.5 + (pulse2_sample - 0.5) * 0.5;
-  } else {
-    return ((1.0 * pulse1_output) - 0.8) * 0.1 +
-           ((1.0 * pulse2_output) - 0.8) * 0.1 +
-           ((2.0 * (noise_output - 0.5))) * 0.1;
-  }
+  // NES non-linear mixer, linear approximation (nesdev wiki).
+  //   pulse_out = 0.00752 * (pulse1 + pulse2)
+  //   tnd_out   = 0.00851*triangle + 0.00494*noise + 0.00335*dmc
+  // Pulse / noise volumes are 0..15. Triangle and DMC are not implemented.
+  double pulse_out = 0.00752 * (pulse1_output + pulse2_output);
+  double tnd_out = 0.00494 * noise_output;
+  double mixed = pulse_out + tnd_out;
+
+  // DC blocker (one-pole high-pass) on the mixed signal. The previous code
+  // hard-zeroed channels on mute and offset the output by -0.16, producing a
+  // step every time a channel toggled. Removing DC eliminates that click.
+  //   y[n] = x[n] - x[n-1] + R * y[n-1], R close to 1.
+  constexpr double kHpR = 0.9985;
+  double y = mixed - mixer_hp_in + kHpR * mixer_hp_out;
+  mixer_hp_in = mixed;
+  mixer_hp_out = y;
+
+  // Mixer formula peaks around 0.3; lift to roughly the previous output level.
+  return y * 2.5;
 }
 
 void Nes2A03::reset() {}
