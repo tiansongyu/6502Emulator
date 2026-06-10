@@ -702,71 +702,11 @@ void Nes2C02::clock() {
   AdvanceCounters();
 }
 
-void Nes2C02::SaveState(std::ostream &os) const {
-  PutPod(os, tblName);
-  PutPod(os, tblPattern);
-  PutPod(os, tblPalette);
-  PutPod(os, status.reg);
-  PutPod(os, mask.reg);
-  PutPod(os, control.reg);
-  PutPod(os, vram_addr.reg);
-  PutPod(os, tram_addr.reg);
-  PutPod(os, fine_x);
-  PutPod(os, address_latch);
-  PutPod(os, ppu_data_buffer);
-  PutPod(os, scanline);
-  PutPod(os, cycle);
-  PutPod(os, bg_next_tile_id);
-  PutPod(os, bg_next_tile_attrib);
-  PutPod(os, bg_next_tile_lsb);
-  PutPod(os, bg_next_tile_msb);
-  PutPod(os, bg_shifter_pattern_lo);
-  PutPod(os, bg_shifter_pattern_hi);
-  PutPod(os, bg_shifter_attrib_lo);
-  PutPod(os, bg_shifter_attrib_hi);
-  PutPod(os, OAM);
-  PutPod(os, oam_addr);
-  PutPod(os, spriteScanline);
-  PutPod(os, sprite_count);
-  PutPod(os, sprite_shifter_pattern_lo);
-  PutPod(os, sprite_shifter_pattern_hi);
-  PutPod(os, bSpriteZeroHitPossible);
-  PutPod(os, bSpriteZeroBeingRendered);
-  PutPod(os, odd_frame);
-  PutPod(os, nmi);
+void Nes2C02::SaveState(std::ostream &os) {
+  VisitState([&os](auto &v) { PutPod(os, v); });
 }
 
 void Nes2C02::LoadState(std::istream &is) {
-  GetPod(is, tblName);
-  GetPod(is, tblPattern);
-  GetPod(is, tblPalette);
-  GetPod(is, status.reg);
-  GetPod(is, mask.reg);
-  GetPod(is, control.reg);
-  GetPod(is, vram_addr.reg);
-  GetPod(is, tram_addr.reg);
-  GetPod(is, fine_x);
-  GetPod(is, address_latch);
-  GetPod(is, ppu_data_buffer);
-  GetPod(is, scanline);
-  GetPod(is, cycle);
-  GetPod(is, bg_next_tile_id);
-  GetPod(is, bg_next_tile_attrib);
-  GetPod(is, bg_next_tile_lsb);
-  GetPod(is, bg_next_tile_msb);
-  GetPod(is, bg_shifter_pattern_lo);
-  GetPod(is, bg_shifter_pattern_hi);
-  GetPod(is, bg_shifter_attrib_lo);
-  GetPod(is, bg_shifter_attrib_hi);
-  GetPod(is, OAM);
-  GetPod(is, oam_addr);
-  GetPod(is, spriteScanline);
-  GetPod(is, sprite_count);
-  GetPod(is, sprite_shifter_pattern_lo);
-  GetPod(is, sprite_shifter_pattern_hi);
-  GetPod(is, bSpriteZeroHitPossible);
-  GetPod(is, bSpriteZeroBeingRendered);
-  GetPod(is, odd_frame);
-  GetPod(is, nmi);
+  VisitState([&is](auto &v) { GetPod(is, v); });
   frame_complete = false;
 }

@@ -16,14 +16,13 @@ class Mapper_004 : public Mapper {
   bool ppuMapWrite(uint16_t addr, uint32_t &mapped_addr) override;
   void reset() override;
 
-  void SaveState(std::ostream &os) const override;
+  void SaveState(std::ostream &os) override;
   void LoadState(std::istream &is) override;
 
   MIRROR mirror();
 
   // IRQ Interface
   bool irqState();
-  void irqClear();
 
   // Scanline Counting
   void scanline();
@@ -45,4 +44,20 @@ class Mapper_004 : public Mapper {
   // No local equipment required
 
   MIRROR mirrormode = MIRROR::HORIZONTAL;
+
+  // 存档字段的唯一清单：SaveState/LoadState 共用
+  template <typename F>
+  void VisitState(F f) {
+    f(nBankSelectRegister);
+    f(nBankData);
+    f(nPrgRamProtect);
+    f(nIrqCounter);
+    f(nIrqLatch);
+    f(pRegister);
+    f(pCHRBank);
+    f(pPRGBank);
+    f(bIRQEnable);
+    f(bIRQActive);
+    f(mirrormode);
+  }
 };

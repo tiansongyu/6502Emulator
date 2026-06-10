@@ -207,7 +207,7 @@ MIRROR Cartridge::Mirror() {
 std::shared_ptr<Mapper> Cartridge::GetMapper() { return pMapper; }
 // mapper 归属校验由 Bus::LoadState 在文件头里完成（必须先于任何
 // 状态改写），这里只搬运内容。
-void Cartridge::SaveState(std::ostream &os) const {
+void Cartridge::SaveState(std::ostream &os) {
   if (nCHRBanks == 0) PutBytes(os, vCHRMemory);  // CHR RAM 才有可变内容
   pMapper->SaveState(os);
 }

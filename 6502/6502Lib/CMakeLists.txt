@@ -27,6 +27,7 @@ set(M6502_SOURCES
     "src/public/Nes6502.cpp"
     "src/public/Nes2A03.h"
     "src/public/Nes2A03.cpp"
+    "src/public/StateIO.h"
 )
 
 source_group("src" FILES ${M6502_SOURCES})

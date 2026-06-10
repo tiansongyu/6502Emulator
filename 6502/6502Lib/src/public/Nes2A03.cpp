@@ -169,6 +169,10 @@ void Nes2A03::clock() {
     pulse[1].seq.clock(pulse[1].enable, RotatePulse);
     noise.seq.clock(noise.enable, ShiftNoise);
 
+    // 扫频单元跟踪当前周期，刷新静音判定（gate 在下面用到）
+    sweep[0].track(pulse[0].seq.reload);
+    sweep[1].track(pulse[1].seq.reload);
+
     // 硬件静音规则基于周期值（reload < 8 时超声波频段，强制静音），
     // 而不是正在倒数的 timer——后者每个周期都会扫过 0..7，会在波形上
     // 凿出周期性的缺口。
@@ -200,21 +204,6 @@ void Nes2A03::clock() {
     pulse[1].lp += kLpAlpha * (raw[1] - pulse[1].lp);
     noise.lp += kLpAlpha * (raw[2] - noise.lp);
   }
-
-  // 扫频单元的目标周期跟踪以高频进行
-  sweep[0].track(pulse[0].seq.reload);
-  sweep[1].track(pulse[1].seq.reload);
-
-  pulse1_visual =
-      (pulse[0].enable && pulse[0].env.output > 1 && !sweep[0].mute)
-          ? pulse[0].seq.reload
-          : 2047;
-  pulse2_visual =
-      (pulse[1].enable && pulse[1].env.output > 1 && !sweep[1].mute)
-          ? pulse[1].seq.reload
-          : 2047;
-  noise_visual =
-      (noise.enable && noise.env.output > 1) ? noise.seq.reload : 2047;
 
   if (++apu_phase == 6) apu_phase = 0;
 }
@@ -251,27 +240,12 @@ void Nes2A03::reset() {
   apu_phase = 0;
   mixer_hp_in = 0.0;
   mixer_hp_out = 0.0;
-  pulse1_visual = 2047;
-  pulse2_visual = 2047;
-  noise_visual = 2047;
 }
 
-void Nes2A03::SaveState(std::ostream &os) const {
-  PutPod(os, pulse);
-  PutPod(os, noise);
-  PutPod(os, sweep);
-  PutPod(os, frame_clock_counter);
-  PutPod(os, apu_phase);
-  PutPod(os, mixer_hp_in);
-  PutPod(os, mixer_hp_out);
+void Nes2A03::SaveState(std::ostream &os) {
+  VisitState([&os](auto &v) { PutPod(os, v); });
 }
 
 void Nes2A03::LoadState(std::istream &is) {
-  GetPod(is, pulse);
-  GetPod(is, noise);
-  GetPod(is, sweep);
-  GetPod(is, frame_clock_counter);
-  GetPod(is, apu_phase);
-  GetPod(is, mixer_hp_in);
-  GetPod(is, mixer_hp_out);
+  VisitState([&is](auto &v) { GetPod(is, v); });
 }

@@ -90,7 +90,7 @@ class Nes6502 {
   std::map<uint16_t, std::string> disassemble(uint16_t nStart, uint16_t nStop);
 
   // 存档：按字段顺序读写 CPU 的全部运行状态
-  void SaveState(std::ostream &os) const;
+  void SaveState(std::ostream &os);
   void LoadState(std::istream &is);
 
   // The status register stores 8 flags. Ive enumerated these here for ease
@@ -159,6 +159,23 @@ class Nes6502 {
     uint8_t cycles;
   };
   static const Instruction lookup[256];
+
+  // 存档字段的唯一清单：SaveState/LoadState 都经由它访问，
+  // 字段增删只需要改这一处，两个方向不可能漂移。
+  template <typename F>
+  void VisitState(F f) {
+    f(a);
+    f(x);
+    f(y);
+    f(stkp);
+    f(pc);
+    f(status);
+    f(fetched);
+    f(addr_abs);
+    f(addr_rel);
+    f(opcode);
+    f(cycles);
+  }
 
   // Dispatch the addressing mode of the current instruction
   uint8_t DoAddressing(AM mode);

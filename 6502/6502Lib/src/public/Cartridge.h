@@ -63,7 +63,7 @@ class Cartridge {
 
   // 存档：mapper 寄存器 + PRG RAM + CHR RAM（ROM 内容不会变，不入档；
   // 记录 mapper 号用于加载时核对存档与卡带是否匹配）
-  void SaveState(std::ostream &os) const;
+  void SaveState(std::ostream &os);
   void LoadState(std::istream &is);
 
   MIRROR Mirror();

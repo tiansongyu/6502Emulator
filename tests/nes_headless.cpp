@@ -53,6 +53,14 @@ static std::shared_ptr<Cartridge> loadCart(const char *path) {
   return cart;
 }
 
+// 所有模式共用的上电流程：装卡带、设采样率、复位
+static void powerOn(Bus &nes, const char *rom) {
+  zeroRam(nes);
+  nes.insertCartridge(loadCart(rom));
+  nes.SetSampleFrequency(44100);
+  nes.reset();
+}
+
 static void stepInstruction(Bus &nes) {
   nes.cpu.clock();
   while (!nes.cpu.complete()) nes.cpu.clock();
@@ -82,18 +90,28 @@ static void runFrame(Bus &nes) {
   nes.ppu.frame_complete = false;
 }
 
+// 步进 n 帧并按 startAt 规则注入 Start 键
+static void stepFrames(Bus &nes, int n, int startAt, int base = 0) {
+  for (int f = 1; f <= n; f++) {
+    nes.controller[0] = startButton(startAt, base + f);
+    runFrame(nes);
+  }
+}
+
+// 当前帧缓冲的 FNV 哈希
+static uint64_t hashScreen(const Bus &nes, uint64_t h = 0xcbf29ce484222325ULL) {
+  return fnv1a(reinterpret_cast<const uint8_t *>(nes.ppu.GetScreen()),
+               256 * 240 * 4, h);
+}
+
 static int runFrames(const char *rom, int frames, int startAt) {
   Bus nes;
-  zeroRam(nes);
-  nes.insertCartridge(loadCart(rom));
-  nes.SetSampleFrequency(44100);
-  nes.reset();
+  powerOn(nes, rom);
   uint64_t cumulative = 0xcbf29ce484222325ULL;
   for (int f = 1; f <= frames; f++) {
     nes.controller[0] = startButton(startAt, f);
     runFrame(nes);
-    const uint8_t *px = reinterpret_cast<const uint8_t *>(nes.ppu.GetScreen());
-    uint64_t h = fnv1a(px, 256 * 240 * 4);
+    uint64_t h = hashScreen(nes);
     cumulative = fnv1a(reinterpret_cast<const uint8_t *>(&h), 8, cumulative);
     if (f % 30 == 0) printf("frame %4d hash %016" PRIx64 "\n", f, h);
   }
@@ -103,10 +121,7 @@ static int runFrames(const char *rom, int frames, int startAt) {
 
 static int runAudio(const char *rom, double seconds, int startAt) {
   Bus nes;
-  zeroRam(nes);
-  nes.insertCartridge(loadCart(rom));
-  nes.SetSampleFrequency(44100);
-  nes.reset();
+  powerOn(nes, rom);
   const long want = static_cast<long>(seconds * 44100.0);
   long got = 0, clicks = 0, frame = 0;
   double prev = 0.0, maxDelta = 0.0, sum = 0.0, sumSq = 0.0;
@@ -145,14 +160,8 @@ static int runAudio(const char *rom, double seconds, int startAt) {
 // 供外部工具转成图片人工查验画面。
 static int runDump(const char *rom, int frame, int startAt, const char *out) {
   Bus nes;
-  zeroRam(nes);
-  nes.insertCartridge(loadCart(rom));
-  nes.SetSampleFrequency(44100);
-  nes.reset();
-  for (int f = 1; f <= frame; f++) {
-    nes.controller[0] = startButton(startAt, f);
-    runFrame(nes);
-  }
+  powerOn(nes, rom);
+  stepFrames(nes, frame, startAt);
   FILE *fp = fopen(out, "wb");
   if (!fp) return 1;
   fwrite(nes.ppu.GetScreen(), 4, 256 * 240, fp);
@@ -165,14 +174,8 @@ static int runDump(const char *rom, int frame, int startAt, const char *out) {
 // b 帧；两次哈希必须一致，否则存档遗漏了某些机器状态。
 static int runSaveTest(const char *rom, int a, int b, int startAt) {
   Bus nes;
-  zeroRam(nes);
-  nes.insertCartridge(loadCart(rom));
-  nes.SetSampleFrequency(44100);
-  nes.reset();
-  for (int f = 1; f <= a; f++) {
-    nes.controller[0] = startButton(startAt, f);
-    runFrame(nes);
-  }
+  powerOn(nes, rom);
+  stepFrames(nes, a, startAt);
 
   std::stringstream state;
   nes.SaveState(state);
@@ -182,8 +185,7 @@ static int runSaveTest(const char *rom, int a, int b, int startAt) {
     for (int f = 0; f < b; f++) {
       n.controller[0] = 0;
       runFrame(n);
-      h = fnv1a(reinterpret_cast<const uint8_t *>(n.ppu.GetScreen()),
-                256 * 240 * 4, h);
+      h = hashScreen(n, h);
     }
     return h;
   };
@@ -209,8 +211,10 @@ int main(int argc, char **argv) {
             "usage: %s trace <rom> <count>\n"
             "       %s frames <rom> <n> [press-start-frame]\n"
             "       %s audio <rom> <seconds> [press-start-frame]\n"
-            "       %s dump <rom> <frame> <press-start-frame|0> <out.rgba>\n",
-            argv[0], argv[0], argv[0], argv[0]);
+            "       %s dump <rom> <frame> <press-start-frame|0> <out.rgba>\n"
+            "       %s savetest <rom> <warmup-frames> <verify-frames> "
+            "<press-start-frame|0>\n",
+            argv[0], argv[0], argv[0], argv[0], argv[0]);
     return 2;
   }
   std::string mode = argv[1];

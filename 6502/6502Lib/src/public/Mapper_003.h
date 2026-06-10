@@ -33,11 +33,18 @@ class Mapper_003 : public Mapper {
   bool ppuMapWrite(uint16_t addr, uint32_t &mapped_addr) override;
   void reset() override;
 
-  void SaveState(std::ostream &os) const override;
+  void SaveState(std::ostream &os) override;
   void LoadState(std::istream &is) override;
 
  private:
   uint8_t regHi = 0x00;
   uint8_t regLo = 0x00;
   // No local equipment required
+
+  // 存档字段的唯一清单：SaveState/LoadState 共用
+  template <typename F>
+  void VisitState(F f) {
+    f(regLo);
+    f(regHi);
+  }
 };

@@ -248,30 +248,12 @@ void Mapper_001::reset() {
 
 MIRROR Mapper_001::mirror() { return mirrormode; }
 
-void Mapper_001::SaveState(std::ostream &os) const {
+void Mapper_001::SaveState(std::ostream &os) {
   Mapper::SaveState(os);
-  PutPod(os, nCHRBankSelect4Lo);
-  PutPod(os, nCHRBankSelect4Hi);
-  PutPod(os, nCHRBankSelect8);
-  PutPod(os, nPRGBankSelect16Lo);
-  PutPod(os, nPRGBankSelect16Hi);
-  PutPod(os, nPRGBankSelect32);
-  PutPod(os, nLoadRegister);
-  PutPod(os, nLoadRegisterCount);
-  PutPod(os, nControlRegister);
-  PutPod(os, mirrormode);
+  VisitState([&os](auto &v) { PutPod(os, v); });
 }
 
 void Mapper_001::LoadState(std::istream &is) {
   Mapper::LoadState(is);
-  GetPod(is, nCHRBankSelect4Lo);
-  GetPod(is, nCHRBankSelect4Hi);
-  GetPod(is, nCHRBankSelect8);
-  GetPod(is, nPRGBankSelect16Lo);
-  GetPod(is, nPRGBankSelect16Hi);
-  GetPod(is, nPRGBankSelect32);
-  GetPod(is, nLoadRegister);
-  GetPod(is, nLoadRegisterCount);
-  GetPod(is, nControlRegister);
-  GetPod(is, mirrormode);
+  VisitState([&is](auto &v) { GetPod(is, v); });
 }

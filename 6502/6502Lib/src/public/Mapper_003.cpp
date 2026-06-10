@@ -73,14 +73,12 @@ bool Mapper_003::ppuMapWrite(uint16_t /*addr*/, uint32_t & /*mapped_addr*/) {
   return false;
 }
 
-void Mapper_003::SaveState(std::ostream &os) const {
+void Mapper_003::SaveState(std::ostream &os) {
   Mapper::SaveState(os);
-  PutPod(os, regLo);
-  PutPod(os, regHi);
+  VisitState([&os](auto &v) { PutPod(os, v); });
 }
 
 void Mapper_003::LoadState(std::istream &is) {
   Mapper::LoadState(is);
-  GetPod(is, regLo);
-  GetPod(is, regHi);
+  VisitState([&is](auto &v) { GetPod(is, v); });
 }

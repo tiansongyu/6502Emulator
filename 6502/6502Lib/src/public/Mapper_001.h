@@ -32,7 +32,7 @@ class Mapper_001 : public Mapper {
   bool ppuMapWrite(uint16_t addr, uint32_t &mapped_addr) override;
   void reset() override;
 
-  void SaveState(std::ostream &os) const override;
+  void SaveState(std::ostream &os) override;
   void LoadState(std::istream &is) override;
 
   MIRROR mirror();
@@ -53,4 +53,19 @@ class Mapper_001 : public Mapper {
   // No local equipment required
 
   MIRROR mirrormode = MIRROR::HORIZONTAL;
+
+  // 存档字段的唯一清单：SaveState/LoadState 共用
+  template <typename F>
+  void VisitState(F f) {
+    f(nCHRBankSelect4Lo);
+    f(nCHRBankSelect4Hi);
+    f(nCHRBankSelect8);
+    f(nPRGBankSelect16Lo);
+    f(nPRGBankSelect16Hi);
+    f(nPRGBankSelect32);
+    f(nLoadRegister);
+    f(nLoadRegisterCount);
+    f(nControlRegister);
+    f(mirrormode);
+  }
 };

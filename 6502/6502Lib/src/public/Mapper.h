@@ -37,15 +37,15 @@ class Mapper {
   // Get Mirror mode if mapper is in control
   virtual MIRROR mirror();
 
-  // IRQ Interface
+  // IRQ 线电平。确认/释放由具体 mapper 的寄存器写入完成
+  //（如 MMC3 写 $E000），总线只看电平——不存在"替游戏清中断"。
   virtual bool irqState();
-  virtual void irqClear();
 
   // Scanline Counting
   virtual void scanline();
 
   // 存档：基类写 PRG RAM，各 mapper 追加自己的 bank/IRQ 寄存器
-  virtual void SaveState(std::ostream &os) const;
+  virtual void SaveState(std::ostream &os);
   virtual void LoadState(std::istream &is);
 
  protected:

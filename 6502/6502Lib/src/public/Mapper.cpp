@@ -17,10 +17,8 @@ MIRROR Mapper::mirror() { return MIRROR::HARDWARE; }
 
 bool Mapper::irqState() { return false; }
 
-void Mapper::irqClear() {}
-
 void Mapper::scanline() {}
 
-void Mapper::SaveState(std::ostream &os) const { PutBytes(os, prgRam); }
+void Mapper::SaveState(std::ostream &os) { PutBytes(os, prgRam); }
 
 void Mapper::LoadState(std::istream &is) { GetBytes(is, prgRam); }

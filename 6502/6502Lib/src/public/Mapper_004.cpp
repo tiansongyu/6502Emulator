@@ -173,8 +173,6 @@ MIRROR Mapper_004::mirror() { return mirrormode; }
 
 bool Mapper_004::irqState() { return bIRQActive; }
 
-void Mapper_004::irqClear() { bIRQActive = false; }
-
 void Mapper_004::scanline() {
   if (nIrqCounter == 0) {
     nIrqCounter = nIrqLatch;
@@ -185,32 +183,12 @@ void Mapper_004::scanline() {
   }
 }
 
-void Mapper_004::SaveState(std::ostream &os) const {
+void Mapper_004::SaveState(std::ostream &os) {
   Mapper::SaveState(os);
-  PutPod(os, nBankSelectRegister);
-  PutPod(os, nBankData);
-  PutPod(os, nPrgRamProtect);
-  PutPod(os, nIrqCounter);
-  PutPod(os, nIrqLatch);
-  PutPod(os, pRegister);
-  PutPod(os, pCHRBank);
-  PutPod(os, pPRGBank);
-  PutPod(os, bIRQEnable);
-  PutPod(os, bIRQActive);
-  PutPod(os, mirrormode);
+  VisitState([&os](auto &v) { PutPod(os, v); });
 }
 
 void Mapper_004::LoadState(std::istream &is) {
   Mapper::LoadState(is);
-  GetPod(is, nBankSelectRegister);
-  GetPod(is, nBankData);
-  GetPod(is, nPrgRamProtect);
-  GetPod(is, nIrqCounter);
-  GetPod(is, nIrqLatch);
-  GetPod(is, pRegister);
-  GetPod(is, pCHRBank);
-  GetPod(is, pPRGBank);
-  GetPod(is, bIRQEnable);
-  GetPod(is, bIRQActive);
-  GetPod(is, mirrormode);
+  VisitState([&is](auto &v) { GetPod(is, v); });
 }

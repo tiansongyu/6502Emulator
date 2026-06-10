@@ -63,7 +63,7 @@ class Nes2A03 {
   double GetOutputSample();
 
   // 存档：通道/扫频/帧计数器/滤波器状态
-  void SaveState(std::ostream &os) const;
+  void SaveState(std::ostream &os);
   void LoadState(std::istream &is);
 
  private:
@@ -220,10 +220,15 @@ class Nes2A03 {
   double mixer_hp_in = 0.0;
   double mixer_hp_out = 0.0;
 
- public:
-  // 调试可视化：当前各通道的周期值（2047 表示静音）
-  uint16_t pulse1_visual = 0;
-  uint16_t pulse2_visual = 0;
-  uint16_t noise_visual = 0;
-  uint16_t triangle_visual = 0;
+  // 存档字段的唯一清单：SaveState/LoadState 共用，增删字段只改这里
+  template <typename F>
+  void VisitState(F f) {
+    f(pulse);
+    f(noise);
+    f(sweep);
+    f(frame_clock_counter);
+    f(apu_phase);
+    f(mixer_hp_in);
+    f(mixer_hp_out);
+  }
 };

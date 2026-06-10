@@ -76,14 +76,12 @@ bool Mapper_002::ppuMapWrite(uint16_t addr, uint32_t &mapped_addr) {
   return false;
 }
 
-void Mapper_002::SaveState(std::ostream &os) const {
+void Mapper_002::SaveState(std::ostream &os) {
   Mapper::SaveState(os);
-  PutPod(os, regLo);
-  PutPod(os, regHi);
+  VisitState([&os](auto &v) { PutPod(os, v); });
 }
 
 void Mapper_002::LoadState(std::istream &is) {
   Mapper::LoadState(is);
-  GetPod(is, regLo);
-  GetPod(is, regHi);
+  VisitState([&is](auto &v) { GetPod(is, v); });
 }

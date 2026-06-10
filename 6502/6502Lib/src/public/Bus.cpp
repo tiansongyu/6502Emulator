@@ -223,18 +223,7 @@ void Bus::SaveState(std::ostream &os) {
   PutPod(os, kSaveMagic);
   PutPod(os, kSaveVersion);
   PutPod(os, cart->MapperId());
-  PutPod(os, cpuRam);
-  PutPod(os, controller);
-  PutPod(os, controller_state);
-  PutPod(os, controller_strobe);
-  PutPod(os, cpu_phase);
-  PutPod(os, odd_cycle);
-  PutPod(os, dma_page);
-  PutPod(os, dma_addr);
-  PutPod(os, dma_data);
-  PutPod(os, dma_dummy);
-  PutPod(os, dma_transfer);
-  PutPod(os, dAudioTime);
+  VisitState([&os](auto &v) { PutPod(os, v); });
   cpu.SaveState(os);
   ppu.SaveState(os);
   apu.SaveState(os);
@@ -253,18 +242,7 @@ bool Bus::LoadState(std::istream &is) {
   if (!is.good() || memcmp(magic, kSaveMagic, 4) != 0 ||
       version != kSaveVersion || mapper_id != cart->MapperId())
     return false;
-  GetPod(is, cpuRam);
-  GetPod(is, controller);
-  GetPod(is, controller_state);
-  GetPod(is, controller_strobe);
-  GetPod(is, cpu_phase);
-  GetPod(is, odd_cycle);
-  GetPod(is, dma_page);
-  GetPod(is, dma_addr);
-  GetPod(is, dma_data);
-  GetPod(is, dma_dummy);
-  GetPod(is, dma_transfer);
-  GetPod(is, dAudioTime);
+  VisitState([&is](auto &v) { GetPod(is, v); });
   cpu.LoadState(is);
   ppu.LoadState(is);
   apu.LoadState(is);

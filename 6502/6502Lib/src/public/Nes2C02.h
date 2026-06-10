@@ -165,6 +165,42 @@ class Nes2C02 {
   // 卡带
   std::shared_ptr<Cartridge> cart;
 
+  // 存档字段的唯一清单：SaveState/LoadState 共用，增删字段只改这里
+  template <typename F>
+  void VisitState(F f) {
+    f(tblName);
+    f(tblPattern);
+    f(tblPalette);
+    f(status.reg);
+    f(mask.reg);
+    f(control.reg);
+    f(vram_addr.reg);
+    f(tram_addr.reg);
+    f(fine_x);
+    f(address_latch);
+    f(ppu_data_buffer);
+    f(scanline);
+    f(cycle);
+    f(bg_next_tile_id);
+    f(bg_next_tile_attrib);
+    f(bg_next_tile_lsb);
+    f(bg_next_tile_msb);
+    f(bg_shifter_pattern_lo);
+    f(bg_shifter_pattern_hi);
+    f(bg_shifter_attrib_lo);
+    f(bg_shifter_attrib_hi);
+    f(OAM);
+    f(oam_addr);
+    f(spriteScanline);
+    f(sprite_count);
+    f(sprite_shifter_pattern_lo);
+    f(sprite_shifter_pattern_hi);
+    f(bSpriteZeroHitPossible);
+    f(bSpriteZeroBeingRendered);
+    f(odd_frame);
+    f(nmi);
+  }
+
   // 名称表/调色板内存的镜像寻址。两个 helper 返回字节引用，
   // 读写共用同一份镜像逻辑。
   uint8_t &NametableByte(uint16_t addr);
@@ -195,6 +231,6 @@ class Nes2C02 {
   bool nmi = false;
 
   // 存档：内部 VRAM/OAM/寄存器/渲染管线状态（不含帧缓冲，重跑即恢复）
-  void SaveState(std::ostream &os) const;
+  void SaveState(std::ostream &os);
   void LoadState(std::istream &is);
 };
