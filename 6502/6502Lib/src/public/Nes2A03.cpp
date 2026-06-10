@@ -85,11 +85,7 @@ void Nes2A03::cpuWrite(uint16_t addr, uint8_t data) {
       noise.seq.reload = kNoisePeriod[data & 0x0F];
       break;
 
-    case 0x400F:  // 噪声：长度计数器装载
-      // 注：重启两个脉冲包络是原始代码的行为，并不符合硬件
-      //（每次鼓点都会重触发旋律音量）；保持原样，修复为独立提交。
-      pulse[0].env.start = true;
-      pulse[1].env.start = true;
+    case 0x400F:  // 噪声：长度计数器装载 + 重启噪声包络
       noise.env.start = true;
       noise.lc.counter = length_table[(data & 0xF8) >> 3];
       break;
