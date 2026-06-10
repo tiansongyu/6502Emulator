@@ -5,7 +5,6 @@
 #include <memory>
 
 #include "Cartridge.h"
-#include "olcPixelGameEngine.h"
 
 class Nes2C02 {
  public:
@@ -18,18 +17,19 @@ class Nes2C02 {
   uint8_t tblPalette[32];       // 调色板
 
  private:
-  olc::Pixel palScreen[0x40];                     // 颜色
-  olc::Sprite sprScreen = olc::Sprite(256, 240);  // 显示器
-  olc::Sprite sprPatternTable[2] = {olc::Sprite(128, 128),
-                                    olc::Sprite(128, 128)};  // 需要显示的模式表
+  // 渲染输出：普通的 32 位 RGBA 像素缓冲（字节序 r,g,b,a，与常见
+  // 图形库的 32 位精灵布局兼容）。核心库不依赖任何 GUI 引擎，
+  // 前端把这些缓冲拷贝进自己的纹理/精灵即可。
+  uint32_t framebuffer[240 * 256];       // 显示器 256 x 240
+  uint32_t patternTable[2][128 * 128];   // 调试用模式表视图
 
  public:
   // 调试函数(打印各种信息)
-  olc::Sprite &GetScreen();                                  // 屏幕
-  olc::Sprite &GetPatternTable(uint8_t i, uint8_t palette);  // 获取模式表
+  const uint32_t *GetScreen() const;                            // 屏幕
+  const uint32_t *GetPatternTable(uint8_t i, uint8_t palette);  // 获取模式表
 
-  olc::Pixel &GetColourFromPaletteRam(uint8_t palette,
-                                      uint8_t pixel);  // 获取调色后的pixel
+  uint32_t GetColourFromPaletteRam(uint8_t palette,
+                                   uint8_t pixel);  // 获取调色后的颜色
 
   bool frame_complete = false;  // 用来判断帧的绘制是否完成
 

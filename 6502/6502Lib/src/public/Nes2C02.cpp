@@ -26,76 +26,30 @@ static uint8_t flipbyte(uint8_t b) {
   return b;
 }
 
+// NES 系统调色板：64 种颜色，打包为 32 位 RGBA（字节序 r,g,b,a）。
+static constexpr uint32_t RGB(uint32_t r, uint32_t g, uint32_t b) {
+  return 0xFF000000u | (b << 16) | (g << 8) | r;
+}
+static constexpr uint32_t kPalette[0x40] = {
+    RGB(84, 84, 84), RGB(0, 30, 116), RGB(8, 16, 144), RGB(48, 0, 136),
+    RGB(68, 0, 100), RGB(92, 0, 48), RGB(84, 4, 0), RGB(60, 24, 0),
+    RGB(32, 42, 0), RGB(8, 58, 0), RGB(0, 64, 0), RGB(0, 60, 0),
+    RGB(0, 50, 60), RGB(0, 0, 0), RGB(0, 0, 0), RGB(0, 0, 0),
+    RGB(152, 150, 152), RGB(8, 76, 196), RGB(48, 50, 236), RGB(92, 30, 228),
+    RGB(136, 20, 176), RGB(160, 20, 100), RGB(152, 34, 32), RGB(120, 60, 0),
+    RGB(84, 90, 0), RGB(40, 114, 0), RGB(8, 124, 0), RGB(0, 118, 40),
+    RGB(0, 102, 120), RGB(0, 0, 0), RGB(0, 0, 0), RGB(0, 0, 0),
+    RGB(236, 238, 236), RGB(76, 154, 236), RGB(120, 124, 236), RGB(176, 98, 236),
+    RGB(228, 84, 236), RGB(236, 88, 180), RGB(236, 106, 100), RGB(212, 136, 32),
+    RGB(160, 170, 0), RGB(116, 196, 0), RGB(76, 208, 32), RGB(56, 204, 108),
+    RGB(56, 180, 204), RGB(60, 60, 60), RGB(0, 0, 0), RGB(0, 0, 0),
+    RGB(236, 238, 236), RGB(168, 204, 236), RGB(188, 188, 236), RGB(212, 178, 236),
+    RGB(236, 174, 236), RGB(236, 174, 212), RGB(236, 180, 176), RGB(228, 196, 144),
+    RGB(204, 210, 120), RGB(180, 222, 120), RGB(168, 226, 144), RGB(152, 226, 180),
+    RGB(160, 214, 228), RGB(160, 162, 160), RGB(0, 0, 0), RGB(0, 0, 0),
+};
+
 Nes2C02::Nes2C02() {
-  // 颜色
-  palScreen[0x00] = olc::Pixel(84, 84, 84);
-  palScreen[0x01] = olc::Pixel(0, 30, 116);
-  palScreen[0x02] = olc::Pixel(8, 16, 144);
-  palScreen[0x03] = olc::Pixel(48, 0, 136);
-  palScreen[0x04] = olc::Pixel(68, 0, 100);
-  palScreen[0x05] = olc::Pixel(92, 0, 48);
-  palScreen[0x06] = olc::Pixel(84, 4, 0);
-  palScreen[0x07] = olc::Pixel(60, 24, 0);
-  palScreen[0x08] = olc::Pixel(32, 42, 0);
-  palScreen[0x09] = olc::Pixel(8, 58, 0);
-  palScreen[0x0A] = olc::Pixel(0, 64, 0);
-  palScreen[0x0B] = olc::Pixel(0, 60, 0);
-  palScreen[0x0C] = olc::Pixel(0, 50, 60);
-  palScreen[0x0D] = olc::Pixel(0, 0, 0);
-  palScreen[0x0E] = olc::Pixel(0, 0, 0);
-  palScreen[0x0F] = olc::Pixel(0, 0, 0);
-
-  palScreen[0x10] = olc::Pixel(152, 150, 152);
-  palScreen[0x11] = olc::Pixel(8, 76, 196);
-  palScreen[0x12] = olc::Pixel(48, 50, 236);
-  palScreen[0x13] = olc::Pixel(92, 30, 228);
-  palScreen[0x14] = olc::Pixel(136, 20, 176);
-  palScreen[0x15] = olc::Pixel(160, 20, 100);
-  palScreen[0x16] = olc::Pixel(152, 34, 32);
-  palScreen[0x17] = olc::Pixel(120, 60, 0);
-  palScreen[0x18] = olc::Pixel(84, 90, 0);
-  palScreen[0x19] = olc::Pixel(40, 114, 0);
-  palScreen[0x1A] = olc::Pixel(8, 124, 0);
-  palScreen[0x1B] = olc::Pixel(0, 118, 40);
-  palScreen[0x1C] = olc::Pixel(0, 102, 120);
-  palScreen[0x1D] = olc::Pixel(0, 0, 0);
-  palScreen[0x1E] = olc::Pixel(0, 0, 0);
-  palScreen[0x1F] = olc::Pixel(0, 0, 0);
-
-  palScreen[0x20] = olc::Pixel(236, 238, 236);
-  palScreen[0x21] = olc::Pixel(76, 154, 236);
-  palScreen[0x22] = olc::Pixel(120, 124, 236);
-  palScreen[0x23] = olc::Pixel(176, 98, 236);
-  palScreen[0x24] = olc::Pixel(228, 84, 236);
-  palScreen[0x25] = olc::Pixel(236, 88, 180);
-  palScreen[0x26] = olc::Pixel(236, 106, 100);
-  palScreen[0x27] = olc::Pixel(212, 136, 32);
-  palScreen[0x28] = olc::Pixel(160, 170, 0);
-  palScreen[0x29] = olc::Pixel(116, 196, 0);
-  palScreen[0x2A] = olc::Pixel(76, 208, 32);
-  palScreen[0x2B] = olc::Pixel(56, 204, 108);
-  palScreen[0x2C] = olc::Pixel(56, 180, 204);
-  palScreen[0x2D] = olc::Pixel(60, 60, 60);
-  palScreen[0x2E] = olc::Pixel(0, 0, 0);
-  palScreen[0x2F] = olc::Pixel(0, 0, 0);
-
-  palScreen[0x30] = olc::Pixel(236, 238, 236);
-  palScreen[0x31] = olc::Pixel(168, 204, 236);
-  palScreen[0x32] = olc::Pixel(188, 188, 236);
-  palScreen[0x33] = olc::Pixel(212, 178, 236);
-  palScreen[0x34] = olc::Pixel(236, 174, 236);
-  palScreen[0x35] = olc::Pixel(236, 174, 212);
-  palScreen[0x36] = olc::Pixel(236, 180, 176);
-  palScreen[0x37] = olc::Pixel(228, 196, 144);
-  palScreen[0x38] = olc::Pixel(204, 210, 120);
-  palScreen[0x39] = olc::Pixel(180, 222, 120);
-  palScreen[0x3A] = olc::Pixel(168, 226, 144);
-  palScreen[0x3B] = olc::Pixel(152, 226, 180);
-  palScreen[0x3C] = olc::Pixel(160, 214, 228);
-  palScreen[0x3D] = olc::Pixel(160, 162, 160);
-  palScreen[0x3E] = olc::Pixel(0, 0, 0);
-  palScreen[0x3F] = olc::Pixel(0, 0, 0);
-
   // 上电状态与按下 Reset 相同：所有内部内存清零，
   // 保证模拟器开机行为是确定性的。
   reset();
@@ -103,12 +57,12 @@ Nes2C02::Nes2C02() {
 
 Nes2C02::~Nes2C02() {}
 
-olc::Sprite &Nes2C02::GetScreen() {
-  // 返回当前需要绘制的屏幕中的像素 256 x 240
-  return sprScreen;
+const uint32_t *Nes2C02::GetScreen() const {
+  // 返回当前需要绘制的屏幕中的像素 256 x 240（行主序）
+  return framebuffer;
 }
 
-olc::Sprite &Nes2C02::GetPatternTable(uint8_t i, uint8_t palette) {
+const uint32_t *Nes2C02::GetPatternTable(uint8_t i, uint8_t palette) {
   // 此函数使用指定的调色板将给定模式表的 CHR ROM 绘制到 olc::Sprite 中。
   // 模式表由 16x16 个"瓷砖(tile)"组成，每个 tile 是 8x8 像素，每像素 2 bit，
   // 存储为两个分离的位平面（低位面 8 字节 + 高位面 8 字节，共 16 字节）。
@@ -126,23 +80,24 @@ olc::Sprite &Nes2C02::GetPatternTable(uint8_t i, uint8_t palette) {
           tile_lsb >>= 1;
           tile_msb >>= 1;
 
-          sprPatternTable[i].SetPixel(nTileX * 8 + (7 - col), nTileY * 8 + row,
-                                      GetColourFromPaletteRam(palette, pixel));
+          patternTable[i][(nTileY * 8 + row) * 128 + nTileX * 8 +
+                          (7 - col)] =
+              GetColourFromPaletteRam(palette, pixel);
         }
       }
     }
   }
 
-  return sprPatternTable[i];
+  return patternTable[i];
 }
 
-olc::Pixel &Nes2C02::GetColourFromPaletteRam(uint8_t palette, uint8_t pixel) {
+uint32_t Nes2C02::GetColourFromPaletteRam(uint8_t palette, uint8_t pixel) {
   // 输入调色板中制定位置信息，返回颜色
   // "0x3F00"       - 内存中调色板的偏移
   // "palette << 2" - 每个调色板的大小为4字节
   // "pixel"        - 每个像素索引为0、1、2或3
   // "& 0x3F"       - 阻止读取超出调色板边界的内容
-  return palScreen[ppuRead(0x3F00 + (palette << 2) + pixel) & 0x3F];
+  return kPalette[ppuRead(0x3F00 + (palette << 2) + pixel) & 0x3F];
 }
 
 uint8_t Nes2C02::cpuRead(uint16_t addr, bool rdonly) {
@@ -343,6 +298,9 @@ void Nes2C02::reset() {
   std::memset(tblName, 0, sizeof(tblName));
   std::memset(tblPattern, 0, sizeof(tblPattern));
   std::memset(tblPalette, 0, sizeof(tblPalette));
+  for (auto &px : framebuffer) px = 0xFF000000u;  // 不透明黑
+  for (auto &tbl : patternTable)
+    for (auto &px : tbl) px = 0xFF000000u;
 }
 
 // ==============================================================================
@@ -693,9 +651,11 @@ void Nes2C02::ComposePixel() {
     }
   }
 
-  // SetPixel 自带越界检查，不可见区域的写入会被丢弃
-  sprScreen.SetPixel(cycle - 1, scanline,
-                     GetColourFromPaletteRam(palette, pixel));
+  // 只有可见窗口内的像素才落入帧缓冲
+  if (cycle >= 1 && cycle <= 256 && scanline >= 0 && scanline < 240) {
+    framebuffer[scanline * 256 + (cycle - 1)] =
+        GetColourFromPaletteRam(palette, pixel);
+  }
 }
 
 // 推进扫描位置，并在每条可见扫描线的 260 周期通知 mapper

@@ -37,7 +37,7 @@ void Bus::cpuWrite(uint16_t addr, uint8_t data) {
     // cartridge进行首次判断
     // cartridge可以根據需要將內容映射到其他任何地址
     // 通过这种方式，可以扩展硬件外设，比如枪。
-  } else if (addr >= 0x0000 && addr <= 0x1FFF) {
+  } else if (addr <= 0x1FFF) {
     // 系统内存地址
     // 只有一共8kb，但是只有2kb可以用
     // 其他地址是2kb的镜像，使用&0x07ff运算，只使用2kb
@@ -72,7 +72,7 @@ uint8_t Bus::cpuRead(uint16_t addr, bool bReadOnly) {
   uint8_t data = 0x00;
   if (cart->cpuRead(addr, data)) {
     // Cartridge 地址
-  } else if (addr >= 0x0000 && addr <= 0x1FFF) {
+  } else if (addr <= 0x1FFF) {
     // 系统内存地址RAM, 每2kb都是镜像  2kb = 0x07FF
     data = cpuRam[addr & 0x07FF];
   } else if (addr >= 0x2000 && addr <= 0x3FFF) {

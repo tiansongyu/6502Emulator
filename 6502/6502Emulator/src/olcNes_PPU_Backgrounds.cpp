@@ -41,12 +41,24 @@ class Demo_olcNES : public olc::PixelGameEngine {
 
   uint8_t nSelectedPalette = 0x00;
 
+  // 核心库输出的是普通 32 位像素缓冲；这里持有引擎侧精灵，
+  // 每帧把缓冲拷入再绘制。
+  olc::Sprite sprScreen = olc::Sprite(256, 240);
+  olc::Sprite sprPattern[2] = {olc::Sprite(128, 128), olc::Sprite(128, 128)};
+
   std::list<uint16_t> audio[4];
   float fAccumulatedTime = 0.0f;
 
  private:
   // Support Utilities
   std::map<uint16_t, std::string> mapAsm;
+
+  // 把核心库的 32 位像素缓冲写入引擎精灵（逐像素写 n 成员，
+  // 避免对带构造函数的 olc::Pixel 做 memcpy）
+  static void Blit(const uint32_t *src, olc::Sprite &dst, int count) {
+    olc::Pixel *px = dst.GetData();
+    for (int i = 0; i < count; i++) px[i].n = src[i];
+  }
 
   std::string hex(uint32_t n, uint8_t d) {
     std::string s(d, '0');
@@ -279,19 +291,23 @@ class Demo_olcNES : public olc::PixelGameEngine {
       for (int s = 0; s < 4; s++)  // For each index
         FillRect(516 + p * (nSwatchSize * 5) + s * nSwatchSize, 340,
                  nSwatchSize, nSwatchSize,
-                 nes.ppu.GetColourFromPaletteRam(p, s));
+                 olc::Pixel(nes.ppu.GetColourFromPaletteRam(p, s)));
 
     // Draw selection reticule around selected palette
     DrawRect(516 + nSelectedPalette * (nSwatchSize * 5) - 1, 339,
              (nSwatchSize * 4), nSwatchSize, olc::WHITE);
 
     // Generate Pattern Tables
-    DrawSprite(516, 348, &nes.ppu.GetPatternTable(0, nSelectedPalette));
-    DrawSprite(648, 348, &nes.ppu.GetPatternTable(1, nSelectedPalette));
+    for (int i = 0; i < 2; i++)
+      Blit(nes.ppu.GetPatternTable(i, nSelectedPalette), sprPattern[i],
+           128 * 128);
+    DrawSprite(516, 348, &sprPattern[0]);
+    DrawSprite(648, 348, &sprPattern[1]);
 
     // Draw rendered output
     // ========================================================
-    DrawSprite(0, 0, &nes.ppu.GetScreen(), 2);
+    Blit(nes.ppu.GetScreen(), sprScreen, 256 * 240);
+    DrawSprite(0, 0, &sprScreen, 2);
     return true;
   }
 
@@ -383,19 +399,23 @@ class Demo_olcNES : public olc::PixelGameEngine {
       for (int s = 0; s < 4; s++)  // For each index
         FillRect(516 + p * (nSwatchSize * 5) + s * nSwatchSize, 340,
                  nSwatchSize, nSwatchSize,
-                 nes.ppu.GetColourFromPaletteRam(p, s));
+                 olc::Pixel(nes.ppu.GetColourFromPaletteRam(p, s)));
 
     // Draw selection reticule around selected palette
     DrawRect(516 + nSelectedPalette * (nSwatchSize * 5) - 1, 339,
              (nSwatchSize * 4), nSwatchSize, olc::WHITE);
 
     // Generate Pattern Tables
-    DrawSprite(516, 348, &nes.ppu.GetPatternTable(0, nSelectedPalette));
-    DrawSprite(648, 348, &nes.ppu.GetPatternTable(1, nSelectedPalette));
+    for (int i = 0; i < 2; i++)
+      Blit(nes.ppu.GetPatternTable(i, nSelectedPalette), sprPattern[i],
+           128 * 128);
+    DrawSprite(516, 348, &sprPattern[0]);
+    DrawSprite(648, 348, &sprPattern[1]);
 
     // Draw rendered output
     // ========================================================
-    DrawSprite(0, 0, &nes.ppu.GetScreen(), 2);
+    Blit(nes.ppu.GetScreen(), sprScreen, 256 * 240);
+    DrawSprite(0, 0, &sprScreen, 2);
     return true;
   }
 };

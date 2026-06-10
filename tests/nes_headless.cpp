@@ -84,8 +84,7 @@ static int runFrames(const char *rom, int frames, int startAt) {
     if (startAt > 0 && f >= startAt && f < startAt + 10)
       nes.controller[0] = 0x10;  // Start button
     runFrame(nes);
-    const uint8_t *px =
-        reinterpret_cast<const uint8_t *>(nes.ppu.GetScreen().GetData());
+    const uint8_t *px = reinterpret_cast<const uint8_t *>(nes.ppu.GetScreen());
     uint64_t h = fnv1a(px, 256 * 240 * 4);
     cumulative = fnv1a(reinterpret_cast<const uint8_t *>(&h), 8, cumulative);
     if (f % 30 == 0) printf("frame %4d hash %016" PRIx64 "\n", f, h);
