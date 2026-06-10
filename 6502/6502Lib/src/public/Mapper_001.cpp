@@ -223,10 +223,8 @@ bool Mapper_001::ppuMapWrite(uint16_t addr, uint32_t &mapped_addr) {
       return true;
     }
 
-    // 注意：CHR-ROM 卡带返回 true 但未设置 mapped_addr 是原始行为
-    //（会把数据写进 vCHRMemory[0]）；保持原样，修复为独立提交。
-    mapped_addr = 0;
-    return true;
+    // CHR ROM 不可写
+    return false;
   } else {
     return false;
   }

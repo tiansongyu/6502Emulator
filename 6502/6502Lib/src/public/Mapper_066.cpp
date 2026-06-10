@@ -25,7 +25,7 @@ bool Mapper_066::cpuMapRead(uint16_t addr, uint32_t &mapped_addr) {
   return false;
 }
 
-bool Mapper_066::cpuMapWrite(uint16_t addr, uint32_t &mapped_addr,
+bool Mapper_066::cpuMapWrite(uint16_t addr, uint32_t & /*mapped_addr*/,
                              uint8_t data) {
   // 7  bit  0
   // ---- ----
@@ -33,13 +33,11 @@ bool Mapper_066::cpuMapWrite(uint16_t addr, uint32_t &mapped_addr,
   // ||   ||
   // ||   ++- Select 8 KB CHR ROM bank for PPU $0000-$1FFF
   // ++------ Select 32 KB PRG ROM bank for CPU $8000-$FFFF
-  // 注意：返回 true 但未设置 mapped_addr 是原始行为（会把 data 写进
-  // vPRGMemory[0]，破坏 ROM 镜像首字节）；保持原样，修复为独立提交。
+  // 写入只改 bank 寄存器，不映射进 ROM——返回 false，
+  // 否则 Cartridge 会把 data 写进 vPRGMemory[mapped_addr]。
   if (addr >= 0x8000) {
     regLo = data & 0b00000011;
     regHi = (data & 0b00110000) >> 4;
-    mapped_addr = 0;
-    return true;
   }
 
   return false;

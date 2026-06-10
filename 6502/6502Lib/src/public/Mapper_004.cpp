@@ -150,6 +150,8 @@ void Mapper_004::reset() {
   nPrgRamProtect = 0x00;
   nIrqCounter = 0x00;
   nIrqLatch = 0x00;
+  bIRQEnable = false;
+  bIRQActive = false;
 
   mirrormode = MIRROR::HORIZONTAL;
 

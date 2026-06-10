@@ -47,16 +47,9 @@ bool Mapper_000::cpuMapRead(uint16_t addr, uint32_t &mapped_addr) {
   return false;
 }
 
-bool Mapper_000::cpuMapWrite(uint16_t addr, uint32_t &mapped_addr,
+bool Mapper_000::cpuMapWrite(uint16_t /*addr*/, uint32_t & /*mapped_addr*/,
                              uint8_t /*data*/) {
-  // data没有使用,map中没有寄存器，cpu不会向map写入数据
-  // 注意：把写入映射进 PRG ROM 是原始行为（会改写 ROM 镜像），
-  // 保持原样，写保护作为独立的行为修正提交。
-  if (addr >= 0x8000) {
-    mapped_addr = addr & (nPRGBanks > 1 ? 0x7FFF : 0x3FFF);
-    return true;
-  }
-
+  // NROM 没有任何寄存器，PRG 是只读 ROM——CPU 写入直接忽略。
   return false;
 }
 
