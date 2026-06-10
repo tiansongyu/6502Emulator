@@ -34,6 +34,15 @@ static uint64_t fnv1a(const uint8_t *p, size_t n, uint64_t h = 0xcbf29ce48422232
 // runs non-deterministic. Zero it explicitly for reproducible baselines.
 static void zeroRam(Bus &nes) { memset(nes.cpuRam, 0, sizeof(nes.cpuRam)); }
 
+// startAt > 0：在 [startAt, startAt+10) 按住 Start（进入游戏）。
+// startAt < 0：每 |startAt| 帧按住 Start 10 帧（盲穿多级菜单）。
+static uint8_t startButton(int startAt, int frame) {
+  if (startAt > 0)
+    return (frame >= startAt && frame < startAt + 10) ? 0x10 : 0x00;
+  if (startAt < 0) return (frame % -startAt) < 10 ? 0x10 : 0x00;
+  return 0x00;
+}
+
 static std::shared_ptr<Cartridge> loadCart(const char *path) {
   auto cart = std::make_shared<Cartridge>(path);
   if (!cart->ImageValid()) {
@@ -80,9 +89,7 @@ static int runFrames(const char *rom, int frames, int startAt) {
   nes.reset();
   uint64_t cumulative = 0xcbf29ce484222325ULL;
   for (int f = 1; f <= frames; f++) {
-    nes.controller[0] = 0x00;
-    if (startAt > 0 && f >= startAt && f < startAt + 10)
-      nes.controller[0] = 0x10;  // Start button
+    nes.controller[0] = startButton(startAt, f);
     runFrame(nes);
     const uint8_t *px = reinterpret_cast<const uint8_t *>(nes.ppu.GetScreen());
     uint64_t h = fnv1a(px, 256 * 240 * 4);
@@ -108,9 +115,7 @@ static int runAudio(const char *rom, double seconds, int startAt) {
     if (nes.ppu.frame_complete) {
       nes.ppu.frame_complete = false;
       frame++;
-      nes.controller[0] =
-          (startAt > 0 && frame >= startAt && frame < startAt + 10) ? 0x10
-                                                                    : 0x00;
+      nes.controller[0] = startButton(startAt, frame);
     }
     if (!sampleReady) continue;
     double s = nes.dAudioSample;
@@ -135,13 +140,34 @@ static int runAudio(const char *rom, double seconds, int startAt) {
   return 0;
 }
 
+// 把第 n 帧的帧缓冲以原始 RGBA 形式写出（256x240x4 字节），
+// 供外部工具转成图片人工查验画面。
+static int runDump(const char *rom, int frame, int startAt, const char *out) {
+  Bus nes;
+  zeroRam(nes);
+  nes.insertCartridge(loadCart(rom));
+  nes.SetSampleFrequency(44100);
+  nes.reset();
+  for (int f = 1; f <= frame; f++) {
+    nes.controller[0] = startButton(startAt, f);
+    runFrame(nes);
+  }
+  FILE *fp = fopen(out, "wb");
+  if (!fp) return 1;
+  fwrite(nes.ppu.GetScreen(), 4, 256 * 240, fp);
+  fclose(fp);
+  printf("wrote %s (frame %d)\n", out, frame);
+  return 0;
+}
+
 int main(int argc, char **argv) {
   if (argc < 4) {
     fprintf(stderr,
             "usage: %s trace <rom> <count>\n"
             "       %s frames <rom> <n> [press-start-frame]\n"
-            "       %s audio <rom> <seconds> [press-start-frame]\n",
-            argv[0], argv[0], argv[0]);
+            "       %s audio <rom> <seconds> [press-start-frame]\n"
+            "       %s dump <rom> <frame> <press-start-frame|0> <out.rgba>\n",
+            argv[0], argv[0], argv[0], argv[0]);
     return 2;
   }
   std::string mode = argv[1];
@@ -150,6 +176,8 @@ int main(int argc, char **argv) {
     return runFrames(argv[2], atoi(argv[3]), argc > 4 ? atoi(argv[4]) : 0);
   if (mode == "audio")
     return runAudio(argv[2], atof(argv[3]), argc > 4 ? atoi(argv[4]) : 0);
+  if (mode == "dump" && argc >= 6)
+    return runDump(argv[2], atoi(argv[3]), atoi(argv[4]), argv[5]);
   fprintf(stderr, "unknown mode %s\n", mode.c_str());
   return 2;
 }

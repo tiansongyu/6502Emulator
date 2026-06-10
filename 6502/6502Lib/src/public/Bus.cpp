@@ -189,9 +189,11 @@ bool Bus::clock() {
     cpu.nmi();
   }
 
-  // Check if cartridge is requesting IRQ
+  // 卡带 IRQ 是电平触发：只要 mapper 仍在拉低 IRQ 线就持续请求，
+  // CPU 用 I 标志决定是否受理。由游戏代码通过 mapper 自己确认中断
+  //（MMC3 写 $E000）来释放 IRQ 线——总线在受理前就替游戏清线，
+  // 会让 I=1 期间到来的 IRQ 永久丢失（Metal Max 的中断问题根因）。
   if (cart->GetMapper()->irqState()) {
-    cart->GetMapper()->irqClear();
     cpu.irq();
   }
 
