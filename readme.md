@@ -13,7 +13,6 @@
 | Select                | Y           |
 | A                     | K           |
 | B                     | J           |
-| Reset                 | R           |
 
 ### 功能键
 
@@ -23,6 +22,9 @@
 | load game state | F2        |
 | reset game      | Backspace |
 | change palette  | P         |
+
+音频后端不可用时（无声模式），额外提供调试键：Space 暂停/继续，
+C 单步一条 CPU 指令，F 单步一帧。
 
 ## 实现的模块
 - BUS
@@ -56,10 +58,25 @@ cd 6502Emulator
 mkdir build  
 cd build 
 cmake  -DCMAKE_BUILD_TYPE=Release .. 
-cd 6502/6502Emulator/
 make -j12 
-./6502Emulator
+cd 6502/6502Emulator/
+./6502Emulator [rom路径]     # 默认 ./rom/smb.nes，可指定其他 .nes 文件
 ```
+
+### 回归测试（headless，无需图形环境）
+
+模拟器核心是独立的静态库（不依赖任何 GUI），`tests/nes_headless`
+就是用它写的回归工具：
+
+``` bash
+cd build/tests
+./nes_headless trace    <rom> 8991        # nestest CPU 逐指令跟踪
+./nes_headless frames   <rom> 300 [start帧] # 帧哈希（图形回归）
+./nes_headless audio    <rom> 5 [start帧]   # 音频指标（直流/点击）
+./nes_headless savetest <rom> 200 100 60    # 存档往返一致性
+```
+
+基线与验证方法见 `tests/baselines.md`。
 ### Windows环境
 ``` bash 
 git clone git@github.com:tiansongyu/6502Emulator.git 
@@ -75,7 +92,7 @@ make_VS2019.bat
 - Mapper1 (MMC1)
 - Mapper2 (UxROM)
 - Mapper3 ( CNROM )
-- Mapper4 (MMC3) 最复杂的一种Mapper，目前可能在存在中断问题，没有解决,metal max 中断不正确
+- Mapper4 (MMC3) 最复杂的一种Mapper（IRQ 改为电平触发后，metal max 等游戏的中断问题已修复）
 - Mapper66 (GxROM)  
 
 查看如下游戏列表，查看对应的Mapper，可以用来判断是否可游玩
