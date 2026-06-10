@@ -30,7 +30,7 @@ static void ShiftNoise(uint32_t &s) {
   s = (((s & 0x0001) ^ ((s & 0x0002) >> 1)) << 14) | ((s & 0x7FFF) >> 1);
 }
 
-Nes2A03::Nes2A03() { noise.seq.sequence = 0xDBDB; }
+Nes2A03::Nes2A03() { reset(); }
 
 Nes2A03::~Nes2A03() {}
 
@@ -100,10 +100,15 @@ void Nes2A03::cpuWrite(uint16_t addr, uint8_t data) {
 }
 
 uint8_t Nes2A03::cpuRead(uint16_t addr) {
-  // $4015 状态读取（长度计数器状态）原始代码即被注释停用，
-  // 保持返回 0；启用作为独立的行为修正提交。
-  (void)addr;
-  return 0x00;
+  // $4015：通道状态——各长度计数器是否仍在计数。
+  // （帧中断 / DMC 状态位未实现。）
+  uint8_t data = 0x00;
+  if (addr == 0x4015) {
+    data |= (pulse[0].lc.counter > 0) ? 0x01 : 0x00;
+    data |= (pulse[1].lc.counter > 0) ? 0x02 : 0x00;
+    data |= (noise.lc.counter > 0) ? 0x04 : 0x00;
+  }
+  return data;
 }
 
 void Nes2A03::clock() {
@@ -228,4 +233,18 @@ double Nes2A03::GetOutputSample() {
   return y * 2.5;
 }
 
-void Nes2A03::reset() {}
+void Nes2A03::reset() {
+  pulse[0] = Channel{};
+  pulse[1] = Channel{};
+  noise = Channel{};
+  noise.seq.sequence = 0xDBDB;  // LFSR 种子
+  sweep[0] = sweeper{};
+  sweep[1] = sweeper{};
+  frame_clock_counter = 0;
+  clock_counter = 0;
+  mixer_hp_in = 0.0;
+  mixer_hp_out = 0.0;
+  pulse1_visual = 2047;
+  pulse2_visual = 2047;
+  noise_visual = 2047;
+}

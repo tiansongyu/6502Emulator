@@ -101,6 +101,7 @@ void Bus::reset() {
   cart->reset();
   cpu.reset();
   ppu.reset();
+  apu.reset();
   nSystemClockCounter = 0;
   dma_page = 0x00;
   dma_addr = 0x00;
