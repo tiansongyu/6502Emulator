@@ -161,10 +161,13 @@ void Nes2A03::clock() {
     pulse[1].seq.clock(pulse[1].enable, RotatePulse);
     noise.seq.clock(noise.enable, ShiftNoise);
 
+    // 硬件静音规则基于周期值（reload < 8 时超声波频段，强制静音），
+    // 而不是正在倒数的 timer——后者每个周期都会扫过 0..7，会在波形上
+    // 凿出周期性的缺口。
     auto gate_pulse = [](const Channel &p, const sweeper &sw) -> double {
       if (!p.enable) return 0.0;
       if (p.lc.counter == 0) return 0.0;
-      if (p.seq.timer < 8) return 0.0;
+      if (p.seq.reload < 8) return 0.0;
       if (sw.mute) return 0.0;
       return static_cast<double>(p.seq.output) *
              static_cast<double>(p.env.output);
@@ -175,7 +178,8 @@ void Nes2A03::clock() {
         gate_pulse(pulse[1], sweep[1]),
         0.0,
     };
-    if (noise.enable && noise.lc.counter > 0 && noise.seq.timer >= 8) {
+    // 噪声通道没有 "周期 < 8 静音" 的规则——快速噪声是合法设置
+    if (noise.enable && noise.lc.counter > 0) {
       raw[2] = static_cast<double>(noise.seq.output) *
                static_cast<double>(noise.env.output);
     }
