@@ -54,9 +54,8 @@ class Bus {
 
  private:
   double dAudioTime = 0.0;
-  double dAudioGlobalTime = 0.0;
   double dAudioTimePerNESClock = 0.0;
-  double dAudioTimePerSystemSample = 0.0f;
+  double dAudioTimePerSystemSample = 0.0;
 
  public:
   // 总线中负责cpu的读写
