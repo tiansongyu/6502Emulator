@@ -57,6 +57,8 @@ class Demo_olcNES : public olc::PixelGameEngine {
   float fResidualTime = 0.0f;
 
   uint8_t nSelectedPalette = 0x00;
+  // 模式表调试视图的刷新节流计数器（详见 OnUserUpdate 末尾）
+  int nPatternRefresh = 0;
 
   // 跨线程请求：GUI 线程置位，驱动模拟器的线程消费。
   // 存档/读档的文件 IO 留在 GUI 线程（实时音频线程上一次磁盘卡顿
@@ -223,7 +225,11 @@ class Demo_olcNES : public olc::PixelGameEngine {
         bLoadRequested = true;
       }
     }
-    if (GetKey(olc::Key::P).bPressed) (++nSelectedPalette) &= 0x07;
+    bool bPaletteChanged = false;
+    if (GetKey(olc::Key::P).bPressed) {
+      (++nSelectedPalette) &= 0x07;
+      bPaletteChanged = true;
+    }
 
     if (!bAudioDriven) {
       // 无音频后备：GUI 线程自己驱动，附带暂停/单步调试键
@@ -288,10 +294,15 @@ class Demo_olcNES : public olc::PixelGameEngine {
     DrawRect(516 + nSelectedPalette * (nSwatchSize * 5) - 1, 339,
              (nSwatchSize * 4), nSwatchSize, olc::WHITE);
 
-    // 模式表
-    for (int i = 0; i < 2; i++)
-      Blit(nes.ppu.GetPatternTable(i, nSelectedPalette), sprPattern[i],
-           128 * 128);
+    // 模式表（调试视图）：CHR 内容随 mapper bank 切换而变，但每帧
+    // 重算两张表要 2×16384 次 ppuRead。节流到每 8 帧刷新一次（肉眼
+    // 无差别），切换调色板时立即刷新；其余帧直接重绘已缓存的精灵。
+    if (bPaletteChanged || nPatternRefresh == 0) {
+      for (int i = 0; i < 2; i++)
+        Blit(nes.ppu.GetPatternTable(i, nSelectedPalette), sprPattern[i],
+             128 * 128);
+    }
+    if (++nPatternRefresh >= 8) nPatternRefresh = 0;
     DrawSprite(516, 348, &sprPattern[0]);
     DrawSprite(648, 348, &sprPattern[1]);
 
