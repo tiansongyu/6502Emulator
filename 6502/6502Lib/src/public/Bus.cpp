@@ -200,13 +200,14 @@ bool Bus::clock() {
     cpu.nmi();
   }
 
-  // 卡带 IRQ 是电平触发：只要 mapper 仍在拉低 IRQ 线就持续请求，
-  // CPU 用 I 标志决定是否受理。由游戏代码通过 mapper 自己确认中断
-  //（MMC3 写 $E000）来释放 IRQ 线——总线在受理前就替游戏清线，
-  // 会让 I=1 期间到来的 IRQ 永久丢失（Metal Max 的中断问题根因）。
-  // 受理推迟到指令边界（DMA 期间 CPU 停摆，自然也不受理）——
-  // 电平触发保证晚受理不丢请求。
-  if (cart->GetMapper()->irqState() && !dma_transfer && cpu.complete()) {
+  // 卡带 IRQ 与 APU 帧 IRQ 都是电平触发：只要 mapper 仍在拉低 IRQ 线、
+  // 或 APU 帧计数器仍有待决中断，就持续请求，CPU 用 I 标志决定是否受理。
+  // 由游戏代码自己确认来释放 IRQ 线（MMC3 写 $E000；读 $4015 清帧 IRQ）——
+  // 总线在受理前就替游戏清线，会让 I=1 期间到来的 IRQ 永久丢失
+  //（Metal Max 的中断问题根因）。受理推迟到指令边界（DMA 期间 CPU 停摆，
+  // 自然也不受理）——电平触发保证晚受理不丢请求。
+  if ((cart->GetMapper()->irqState() || apu.irqState()) && !dma_transfer &&
+      cpu.complete()) {
     cpu.irq();
   }
 

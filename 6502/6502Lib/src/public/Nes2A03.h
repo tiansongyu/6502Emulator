@@ -43,7 +43,8 @@
         David Barr, aka javidx9, OneLoneCoder 2019
 */
 
-// 实现状态：脉冲 1/2 与噪声通道可用；三角波与 DMC 尚未实现。
+// 实现状态：脉冲 1/2、三角波、噪声通道可用，含 $4017 帧计数器
+//（4/5-step 模式与帧 IRQ）；DMC 尚未实现。
 #pragma once
 
 #include <cstdint>
@@ -62,6 +63,10 @@ class Nes2A03 {
 
   double GetOutputSample();
 
+  // 帧计数器 IRQ 线（电平触发，由 Bus 汇入 CPU 的 IRQ）。
+  // 与 mapper IRQ 一样：总线只看电平，受理与否由 CPU 的 I 标志决定。
+  bool irqState() const { return frame_irq; }
+
   // 存档：通道/扫频/帧计数器/滤波器状态
   void SaveState(std::ostream &os);
   void LoadState(std::istream &is);
@@ -71,6 +76,16 @@ class Nes2A03 {
   // PPU 时钟 / 6 = APU 时钟。显式相位计数器，不用自由增长的
   // 计数器取模（uint32 回绕时 2^32 % 6 != 0，相位会跳变）。
   uint8_t apu_phase = 0;
+
+  // $4017 帧计数器模式与中断：4-step 模式在序列末尾周期性触发帧
+  // IRQ（除非 inhibit 置 1）；5-step 模式多一个静默步、从不触发 IRQ。
+  bool frame_mode_5 = false;  // $4017 bit7：false=4-step, true=5-step
+  bool irq_inhibit = false;   // $4017 bit6：抑制帧 IRQ
+  bool frame_irq = false;     // 帧中断电平；读 $4015 或写 inhibit 时清除
+
+  // 帧序列的两种节拍，被 clock() 与 $4017 的立即触发共用
+  void clockQuarterFrame();  // 包络 + 三角波线性计数器
+  void clockHalfFrame();     // 长度计数器 + 扫频
 
  private:
   static const uint8_t length_table[];
@@ -211,8 +226,49 @@ class Nes2A03 {
     double lp = 0.0;
   };
 
+  // 三角波通道：没有包络、没有扫频。timer 以 CPU 速率运行（脉冲的两倍），
+  // 受线性计数器与长度计数器双重门控，输出 0..15 的 32 步三角序列。
+  struct triangle_channel {
+    bool enable = false;
+    bool control = false;  // $4008 bit7：linear 控制 / length halt 共用此位
+    uint16_t timer = 0x0000;
+    uint16_t reload = 0x0000;  // 11 位周期
+    uint8_t linear_counter = 0x00;
+    uint8_t linear_reload = 0x00;
+    bool linear_reload_flag = false;
+    lengthcounter lc;
+    uint8_t seq_index = 0x00;  // 0..31，三角序列的当前相位
+    uint8_t output = 0x00;     // 当前序列输出 0..15
+    double lp = 0.0;           // 与脉冲/噪声一致的抗混叠低通状态
+
+    // 每个 CPU 周期推进一拍 timer；两个门控全开时才推进 32 步序列。
+    // 静音时序列冻结（保持当前相位，不归零）——这正是真实三角波
+    // 通道开关不产生爆音的原因，残留直流由 mixer 的 DC blocker 消除。
+    void clockTimer(const uint8_t *seq) {
+      if (reload < 2) return;  // 超声周期：冻结，避免高频垃圾与 DC pop
+      timer--;
+      if (timer == 0xFFFF) {
+        timer = reload;
+        if (linear_counter > 0 && lc.counter > 0) {
+          seq_index = (seq_index + 1) & 0x1F;
+          output = seq[seq_index];
+        }
+      }
+    }
+
+    // 每 quarter frame 推进线性计数器（reload flag 优先于倒数）
+    void clockLinear() {
+      if (linear_reload_flag)
+        linear_counter = linear_reload;
+      else if (linear_counter > 0)
+        linear_counter--;
+      if (!control) linear_reload_flag = false;
+    }
+  };
+
   Channel pulse[2];
   Channel noise;
+  triangle_channel triangle;
   sweeper sweep[2];  // 扫频单元只属于两个脉冲通道，与 pulse[] 同下标
 
   // 混音后的一阶高通（DC blocker）：消除通道开关造成的直流台阶，
@@ -225,9 +281,13 @@ class Nes2A03 {
   void VisitState(F f) {
     f(pulse);
     f(noise);
+    f(triangle);
     f(sweep);
     f(frame_clock_counter);
     f(apu_phase);
+    f(frame_mode_5);
+    f(irq_inhibit);
+    f(frame_irq);
     f(mixer_hp_in);
     f(mixer_hp_out);
   }
