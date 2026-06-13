@@ -15,7 +15,6 @@ endif()
 # Turn on the ability to create folders to organize projects (.vcproj)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-add_subdirectory(third_party/olc)   # GUI 引擎（仅前端链接）
 add_subdirectory(6502/6502Lib)      # 模拟器核心（无 GUI 依赖）
-add_subdirectory(6502/6502Emulator) # GUI 前端
+add_subdirectory(6502/6502Emulator) # GUI 前端（SDL2）
 add_subdirectory(tests)             # headless 回归测试（核心可独立复用的证明）

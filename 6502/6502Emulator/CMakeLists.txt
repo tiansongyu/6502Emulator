@@ -1,13 +1,13 @@
 project(6502Emulator)
 
-# GUI 前端：olcPixelGameEngine 窗口 + olcPGEX_Sound 音频线程。
-# olcImpl.cpp 是唯一定义 OLC_PGE_APPLICATION / OLC_PGEX_SOUND 的 TU。
-add_executable(6502Emulator
-    "src/olcNes_PPU_Backgrounds.cpp"
-    "src/olcImpl.cpp"
-)
+# GUI 前端：SDL2 窗口/渲染/输入/音频。核心库（M6502Lib）完全不依赖它。
+# 单线程 + 音频队列起搏，详见 src/sdl2_nes.cpp。
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(SDL2 REQUIRED IMPORTED_TARGET sdl2)
 
-target_link_libraries(6502Emulator M6502Lib olc_pge)
+add_executable(6502Emulator "src/sdl2_nes.cpp")
+
+target_link_libraries(6502Emulator M6502Lib PkgConfig::SDL2)
 
 # 把 ROM 复制到可执行文件旁边，保证从该目录启动即可找到 ./rom/
 add_custom_command(TARGET 6502Emulator POST_BUILD

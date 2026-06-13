@@ -21,10 +21,12 @@
 | save game state | F1        |
 | load game state | F2        |
 | reset game      | Backspace |
-| change palette  | P         |
+| pause / resume  | Space     |
+| quit            | Esc       |
 
-音频后端不可用时（无声模式），额外提供调试键：Space 暂停/继续，
-C 单步一条 CPU 指令，F 单步一帧。
+> 前端为 SDL2（窗口/渲染/输入/音频），核心库 `M6502Lib` 不依赖任何 GUI。
+> 当前 SDL2 前端只渲染游戏画面（256×240，3 倍缩放）；旧 olc 版的调试面板
+> （CPU 寄存器 / OAM / 调色板 / 模式表）与单步调试键未移植。
 
 ## 实现的模块
 - BUS
@@ -38,17 +40,14 @@ C 单步一条 CPU 指令，F 单步一帧。
 
 ### linux环境
 
-安装cmake
-``` bash 
+安装 cmake 与 SDL2 开发库
+``` bash
 # ubuntu
-# 安装opengl、alsa
-sudo apt install cmake mesa-common-dev libgl1-mesa-dev \
-libglu1-mesa-dev alsa-base alsa-utils alsa-source libasound2-dev libpng-dev -y
-
+sudo apt install cmake libsdl2-dev -y
 ```
 ### windows
 
-安装vs2019
+安装 vs2019 与 SDL2（建议用 vcpkg：`vcpkg install sdl2`）
 ## 编译
 
 ### linux环境
