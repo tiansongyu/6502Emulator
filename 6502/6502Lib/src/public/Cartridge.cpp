@@ -147,6 +147,9 @@ bool Cartridge::cpuRead(uint16_t addr, uint8_t &data) {
 
   uint32_t mapped_addr = 0;
   if (pMapper->cpuMapRead(addr, mapped_addr)) {
+    // mapper 的 bank 计算理论上落在 ROM 内；畸形 ROM 或越界的 bank
+    // 寄存器会越过 vector 边界（堆 UB）——兜底为开放总线，不读越界内存。
+    if (mapped_addr >= vPRGMemory.size()) return false;
     data = vPRGMemory[mapped_addr];
     return true;
   }
@@ -161,6 +164,7 @@ bool Cartridge::cpuWrite(uint16_t addr, uint8_t data) {
 
   uint32_t mapped_addr = 0;
   if (pMapper->cpuMapWrite(addr, mapped_addr, data)) {
+    if (mapped_addr >= vPRGMemory.size()) return false;
     vPRGMemory[mapped_addr] = data;
     return true;
   }
@@ -170,6 +174,7 @@ bool Cartridge::cpuWrite(uint16_t addr, uint8_t data) {
 bool Cartridge::ppuRead(uint16_t addr, uint8_t &data) {
   uint32_t mapped_addr = 0;
   if (pMapper->ppuMapRead(addr, mapped_addr)) {
+    if (mapped_addr >= vCHRMemory.size()) return false;
     data = vCHRMemory[mapped_addr];
     return true;
   } else
@@ -179,6 +184,7 @@ bool Cartridge::ppuRead(uint16_t addr, uint8_t &data) {
 bool Cartridge::ppuWrite(uint16_t addr, uint8_t data) {
   uint32_t mapped_addr = 0;
   if (pMapper->ppuMapWrite(addr, mapped_addr)) {
+    if (mapped_addr >= vCHRMemory.size()) return false;
     vCHRMemory[mapped_addr] = data;
     return true;
   } else

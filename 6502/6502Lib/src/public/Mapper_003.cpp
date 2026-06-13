@@ -33,12 +33,10 @@ void Mapper_003::reset() {
 }
 
 bool Mapper_003::cpuMapRead(uint16_t addr, uint32_t &mapped_addr) {
-  // 存在ROM为16KB和32KB两种情况
+  // CNROM 的 PRG 固定为 16KB 或 32KB（>1 个 16KB bank 即 32KB）。
+  // 用一次掩码处理，避免 nPRGBanks 既非 1 也非 2 时 mapped_addr 漏赋值。
   if (addr >= 0x8000) {
-    if (nPRGBanks == 1)  // 16KB
-      mapped_addr = addr & 0x3FFF;
-    else if (nPRGBanks == 2)  // 32KB
-      mapped_addr = addr & 0x7FFF;
+    mapped_addr = addr & (nPRGBanks > 1 ? 0x7FFF : 0x3FFF);
     return true;
   }
 
