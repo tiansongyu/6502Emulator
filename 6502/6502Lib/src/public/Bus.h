@@ -18,6 +18,7 @@
 // 6502Emulator is actively maintained and developed!
 #pragma once
 
+#include <atomic>
 #include <cstdint>
 #include <iosfwd>
 #include <memory>
@@ -43,8 +44,11 @@ class Bus {
   // CPU中2KB的内存RAM。上电清零，保证模拟器开机行为确定
   //（真实硬件是随机值，但确定性对调试和回归测试更有价值）
   uint8_t cpuRam[2048] = {};
-  // 控制器数据暂存位置
-  uint8_t controller[2] = {};
+  // 两个手柄的实时按键快照。GUI 线程每帧写入，模拟器线程（音频驱动
+  // 模式下是声卡线程）在游戏读 $4016 时读取——跨线程共享，必须用原子
+  // 类型。普通 uint8_t 在弱序架构上写入可能永远到不了读取线程，导致
+  // 按键完全失灵（强序的 x86 多数时候侥幸可用，但仍是数据竞争 UB）。
+  std::atomic<uint8_t> controller[2] = {};
 
  public:
   // 设置声音发声频率
@@ -103,7 +107,9 @@ class Bus {
   template <typename F>
   void VisitState(F f) {
     f(cpuRam);
-    f(controller);
+    // controller[] 是每帧被 GUI 覆写的实时输入，不属于机器状态，不入档
+    //（且为跨线程原子类型，本就不可按 POD 序列化）。真正需要保存的是
+    // 下面的移位寄存器与选通线——读取序列进行到一半时存档要能还原。
     f(controller_state);
     f(controller_strobe);
     f(cpu_phase);

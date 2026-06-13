@@ -218,7 +218,9 @@ bool Bus::clock() {
 }
 
 static const char kSaveMagic[4] = {'N', 'E', 'S', 'S'};
-static const uint32_t kSaveVersion = 1;
+// v2：手柄实时输入移出存档字段（改为跨线程原子类型，且本就是每帧
+// 被覆写的瞬态输入）。版本号递增，让旧存档被干净拒绝而非错位读入。
+static const uint32_t kSaveVersion = 2;
 
 void Bus::SaveState(std::ostream &os) {
   PutPod(os, kSaveMagic);
